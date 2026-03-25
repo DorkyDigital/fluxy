@@ -1,19 +1,28 @@
 ---
-name: Feature Request
-about: Suggest a new feature or improvement
+name: Feature request
+description: Suggest a new capability or improvement for Fluxy
 title: '[Feature] '
-labels: enhancement
-assignees: ''
+labels: ['enhancement']
 ---
 
-## Description
-A clear description of the feature you'd like.
+## Problem / motivation
+What is frustrating, missing, or inefficient today? Who benefits?
 
-## Use Case
-Why is this feature needed? What problem does it solve?
+## Proposed change
+Describe the behavior you want (commands, automod, dashboard, API, etc.). Be specific.
 
-## Proposed Solution
-How you think it could be implemented (optional).
+**Area (pick any that apply):**
+- [ ] New Prefix commands
+- [ ] Automod
+- [ ] Logging / tickets / moderation workflows
+- [ ] Dashboard / web
+- [ ] API / OAuth
+- [ ] Self-hosting / ops (docs, deploy)
+- [ ] Other: …
 
-## Alternatives Considered
-Any alternative solutions or workarounds you've considered.
+## Alternatives
+What workarounds exist today (other bots, manual steps, settings)?
+
+## Extra checks
+- [ ] I searched existing issues and discussions for similar ideas
+- [ ] I understand maintainers may decline or defer—no hard feelings

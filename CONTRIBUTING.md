@@ -9,7 +9,7 @@ By contributing, you agree that your contributions will be licensed under the sa
 ## Development setup
 
 - **Node.js** `>=22`
-- **MongoDB** (local or Docker) for development
+- **MongoDB** (local or Docker etc. etc.) for development
 - Copy `.env.example` to `.env` and fill in values
 
 ```bash

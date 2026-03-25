@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Fluxy Support Server
+    url: https://fluxer.gg/fluxy
+    about: Help with invites, permissions, or general Fluxy questions which is often faster than an issue.
+  - name: Security vulnerabilities
+    url: https://github.com/DorkyDigital/fluxy/security/policy
+    about: Do not open a public issue for security reports,use this policy instead.

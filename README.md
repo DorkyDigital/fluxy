@@ -8,14 +8,14 @@ It includes:
 - utility/admin features (tickets, reaction roles, verification, logging, lockdown)
 - optional API/dashboard integration
 
-## Add Fluxy to your server (hosted)
+## Add Fluxy to your server (hosted by yours truly 💖)
 
-**Most people should use the official hosted Fluxy**—you get updates, infrastructure, and support without running your own stack.
+**Most people should use the official hosted Fluxy** - with this you get updates, infrastructure, and support without running your own stack.
 
 - **[Invite Fluxy to your server](https://web.fluxer.app/oauth2/authorize?client_id=1474069931333816428&scope=bot&permissions=4504699474930806)** — OAuth install with the recommended permissions.
-- **Support & community:** [fluxer.gg/fluxy](https://fluxer.gg/fluxy) (Fluxer Discord).
+- **Support & community:** [fluxer.gg/fluxy](https://fluxer.gg/fluxy)
 
-This repository is for **self-hosting** Fluxy (your own VPS, MongoDB, env, and ops). If you only want the bot in Discord, use the invite link above; skip to [License](#license) / [Licensing FAQ](#licensing-faq) if you need legal detail.
+This repository is for **self-hosting** Fluxy (your own VPS, MongoDB, env, and ops) and for contributing. If you only want the bot in Fluxer, use the invite link above.
 
 ## Requirements (self-hosting)
 
