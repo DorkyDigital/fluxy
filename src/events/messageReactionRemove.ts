@@ -1,12 +1,11 @@
-// id ont know if this works or not
-
 import type { BotEvent } from '../types';
 import settingsCache from '../utils/settingsCache';
 import { logServerEvent } from '../utils/logger';
 import isNetworkError from '../utils/isNetworkError';
 import * as roleQueue from '../utils/roleQueue';
-
-// test
+import StarboardMessage from '../models/StarboardMessage';
+import { Routes } from '@fluxerjs/types';
+import { EmbedBuilder } from '@fluxerjs/core';
 
 const event: BotEvent = {
   name: 'messageReactionRemove',
@@ -33,8 +32,8 @@ const event: BotEvent = {
         'Reaction Removed',
         0x95a5a6,
         [
-          { name: 'User',    value: `<@${user.id}>`, inline: true },
-          { name: 'Emoji',   value: emojiDisplay, inline: true },
+          { name: 'User', value: `<@${user.id}>`, inline: true },
+          { name: 'Emoji', value: emojiDisplay, inline: true },
           { name: 'Channel', value: `<#${reaction.channelId}>`, inline: true },
         ],
         client,
@@ -43,7 +42,89 @@ const event: BotEvent = {
           footer: `Message ID: ${reaction.messageId}`,
           eventType: 'reaction_remove',
         }
-      ).catch(() => {});
+      ).catch(() => { });
+
+      const starboard = (settings as any).starboard;
+      if (starboard?.enabled && starboard?.channelId) {
+        const starEmojiRaw = reaction.emoji.id
+          ? `${reaction.emoji.name}:${reaction.emoji.id}`
+          : String(reaction.emoji.name ?? '');
+        const configEmoji = starboard.emoji ?? '⭐';
+        const stripVS = (s: string) => s.replace(/[\uFE00-\uFE0F\u200D]/g, '').trim();
+
+        const emojiMatches = reaction.emoji.id
+          ? (starEmojiRaw === configEmoji || `<:${starEmojiRaw}>` === configEmoji || `<a:${starEmojiRaw}>` === configEmoji)
+          : (stripVS(starEmojiRaw) === stripVS(configEmoji));
+
+        if (emojiMatches) {
+          try {
+            const entry = await StarboardMessage.findOne({ guildId: guild.id, messageId: reaction.messageId });
+            if (entry) {
+              entry.reactors = entry.reactors.filter((id: string) => id !== user.id);
+              entry.starCount = entry.reactors.length;
+              await entry.save();
+
+              const threshold = starboard.threshold ?? 3;
+              if (entry.starCount < threshold) {
+                if (entry.starboardMessageId) {
+                  try {
+                    await client.rest.delete(Routes.channelMessage(starboard.channelId, entry.starboardMessageId));
+                  } catch { }
+                  entry.starboardMessageId = null;
+                  await entry.save();
+                }
+              } else if (entry.starboardMessageId) {
+                try {
+                  const origMsg = await client.rest.get(Routes.channelMessage(reaction.channelId, reaction.messageId)) as any;
+                  if (origMsg) {
+                    const getStarEmoji = (c: number) => c >= 25 ? '💫' : c >= 10 ? '🌟' : '⭐';
+                    const getStarColor = (c: number) => c >= 25 ? 0xe74c3c : c >= 10 ? 0xe67e22 : 0xf1c40f;
+
+                    const content = origMsg.content?.length > 1024
+                      ? origMsg.content.substring(0, 1021) + '...'
+                      : (origMsg.content || '');
+
+                    const starEmoji = getStarEmoji(entry.starCount);
+                    const starColor = getStarColor(entry.starCount);
+
+                    const starEmbed = new EmbedBuilder()
+                      .setAuthor({
+                        name: origMsg.author?.username ?? 'Unknown User',
+                        iconURL: origMsg.author?.avatar
+                          ? `https://fluxerusercontent.com/avatars/${origMsg.author.id}/${origMsg.author.avatar}.png`
+                          : undefined,
+                      })
+                      .setColor(starColor)
+                      .setTimestamp(new Date(origMsg.timestamp ?? Date.now()));
+
+                    if (content) starEmbed.setDescription(content);
+
+                    starEmbed.addFields(
+                      { name: 'Source', value: `[Jump to message](https://fluxer.app/channels/${guild.id}/${reaction.channelId}/${reaction.messageId})`, inline: true },
+                      { name: 'Channel', value: `<#${reaction.channelId}>`, inline: true },
+                    );
+                    starEmbed.setFooter({ text: `ID: ${reaction.messageId}` });
+
+                    if (origMsg.attachments?.length > 0) {
+                      const img = origMsg.attachments.find((a: any) => a.content_type?.startsWith('image/'));
+                      if (img?.url) starEmbed.setImage(img.url);
+                    }
+
+                    await client.rest.patch(Routes.channelMessage(starboard.channelId, entry.starboardMessageId), {
+                      body: {
+                        content: `${starEmoji} **${entry.starCount}** | <#${reaction.channelId}>`,
+                        embeds: [starEmbed.toJSON()],
+                      },
+                    });
+                  }
+                } catch { }
+              }
+            }
+          } catch (sbErr: any) {
+            console.error(`[starboard] Error processing reaction remove in ${guild.name}: ${sbErr.message}`);
+          }
+        }
+      }
 
       const reactionRoles = settings.reactionRoles;
       if (!reactionRoles || reactionRoles.length === 0) return;
@@ -118,7 +199,7 @@ const event: BotEvent = {
           const restoredName = restoredRole?.name || roleMapping.removeRoleId;
           dmMsg = `Your role has been switched back from **${roleName}** to **${restoredName}** in **${guild.name}**.`;
         }
-        user.send(dmMsg).catch(() => {});
+        user.send(dmMsg).catch(() => { });
       }
 
     } catch (error) {

@@ -14,6 +14,39 @@ const CATEGORY_META: Record<string, { label: string; description: string }> = {
 
 const CATEGORY_ORDER = ['moderation', 'admin', 'info', 'general'];
 
+function getMemberRoleIds(member: any | null): string[] {
+  if (!member?.roles) return [];
+  const roles = member.roles as any;
+  if (Array.isArray(roles?.roleIds)) return roles.roleIds;
+  if (roles?.cache && typeof roles.cache.values === 'function') {
+    return [...roles.cache.values()].map((r: any) => r?.id).filter(Boolean);
+  }
+  if (typeof roles.values === 'function') {
+    return [...roles.values()].map((r: any) => (typeof r === 'string' ? r : r?.id)).filter(Boolean);
+  }
+  return [];
+}
+
+function canSeeTicketCommand(member: any | null, guildSettings: any): boolean {
+  if (!member) return false;
+  if (hasAnyPermission(member, ['Administrator', 'ManageGuild'])) return true;
+  const supportRoleIds = new Set<string>(guildSettings?.ticketSupportRoleIds || []);
+  if (guildSettings?.ticketSupportRoleId) supportRoleIds.add(guildSettings.ticketSupportRoleId);
+  if (supportRoleIds.size === 0) return false;
+  const memberRoleIds = getMemberRoleIds(member);
+  return memberRoleIds.some((id: string) => supportRoleIds.has(id));
+}
+
+function canSeeLockdownCommand(message: any, member: any | null, guildSettings: any): boolean {
+  if (!member) return false;
+  if (hasAnyPermission(member, ['Administrator'])) return true;
+  const isGuildOwner = Boolean(message.guild?.ownerId && String(message.guild.ownerId) === String(message.author?.id));
+  if (isGuildOwner) return true;
+  if ((guildSettings?.lockdownAllowedUsers ?? []).includes(message.author?.id)) return true;
+  const memberRoleIds = getMemberRoleIds(member);
+  return (guildSettings?.lockdownAllowedRoles ?? []).some((roleId: string) => memberRoleIds.includes(roleId));
+}
+
 
 async function getPrefix(message: any): Promise<string> {
   const guildId = message.guildId || message.guild?.id;
@@ -36,8 +69,9 @@ async function canUserSeeCommand(opts: {
   isOwner: boolean;
   member: any | null;
   disabledCommands: unknown;
+  guildSettings: any | null;
 }): Promise<boolean> {
-  const { message, cmd, isOwner, member, disabledCommands } = opts;
+  const { message, cmd, isOwner, member, disabledCommands, guildSettings } = opts;
 
   if ((cmd as any).hidden) return false;
   if (cmd.ownerOnly && !isOwner) return false;
@@ -51,6 +85,12 @@ async function canUserSeeCommand(opts: {
   if (cmd.permissions?.length) {
     if (!member) return false;
     return hasAnyPermission(member, cmd.permissions);
+  }
+
+  if (cmd.category === 'admin') {
+    if (cmd.name === 'ticket') return canSeeTicketCommand(member, guildSettings);
+    if (cmd.name === 'lockdown') return canSeeLockdownCommand(message, member, guildSettings);
+    return false;
   }
 
   return true;
@@ -71,14 +111,15 @@ const command: Command = {
     const isOwner = Boolean(config.ownerId && (message as any).author.id === config.ownerId);
     const guildId = message.guildId || message.guild?.id;
     const member = guildId ? await (commandHandler as any).getMember(message).catch(() => null) : null;
-    const disabledCommands = guildId ? (await settingsCache.get(guildId).catch(() => null))?.disabledCommands : null;
+    const guildSettings = guildId ? await settingsCache.get(guildId).catch(() => null) : null;
+    const disabledCommands = guildSettings?.disabledCommands ?? null;
 
     try {
       if (args[0]) {
         const commandName = args[0].toLowerCase().replace(/^[^\w]/, '');
         const cmd = commandHandler.getCommand(commandName);
 
-        const visible = cmd && await canUserSeeCommand({ message, cmd, isOwner, member, disabledCommands });
+        const visible = cmd && await canUserSeeCommand({ message, cmd, isOwner, member, disabledCommands, guildSettings });
         if (!cmd || !visible) {
           return void await message.reply(`No command called \`${commandName}\` found. Use \`${prefix}help\` to see all commands.`).catch(() => {});
         }
@@ -140,7 +181,7 @@ const command: Command = {
         if (cat === 'owner') continue;
         const visible: Command[] = [];
         for (const c of cmds) {
-          if (await canUserSeeCommand({ message, cmd: c, isOwner, member, disabledCommands })) visible.push(c);
+          if (await canUserSeeCommand({ message, cmd: c, isOwner, member, disabledCommands, guildSettings })) visible.push(c);
         }
         if (visible.length === 0) continue;
         const meta = CATEGORY_META[cat] ?? { label: cat };
@@ -158,7 +199,7 @@ const command: Command = {
           if (cat === 'owner') continue;
           const visible: Command[] = [];
           for (const c of cmds) {
-            if (await canUserSeeCommand({ message, cmd: c, isOwner, member, disabledCommands })) visible.push(c);
+            if (await canUserSeeCommand({ message, cmd: c, isOwner, member, disabledCommands, guildSettings })) visible.push(c);
           }
           if (visible.length === 0) continue;
           const meta = CATEGORY_META[cat] ?? { label: cat };

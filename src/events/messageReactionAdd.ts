@@ -7,6 +7,7 @@ import { createTicketForUser } from '../commands/admin/ticket';
 import antiReactionSpam from '../automod/modules/antiReactionSpam';
 import { Routes } from '@fluxerjs/types';
 import GlobalBanPrompt from '../models/GlobalBanPrompt';
+import StarboardMessage from '../models/StarboardMessage';
 import { PermissionFlags } from '@fluxerjs/core';
 import { EmbedBuilder } from '@fluxerjs/core';
 
@@ -297,6 +298,142 @@ const event: BotEvent = {
         }
 
         return;
+      }
+
+      const starboard = (settings as any).starboard;
+      if (starboard?.enabled && starboard?.channelId) {
+        const starEmojiRaw = reaction.emoji.id
+          ? `${reaction.emoji.name}:${reaction.emoji.id}`
+          : String(reaction.emoji.name ?? '');
+        const configEmoji = starboard.emoji ?? '⭐';
+        const stripVS = (s: string) => s.replace(/[\uFE00-\uFE0F\u200D]/g, '').trim();
+
+        const emojiMatches = reaction.emoji.id
+          ? (starEmojiRaw === configEmoji || `<:${starEmojiRaw}>` === configEmoji || `<a:${starEmojiRaw}>` === configEmoji)
+          : (stripVS(starEmojiRaw) === stripVS(configEmoji));
+
+        if (emojiMatches) {
+          const skip = (() => {
+            if (starboard.ignoredChannels?.includes(reaction.channelId)) return true;
+            return false;
+          })();
+
+          if (!skip) {
+            try {
+              let origMsg: any = null;
+              try {
+                origMsg = await client.rest.get(Routes.channelMessage(reaction.channelId, reaction.messageId));
+              } catch {}
+
+              if (origMsg) {
+                const authorId = origMsg.author?.id;
+                if (starboard.ignoreBots !== false && origMsg.author?.bot) {
+                } else if (!starboard.selfStarEnabled && authorId === user.id) {
+                } else {
+                  let hasIgnoredRole = false;
+                  if (starboard.ignoredRoles?.length > 0) {
+                    let reactorMember = guild.members?.get(user.id);
+                    if (!reactorMember) try { reactorMember = await guild.fetchMember(user.id); } catch {}
+                    if (reactorMember) {
+                      const roleIds = reactorMember.roles?.roleIds ?? [];
+                      hasIgnoredRole = roleIds.some((id: string) => starboard.ignoredRoles.includes(id));
+                    }
+                  }
+
+                  if (!hasIgnoredRole) {
+                    const entry = await StarboardMessage.findOneAndUpdate(
+                      { guildId: guild.id, messageId: reaction.messageId },
+                      {
+                        $setOnInsert: {
+                          channelId: reaction.channelId,
+                          authorId: authorId ?? 'unknown',
+                        },
+                        $addToSet: { reactors: user.id },
+                      },
+                      { upsert: true, returnDocument: 'after' }
+                    );
+
+                    if (entry) {
+                      entry.starCount = entry.reactors.length;
+                      await entry.save();
+
+                      const threshold = starboard.threshold ?? 3;
+                      if (entry.starCount >= threshold) {
+                        const getStarEmoji = (c: number) => c >= 25 ? '💫' : c >= 10 ? '🌟' : '⭐';
+                        const getStarColor = (c: number) => c >= 25 ? 0xe74c3c : c >= 10 ? 0xe67e22 : 0xf1c40f;
+
+                        const content = origMsg.content?.length > 1024
+                          ? origMsg.content.substring(0, 1021) + '...'
+                          : (origMsg.content || '');
+
+                        const starEmoji = getStarEmoji(entry.starCount);
+                        const starColor = getStarColor(entry.starCount);
+
+                        const starEmbed = new EmbedBuilder()
+                          .setAuthor({
+                            name: origMsg.author?.username ?? 'Unknown User',
+                            iconURL: origMsg.author?.avatar
+                              ? `https://fluxerusercontent.com/avatars/${origMsg.author.id}/${origMsg.author.avatar}.png`
+                              : undefined,
+                          })
+                          .setColor(starColor)
+                          .setTimestamp(new Date(origMsg.timestamp ?? Date.now()));
+
+                        if (content) starEmbed.setDescription(content);
+
+                        starEmbed.addFields(
+                          { name: 'Source', value: `[Jump to message](https://fluxer.app/channels/${guild.id}/${reaction.channelId}/${reaction.messageId})`, inline: true },
+                          { name: 'Channel', value: `<#${reaction.channelId}>`, inline: true },
+                        );
+
+                        starEmbed.setFooter({ text: `ID: ${reaction.messageId}` });
+
+                        if (origMsg.attachments?.length > 0) {
+                          const img = origMsg.attachments.find((a: any) => a.content_type?.startsWith('image/'));
+                          if (img?.url) starEmbed.setImage(img.url);
+                        }
+
+                        const msgContent = `${starEmoji} **${entry.starCount}** | <#${reaction.channelId}>`;
+
+                        if (entry.starboardMessageId) {
+                          try {
+                            await client.rest.patch(Routes.channelMessage(starboard.channelId, entry.starboardMessageId), {
+                              body: { content: msgContent, embeds: [starEmbed.toJSON()] },
+                            });
+                          } catch (editErr: any) {
+                            if (editErr?.statusCode === 404) {
+                              try {
+                                const newMsg = await client.rest.post(Routes.channelMessages(starboard.channelId), {
+                                  body: { content: msgContent, embeds: [starEmbed.toJSON()] },
+                                }) as any;
+                                if (newMsg?.id) {
+                                  entry.starboardMessageId = newMsg.id;
+                                  await entry.save();
+                                }
+                              } catch {}
+                            }
+                          }
+                        } else {
+                          try {
+                            const newMsg = await client.rest.post(Routes.channelMessages(starboard.channelId), {
+                              body: { content: msgContent, embeds: [starEmbed.toJSON()] },
+                            }) as any;
+                            if (newMsg?.id) {
+                              entry.starboardMessageId = newMsg.id;
+                              await entry.save();
+                            }
+                          } catch {}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            } catch (sbErr: any) {
+              console.error(`[starboard] Error processing reaction add in ${guild.name}: ${sbErr.message}`);
+            }
+          }
+        }
       }
 
       const reactionRoles = settings.reactionRoles;

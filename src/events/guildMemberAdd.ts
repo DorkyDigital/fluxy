@@ -32,7 +32,7 @@ async function handleGlobalBan(member: any, guild: any, client: any, ban: any): 
           .setTimestamp(new Date())
           .toJSON()]
       });
-    } catch {}
+    } catch { }
 
     await guild.ban(member.id || member.user?.id, {
       reason: `[Fluxy Global Ban] ${ban.reason}`,
@@ -53,7 +53,7 @@ async function handleGlobalBan(member: any, guild: any, client: any, ban: any): 
         footer: `Banned by Fluxy Global Protection • Disable with the globalban toggle command`,
         eventType: 'global_ban',
       }
-    ).catch(() => {});
+    ).catch(() => { });
 
     const ownerId = guild.ownerId || (guild as any).owner_id;
     if (ownerId) {
@@ -75,7 +75,7 @@ async function handleGlobalBan(member: any, guild: any, client: any, ban: any): 
               .toJSON()]
           });
         }
-      } catch {}
+      } catch { }
     }
 
     return true;
@@ -99,7 +99,7 @@ const event: BotEvent = {
       if (userId) {
         const raid = recordJoin(guild.id, userId, settings);
         if (raid?.detected) {
-          sendRaidAlert(client, guild, raid.joinCount, raid.userIds).catch(() => {});
+          sendRaidAlert(client, guild, raid.joinCount, raid.userIds).catch(() => { });
         }
       }
 
@@ -128,27 +128,27 @@ const event: BotEvent = {
 
       if (settings.autoroleId) {
         if (settings.raidDisableAutorole && isRaidActive(guild.id)) {
-          console.log(`[autorole] Skipping autorole for ${member.id} in ${guild.name} — raid detected`);
+          console.log(`[autorole] Skipping autorole for ${member.id} in ${guild.name} - raid detected`);
         } else {
-        const botMember = guild.members?.me;
-        const targetRole = guild.roles?.get(settings.autoroleId);
-        const botHighest = botMember
-          ? Math.max(0, ...(botMember.roles?.roleIds ?? []).map((id: string) => guild.roles?.get(id)?.position || 0))
-          : Infinity;
+          const botMember = guild.members?.me;
+          const targetRole = guild.roles?.get(settings.autoroleId);
+          const botHighest = botMember
+            ? Math.max(0, ...(botMember.roles?.roleIds ?? []).map((id: string) => guild.roles?.get(id)?.position || 0))
+            : Infinity;
 
-        if (targetRole && targetRole.position >= botHighest) {
-          console.warn(`[autorole] Skipping ${guild.name}: bot role is below ${targetRole.name}`);
-        } else {
-          try {
-            await member.addRole(settings.autoroleId);
-          } catch (err: any) {
-            if (isNetworkError(err)) {
-              autoroleQueue.enqueue(guild.id, member.id, settings.autoroleId);
-            } else {
-              console.error(`[autorole] Failed to assign role ${settings.autoroleId} to ${member.id} in ${guild.name}: ${err.message}`);
+          if (targetRole && targetRole.position >= botHighest) {
+            console.warn(`[autorole] Skipping ${guild.name}: bot role is below ${targetRole.name}`);
+          } else {
+            try {
+              await member.addRole(settings.autoroleId);
+            } catch (err: any) {
+              if (isNetworkError(err)) {
+                autoroleQueue.enqueue(guild.id, member.id, settings.autoroleId);
+              } else {
+                console.error(`[autorole] Failed to assign role ${settings.autoroleId} to ${member.id} in ${guild.name}: ${err.message}`);
+              }
             }
           }
-        }
         }
       }
 

@@ -18,7 +18,7 @@ export function createStatsRouter(client: Client): Router {
         totalModActions: modActionCount,
       });
     } catch (err: any) {
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 
@@ -40,7 +40,7 @@ export function createStatsRouter(client: Client): Router {
 
       res.json(daily.map(d => ({ date: d._id, count: d.count })));
     } catch (err: any) {
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 
@@ -57,7 +57,7 @@ export function createStatsRouter(client: Client): Router {
 
       res.json(top.map(t => ({ command: t._id, count: t.count })));
     } catch (err: any) {
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 
@@ -81,7 +81,7 @@ export function createStatsRouter(client: Client): Router {
         };
       }));
     } catch (err: any) {
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 

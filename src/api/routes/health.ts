@@ -41,7 +41,7 @@ export function createHealthRouter(client: Client): Router {
         nodeVersion: process.version,
       });
     } catch (err: any) {
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 
@@ -86,7 +86,7 @@ export function createHealthRouter(client: Client): Router {
         loadAvg: os.loadavg(),
       });
     } catch (err: any) {
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 

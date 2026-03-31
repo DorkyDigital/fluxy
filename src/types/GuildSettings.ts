@@ -148,6 +148,17 @@ export interface ILogChannelOverrides {
   server: string | null;
 }
 
+export interface IStarboard {
+  enabled: boolean;
+  channelId: string | null;
+  threshold: number;
+  emoji: string;
+  selfStarEnabled: boolean;
+  ignoreBots: boolean;
+  ignoredChannels: string[];
+  ignoredRoles: string[];
+}
+
 export interface IVerification {
   enabled: boolean;
   categoryId: string | null;
@@ -219,6 +230,8 @@ export interface IGuildSettings {
   disabledCommands: string[];
 
   verification: IVerification;
+
+  starboard: IStarboard;
 
   onboardingComplete: boolean;
   onboardingStep: number;

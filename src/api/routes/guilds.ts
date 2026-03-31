@@ -8,6 +8,7 @@ import log from '../../utils/consoleLogger';
 import settingsCache from '../../utils/settingsCache';
 import { broadcastSettingsUpdate } from '../ws/settingsWs';
 import { generateTranscriptHtml } from '../../utils/transcriptGenerator';
+import { validateSettingsUpdate } from '../middleware/settingsValidator';
 
 const ALLOWED_SETTINGS_FIELDS = new Set([
   'prefixes',
@@ -57,6 +58,7 @@ const ALLOWED_SETTINGS_FIELDS = new Set([
   'onboardingComplete',
   'onboardingStep',
   'verification',
+  'starboard',
 ]);
 
 function sanitizeUpdates(body: Record<string, unknown>): Record<string, unknown> {
@@ -139,7 +141,7 @@ export function createGuildsRouter(client: Client, requireGuildAccess: RequestHa
 
       res.json(result);
     } catch (err: any) {
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 
@@ -261,7 +263,7 @@ export function createGuildsRouter(client: Client, requireGuildAccess: RequestHa
       const settings = await settingsCache.getOrCreate(req.params.id as string);
       res.json(settings);
     } catch (err: any) {
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 
@@ -269,15 +271,22 @@ export function createGuildsRouter(client: Client, requireGuildAccess: RequestHa
     const guildId = req.params.id as string;
 
     const updates = sanitizeUpdates(req.body);
-    try {
-      if (Object.keys(updates).length === 0) {
-        res.status(400).json({ error: 'No valid fields to update' });
-        return;
-      }
+    if (Object.keys(updates).length === 0) {
+      res.status(400).json({ error: 'No valid fields to update' });
+      return;
+    }
 
+    // Deep-validate and sanitize all values
+    const { valid, errors, sanitized } = validateSettingsUpdate(updates);
+    if (!valid) {
+      res.status(400).json({ error: 'Validation failed', details: errors });
+      return;
+    }
+
+    try {
       const updated = await GuildSettings.findOneAndUpdate(
         { guildId },
-        { $set: updates },
+        { $set: sanitized },
         { returnDocument: 'after', upsert: true, runValidators: true },
       ).lean();
 
@@ -287,12 +296,13 @@ export function createGuildsRouter(client: Client, requireGuildAccess: RequestHa
 
       res.json(updated);
     } catch (err: any) {
-      const fields = Object.keys(updates);
+      const fields = Object.keys(sanitized);
       if (err.name === 'ValidationError') {
         res.status(400).json({ error: `Validation error updating ${fields.join(', ')}`, details: err.message });
         return;
       }
-      res.status(500).json({ error: `Failed to update ${fields.join(', ')}: ${err.message}` });
+      log.error('API', `Failed to update settings for ${guildId}: ${err.message}`);
+      res.status(500).json({ error: 'Failed to update settings' });
     }
   });
 
@@ -560,7 +570,7 @@ export function createGuildsRouter(client: Client, requireGuildAccess: RequestHa
       res.json({ messageId, channelId });
     } catch (err: any) {
       console.error(`[reaction-roles] Create panel for ${guildId}: ${err.message}`);
-      res.status(500).json({ error: err.message || 'Failed to create panel' });
+      res.status(500).json({ error: 'Failed to create panel' });
     }
   });
 
@@ -635,7 +645,7 @@ export function createGuildsRouter(client: Client, requireGuildAccess: RequestHa
       res.json({ emoji: normalized, roleId, removeRoleId: removeRoleId || null });
     } catch (err: any) {
       console.error(`[reaction-roles] Add mapping for ${guildId}: ${err.message}`);
-      res.status(500).json({ error: err.message || 'Failed to add mapping' });
+      res.status(500).json({ error: 'Failed to add mapping' });
     }
   });
 
@@ -673,7 +683,7 @@ export function createGuildsRouter(client: Client, requireGuildAccess: RequestHa
       res.json({ success: true });
     } catch (err: any) {
       console.error(`[reaction-roles] Edit panel for ${guildId}: ${err.message}`);
-      res.status(500).json({ error: err.message || 'Failed to edit panel' });
+      res.status(500).json({ error: 'Failed to edit panel' });
     }
   });
 
@@ -724,7 +734,7 @@ export function createGuildsRouter(client: Client, requireGuildAccess: RequestHa
       const url = `/uploads/${guildId}/${filename}`;
       res.json({ url });
     } catch (err: any) {
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 
@@ -741,7 +751,7 @@ export function createGuildsRouter(client: Client, requireGuildAccess: RequestHa
         .lean();
       res.json(tickets);
     } catch (err: any) {
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 
@@ -776,7 +786,7 @@ export function createGuildsRouter(client: Client, requireGuildAccess: RequestHa
 
       res.json(ticket);
     } catch (err: any) {
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 
@@ -954,7 +964,47 @@ export function createGuildsRouter(client: Client, requireGuildAccess: RequestHa
         closedAt: (ticket as any).closedAt,
       });
     } catch (err: any) {
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // ─── Starboard leaderboard ───
+  router.get('/:id/starboard/leaderboard', requireGuildAccess, async (req: AuthRequest, res) => {
+    try {
+      const StarboardMessage = (await import('../../models/StarboardMessage')).default;
+      const entries = await StarboardMessage.find({ guildId: req.params.id, starCount: { $gt: 0 } })
+        .sort({ starCount: -1 })
+        .limit(10)
+        .lean();
+      res.json(entries);
+    } catch (err: any) {
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // ─── Starboard stats ───
+  router.get('/:id/starboard/stats', requireGuildAccess, async (req: AuthRequest, res) => {
+    try {
+      const StarboardMessage = (await import('../../models/StarboardMessage')).default;
+      const guildId = req.params.id as string;
+      const totalEntries = await StarboardMessage.countDocuments({ guildId });
+      const postedCount = await StarboardMessage.countDocuments({ guildId, starboardMessageId: { $ne: null } });
+      const totalStarsResult = await StarboardMessage.aggregate([
+        { $match: { guildId } },
+        { $group: { _id: null, total: { $sum: '$starCount' } } },
+      ]);
+      const totalStars = totalStarsResult[0]?.total ?? 0;
+
+      const topUsers = await StarboardMessage.aggregate([
+        { $match: { guildId, starCount: { $gt: 0 } } },
+        { $group: { _id: '$authorId', totalStars: { $sum: '$starCount' }, messageCount: { $sum: 1 } } },
+        { $sort: { totalStars: -1 } },
+        { $limit: 5 },
+      ]);
+
+      res.json({ totalEntries, totalStars, postedCount, topUsers });
+    } catch (err: any) {
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 

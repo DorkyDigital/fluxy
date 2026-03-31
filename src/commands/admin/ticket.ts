@@ -34,6 +34,27 @@ function getSupportRoleIds(settings: any): string[] {
   return [...ids];
 }
 
+async function getMemberWithTicketAccess(message: any, guild: any, settings: any): Promise<{ ok: boolean; reason?: string; member?: any }> {
+  let member = guild.members?.get(message.author.id);
+  if (!member) {
+    try { member = await guild.fetchMember(message.author.id); } catch {}
+  }
+  if (!member) {
+    return { ok: false, reason: 'Could not verify your permissions right now. Please try again.' };
+  }
+
+  const supportRoleIds = getSupportRoleIds(settings);
+  const memberRoleIds = member.roles?.roleIds ?? [];
+  const isSupport = supportRoleIds.some((id: string) => memberRoleIds.includes(id));
+  const isAdmin = member.permissions?.has(PermissionFlags.ManageGuild) || member.permissions?.has(PermissionFlags.Administrator);
+
+  if (!isSupport && !isAdmin) {
+    return { ok: false, reason: 'You need a **support role** or **Manage Server** permission to manage tickets.' };
+  }
+
+  return { ok: true, member };
+}
+
 async function save(settings: any, guildId: string): Promise<void> {
   settings.markModified('ticketCategoryId');
   settings.markModified('ticketSetupChannelId');
@@ -399,17 +420,8 @@ const subcommands: Record<string, (message: any, args: string[], guild: any, set
   },
 
   async claim(message, args, guild, settings, client, prefix) {
-    const supportRoleIds = getSupportRoleIds(settings);
-    let member = guild.members?.get(message.author.id);
-    if (!member) try { member = await guild.fetchMember(message.author.id); } catch {}
-    if (member) {
-      const memberRoleIds = member.roles?.roleIds ?? [];
-      const isSupport = supportRoleIds.some((id: string) => memberRoleIds.includes(id));
-      const isAdmin = member.permissions?.has(PermissionFlags.ManageGuild) || member.permissions?.has(PermissionFlags.Administrator);
-      if (!isSupport && !isAdmin) {
-        return message.reply('You need a **support role** or **Manage Server** permission to claim tickets.');
-      }
-    }
+    const access = await getMemberWithTicketAccess(message, guild, settings);
+    if (!access.ok) return message.reply(access.reason);
 
     const channelId = (message as any).channelId || (message as any).channel?.id;
     const ticket = await Ticket.findOne({ channelId, status: 'open' });
@@ -433,6 +445,9 @@ const subcommands: Record<string, (message: any, args: string[], guild: any, set
   },
 
   async close(message, args, guild, settings, client, _prefix) {
+    const access = await getMemberWithTicketAccess(message, guild, settings);
+    if (!access.ok) return message.reply(access.reason);
+
     const channelId = (message as any).channelId || (message as any).channel?.id;
     const ticket = await Ticket.findOne({ channelId, status: 'open' });
 
@@ -600,6 +615,9 @@ const subcommands: Record<string, (message: any, args: string[], guild: any, set
   },
 
   async add(message, args, guild, settings, client, prefix) {
+    const access = await getMemberWithTicketAccess(message, guild, settings);
+    if (!access.ok) return message.reply(access.reason);
+
     const channelId = (message as any).channelId || (message as any).channel?.id;
     const ticket = await Ticket.findOne({ channelId, status: 'open' });
     if (!ticket) return message.reply('This command can only be used inside an open ticket channel.');
@@ -628,6 +646,9 @@ const subcommands: Record<string, (message: any, args: string[], guild: any, set
   },
 
   async remove(message, args, guild, settings, client, prefix) {
+    const access = await getMemberWithTicketAccess(message, guild, settings);
+    if (!access.ok) return message.reply(access.reason);
+
     const channelId = (message as any).channelId || (message as any).channel?.id;
     const ticket = await Ticket.findOne({ channelId, status: 'open' });
     if (!ticket) return message.reply('This command can only be used inside an open ticket channel.');

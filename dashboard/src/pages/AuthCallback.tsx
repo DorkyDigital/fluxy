@@ -29,8 +29,8 @@ export function AuthCallback() {
 
     (async () => {
       try {
-        const data = await api.post<{ access_token: string }>('/auth/callback', { code, state });
-        await onLogin(data.access_token);
+        await api.post('/auth/callback', { code, state });
+        await onLogin();
         navigate('/', { replace: true });
       } catch (err: any) {
         setError(err.message || 'Authentication failed');

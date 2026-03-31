@@ -1,6 +1,7 @@
 import { Router, type Request } from 'express';
 import crypto from 'crypto';
 import config from '../../config';
+import { invalidateTokenCache } from '../middleware/auth';
 
 const pendingStates = new Map<string, { createdAt: number }>();
 const STATE_TTL = 5 * 60 * 1000;
@@ -102,7 +103,7 @@ export function createAuthRouter(): Router {
         });
       }
 
-      res.json({ access_token: tokenData.access_token });
+      res.json({ success: true });
     } catch {
       res.status(500).json({ error: 'Token exchange error' });
     }
@@ -185,16 +186,18 @@ export function createAuthRouter(): Router {
         ...user as object,
         isOwner: config.ownerId ? (user as any).id === config.ownerId : false,
       };
-      if (token !== (authHeader?.slice(7) ?? null)) {
-        responseData.refreshedToken = token;
-      }
       res.json(responseData);
     } catch (err: any) {
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 
-  router.post('/logout', (_req, res) => {
+  router.post('/logout', (req, res) => {
+    // Invalidate the token from the server-side cache immediately
+    const token = (req as any).cookies?.fluxy_token;
+    if (token) {
+      invalidateTokenCache(token);
+    }
     res.clearCookie('fluxy_token', { httpOnly: true, secure: true, sameSite: 'lax', path: '/' });
     res.clearCookie('fluxy_refresh', { httpOnly: true, secure: true, sameSite: 'lax', path: '/' });
     res.json({ success: true });

@@ -84,7 +84,7 @@ describe('GET /api/health/process', () => {
     const app = createApp();
     const res = await request(app).get('/api/health/process');
     expect(res.status).toBe(500);
-    expect(res.body.error).toBe('pidusage failed');
+    expect(res.body.error).toBe('Internal server error');
   });
 });
 

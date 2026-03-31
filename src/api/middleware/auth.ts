@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { Client } from '@fluxerjs/core';
+import crypto from 'crypto';
 import config from '../../config';
 
 const tokenCache = new Map<string, { userId: string; expiresAt: number }>();
@@ -19,6 +20,19 @@ function cacheToken(token: string, userId: string): void {
     if (oldest) tokenCache.delete(oldest);
   }
   tokenCache.set(token, { userId, expiresAt: Date.now() + TOKEN_CACHE_TTL });
+}
+
+export function invalidateTokenCache(token: string): void {
+  tokenCache.delete(token);
+}
+
+function safeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  try {
+    return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+  } catch {
+    return false;
+  }
 }
 
 export interface AuthRequest extends Request {
@@ -69,7 +83,7 @@ export function createAuthMiddleware(_client: Client) {
       return;
     }
 
-    if (config.api.adminToken && token === config.api.adminToken) {
+    if (config.api.adminToken && safeCompare(token, config.api.adminToken)) {
       req.userId = config.ownerId || 'admin';
       req.isOwner = true;
       req.fluxerToken = null;

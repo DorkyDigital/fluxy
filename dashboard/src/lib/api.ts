@@ -2,10 +2,6 @@ import { Sentry } from './sentry';
 
 const API_BASE = '/api';
 
-function getToken(): string | null {
-  return localStorage.getItem('fluxy_token');
-}
-
 const responseCache = new Map<string, { data: unknown; ts: number }>();
 const CACHE_TTL = 30_000;
 
@@ -37,15 +33,10 @@ export function invalidateCache(pathPrefix?: string): void {
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = getToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
   };
-
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
 
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
@@ -315,6 +306,17 @@ export interface Verification {
   maxAttempts: number;
 }
 
+export interface Starboard {
+  enabled: boolean;
+  channelId: string | null;
+  threshold: number;
+  emoji: string;
+  selfStarEnabled: boolean;
+  ignoreBots: boolean;
+  ignoredChannels: string[];
+  ignoredRoles: string[];
+}
+
 export interface GuildSettings {
   guildId: string;
   prefixes: string[];
@@ -356,6 +358,7 @@ export interface GuildSettings {
   commandAllowedRoles: string[];
   disabledCommands: string[];
   verification: Verification;
+  starboard: Starboard;
 }
 
 export function normalizeSettings(s: Partial<GuildSettings> & { guildId: string }): GuildSettings {
@@ -505,6 +508,17 @@ export function normalizeSettings(s: Partial<GuildSettings> & { guildId: string 
       panelMessageId: (s as any).verification?.panelMessageId ?? null,
       logChannelId: (s as any).verification?.logChannelId ?? null,
       maxAttempts: (s as any).verification?.maxAttempts ?? 2,
+    },
+
+    starboard: {
+      enabled: (s as any).starboard?.enabled ?? false,
+      channelId: (s as any).starboard?.channelId ?? null,
+      threshold: (s as any).starboard?.threshold ?? 3,
+      emoji: (s as any).starboard?.emoji ?? '⭐',
+      selfStarEnabled: (s as any).starboard?.selfStarEnabled ?? false,
+      ignoreBots: (s as any).starboard?.ignoreBots ?? true,
+      ignoredChannels: (s as any).starboard?.ignoredChannels ?? [],
+      ignoredRoles: (s as any).starboard?.ignoredRoles ?? [],
     },
   };
 }

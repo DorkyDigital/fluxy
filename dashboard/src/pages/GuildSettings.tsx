@@ -15,7 +15,7 @@ import EmojiPicker, { type EmojiClickData, Theme } from 'emoji-picker-react';
 import {
   ArrowLeft, Settings, Shield, MessageSquare, Gavel,
   Terminal, Ticket, Bug, Save, Loader2,
-  Plus, Trash2, X, Lock, Smile, UserMinus, ShieldCheck,
+  Plus, Trash2, X, Lock, Smile, UserMinus, ShieldCheck, Star,
 } from 'lucide-react';
 import type {
   GuildSettings as GuildSettingsType,
@@ -24,7 +24,9 @@ import type {
   CustomCommand,
   HoneypotEntry,
   LogChannelOverrides,
+  Starboard,
 } from '../lib/api';
+import { api } from '../lib/api';
 import WelcomeEditor from '../components/WelcomeEditor';
 
 function roleName(name: string): string {
@@ -1998,6 +2000,233 @@ function GoodbyeTab({ settings, guild, onSave, saving }: TabProps) {
   );
 }
 
+function StarboardTab({ settings, guild, onSave, saving, guildId }: TabProps) {
+  const [sb, setSb] = useState<Starboard>(settings.starboard);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [stats, setStats] = useState<{ totalEntries: number; totalStars: number; postedCount: number } | null>(null);
+
+  const update = (patch: Partial<Starboard>) => setSb(prev => ({ ...prev, ...patch }));
+
+  useEffect(() => {
+    if (guildId) {
+      api.get<any[]>(`/guilds/${guildId}/starboard/leaderboard`, { skipCache: true }).then(setLeaderboard).catch(() => {});
+      api.get<any>(`/guilds/${guildId}/starboard/stats`, { skipCache: true }).then(setStats).catch(() => {});
+    }
+  }, [guildId]);
+
+  const handleEmojiClick = (emojiData: EmojiClickData) => {
+    update({ emoji: emojiData.emoji });
+    setShowEmojiPicker(false);
+  };
+
+  const handleSave = () => onSave({ starboard: sb });
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Star className="h-4 w-4" /> Starboard</CardTitle>
+          <CardDescription>Highlight popular messages by automatically reposting them when they receive enough reactions</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-white">Enabled</p>
+              <p className="text-xs text-gray-400">Turn the starboard system on or off</p>
+            </div>
+            <Switch checked={sb.enabled} onCheckedChange={v => update({ enabled: v })} />
+          </div>
+
+          {sb.enabled && (
+            <>
+              <Separator />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Starboard Channel</Label>
+                  <ChannelSelect channels={guild.channels} value={sb.channelId} onChange={v => update({ channelId: v })} placeholder="Select starboard channel" />
+                  <p className="text-xs text-gray-500">Where starred messages will be reposted</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Threshold</Label>
+                  <Input type="number" min={1} max={100} value={sb.threshold}
+                    onChange={e => {
+                      const v = parseInt(e.target.value, 10);
+                      if (!isNaN(v)) update({ threshold: Math.max(1, Math.min(100, v)) });
+                    }} />
+                  <p className="text-xs text-gray-500">Minimum reactions before a message is posted to the starboard</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Tracked Emoji</Label>
+                <div className="flex items-center gap-3">
+                  <div className="text-2xl px-3 py-1 rounded-lg bg-[hsl(var(--muted))] border border-white/10">
+                    {sb.emoji}
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => setShowEmojiPicker(!showEmojiPicker)}>
+                    <Smile className="h-4 w-4 mr-1" /> Change Emoji
+                  </Button>
+                </div>
+                {showEmojiPicker && (
+                  <div className="mt-2">
+                    <EmojiPicker theme={Theme.DARK} onEmojiClick={handleEmojiClick} lazyLoadEmojis />
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {sb.enabled && (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Behavior</CardTitle>
+              <CardDescription>Control how the starboard handles different scenarios</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-white">Allow Self-Starring</p>
+                  <p className="text-xs text-gray-400">Let users star their own messages</p>
+                </div>
+                <Switch checked={sb.selfStarEnabled} onCheckedChange={v => update({ selfStarEnabled: v })} />
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-white">Ignore Bot Messages</p>
+                  <p className="text-xs text-gray-400">Don't track stars on messages sent by bots</p>
+                </div>
+                <Switch checked={sb.ignoreBots} onCheckedChange={v => update({ ignoreBots: v })} />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Exclusions</CardTitle>
+              <CardDescription>Channels and roles that are excluded from the starboard</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Ignored Channels</Label>
+                <p className="text-xs text-gray-500">Messages in these channels won't be tracked</p>
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {sb.ignoredChannels.map(id => {
+                    const ch = guild.channels.find(c => c.id === id);
+                    return (
+                      <Badge key={id} variant="secondary" className="gap-1">
+                        #{ch?.name || id}
+                        <X className="h-3 w-3 cursor-pointer" onClick={() =>
+                          update({ ignoredChannels: sb.ignoredChannels.filter(c => c !== id) })
+                        } />
+                      </Badge>
+                    );
+                  })}
+                </div>
+                <ChannelSelect
+                  channels={guild.channels.filter(c => !sb.ignoredChannels.includes(c.id))}
+                  value={null}
+                  onChange={v => v && update({ ignoredChannels: [...sb.ignoredChannels, v] })}
+                  placeholder="Add ignored channel..."
+                />
+              </div>
+              <Separator />
+              <div className="space-y-2">
+                <Label>Ignored Roles</Label>
+                <p className="text-xs text-gray-500">Members with these roles can't contribute stars</p>
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {sb.ignoredRoles.map(id => {
+                    const role = guild.roles.find(r => r.id === id);
+                    return (
+                      <Badge key={id} variant="secondary" className="gap-1">
+                        @{role?.name || id}
+                        <X className="h-3 w-3 cursor-pointer" onClick={() =>
+                          update({ ignoredRoles: sb.ignoredRoles.filter(r => r !== id) })
+                        } />
+                      </Badge>
+                    );
+                  })}
+                </div>
+                <RoleSelect
+                  roles={guild.roles.filter(r => !sb.ignoredRoles.includes(r.id))}
+                  value={null}
+                  onChange={v => v && update({ ignoredRoles: [...sb.ignoredRoles, v] })}
+                  placeholder="Add ignored role..."
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {stats && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Statistics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center p-4 rounded-lg bg-[hsl(var(--muted))]">
+                    <p className="text-2xl font-bold text-white">{stats.totalEntries}</p>
+                    <p className="text-xs text-gray-400">Tracked Messages</p>
+                  </div>
+                  <div className="text-center p-4 rounded-lg bg-[hsl(var(--muted))]">
+                    <p className="text-2xl font-bold text-yellow-400">{stats.totalStars}</p>
+                    <p className="text-xs text-gray-400">Total Stars</p>
+                  </div>
+                  <div className="text-center p-4 rounded-lg bg-[hsl(var(--muted))]">
+                    <p className="text-2xl font-bold text-white">{stats.postedCount}</p>
+                    <p className="text-xs text-gray-400">Posted</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {leaderboard.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Leaderboard</CardTitle>
+                <CardDescription>Top starred messages in this server</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {leaderboard.map((entry: any, i: number) => (
+                  <div key={entry.messageId} className="flex items-center gap-3 p-3 rounded-lg bg-[hsl(var(--muted))]">
+                    <span className="text-lg font-bold text-gray-400 w-6">#{i + 1}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-yellow-400">
+                          {entry.starCount >= 25 ? '💫' : entry.starCount >= 10 ? '🌟' : '⭐'}
+                        </span>
+                        <span className="text-sm font-medium text-white">{entry.starCount} stars</span>
+                      </div>
+                      <p className="text-xs text-gray-400 truncate">
+                        by &lt;@{entry.authorId}&gt; in #{guild.channels.find(c => c.id === entry.channelId)?.name || entry.channelId}
+                      </p>
+                    </div>
+                    <a
+                      href={`https://fluxer.app/channels/${guildId}/${entry.channelId}/${entry.messageId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-400 hover:text-blue-300 shrink-0"
+                    >
+                      Jump →
+                    </a>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
+
+      <SaveButton onClick={handleSave} saving={saving} />
+    </div>
+  );
+}
+
 interface TabProps {
   settings: GuildSettingsType;
   guild: GuildDetail;
@@ -2098,6 +2327,7 @@ export function GuildSettings() {
           <TabsTrigger value="goodbye" className="gap-1.5"><UserMinus className="h-3.5 w-3.5" />Goodbye</TabsTrigger>
           <TabsTrigger value="honeypot" className="gap-1.5"><Bug className="h-3.5 w-3.5" />Honeypot</TabsTrigger>
           <TabsTrigger value="verification" className="gap-1.5"><ShieldCheck className="h-3.5 w-3.5" />Verification</TabsTrigger>
+          <TabsTrigger value="starboard" className="gap-1.5"><Star className="h-3.5 w-3.5" />Starboard</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general"><GeneralTab {...tabProps} /></TabsContent>
@@ -2111,6 +2341,7 @@ export function GuildSettings() {
         <TabsContent value="goodbye"><GoodbyeTab {...tabProps} /></TabsContent>
         <TabsContent value="honeypot"><HoneypotTab {...tabProps} /></TabsContent>
         <TabsContent value="verification"><VerificationTab {...tabProps} /></TabsContent>
+        <TabsContent value="starboard"><StarboardTab {...tabProps} /></TabsContent>
       </Tabs>
     </div>
   );

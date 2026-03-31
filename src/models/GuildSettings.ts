@@ -4,7 +4,7 @@ import type {
   IWelcomeCard, IWelcomeEmbed, IWelcomeDM, IWelcomeMessage,
   IReactionRole, IReactionRoleEntry, IModeration, ICustomCommand,
   IAutomodSpam, IAutomodRaid, IAutomod, IGoodbyeEmbed, IGoodbyeMessage,
-  ILogChannelOverrides, IVerification,
+  ILogChannelOverrides, IVerification, IStarboard,
 } from '../types';
 
 const keywordEntrySchema = new Schema<IKeywordEntry>({
@@ -148,6 +148,17 @@ const verificationSchema = new Schema<IVerification>({
   maxAttempts: { type: Number, default: 2, min: 1, max: 5 },
 }, { _id: false });
 
+const starboardSchema = new Schema<IStarboard>({
+  enabled: { type: Boolean, default: false },
+  channelId: { type: String, default: null },
+  threshold: { type: Number, default: 3, min: 1, max: 100 },
+  emoji: { type: String, default: '⭐' },
+  selfStarEnabled: { type: Boolean, default: false },
+  ignoreBots: { type: Boolean, default: true },
+  ignoredChannels: { type: [String], default: [] },
+  ignoredRoles: { type: [String], default: [] },
+}, { _id: false });
+
 export interface GuildSettingsDocument extends IGuildSettings, Document { }
 
 export interface GuildSettingsModel extends Model<GuildSettingsDocument> {
@@ -282,6 +293,8 @@ const settingsSchema = new Schema<GuildSettingsDocument, GuildSettingsModel>({
   disabledCommands: { type: [String], default: [] },
 
   verification: { type: verificationSchema, default: () => ({}) },
+
+  starboard: { type: starboardSchema, default: () => ({}) },
 
   onboardingComplete: { type: Boolean, default: false },
   onboardingStep: { type: Number, default: 0, min: 0 },
