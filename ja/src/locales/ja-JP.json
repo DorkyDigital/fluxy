@@ -1141,7 +1141,7 @@
         "generic": "An error occurred while generating help information."
       },
       "menuTitle": "Fluxy — Help Menu",
-      "menuDescription": "Prefix: **`{prefix}`**\nUse `{prefix}help <command>` for detailed info on any command.\n[Full Documentation](https://fluxy.dorcus.digital) • [Web Dashboard](https://bot.dorcus.digital)",
+      "menuDescription": "Prefix: **`{prefix}`**\nUse `{prefix}help <command>` for detailed info on any command.\n[Full Documentation](https://docs.fluxy.gay) • [Web Dashboard](https://bot.dorcus.digital)",
       "menuFooter": "{prefix}help <command> for details • Dashboard: bot.dorcus.digital",
       "commandListHeader": "**Fluxy — Command List** • Prefix: `{prefix}`"
     }
