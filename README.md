@@ -80,7 +80,6 @@ Full list is in `.env.example`. The ones you'll actually touch:
 | `npm run test:coverage` | Coverage report |
 | `npm run lint` | ESLint |
 | `npm run i18n:check` | Validate locale JSON files (keys + placeholders vs `en.json`) |
-| `npm run crowdin:consolidate` | Copy translations from legacy nested Crowdin paths into `src/locales/` (only if needed) |
 
 ### Localization
 
