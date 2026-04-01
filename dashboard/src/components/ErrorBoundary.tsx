@@ -2,7 +2,7 @@ import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
-import { Sentry } from '../lib/sentry';
+import { GlitchTip } from '../lib/glitchtip';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -26,7 +26,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     console.error('[ErrorBoundary]', error, errorInfo.componentStack);
-    Sentry.captureException(error, {
+    GlitchTip.captureException(error, {
       contexts: { react: { componentStack: errorInfo.componentStack } },
     });
   }

@@ -1,6 +1,6 @@
 import './instrument';
 
-import * as Sentry from '@sentry/node';
+import * as GlitchTip from '@sentry/node';
 import { Client, GatewayOpcodes, Events } from '@fluxerjs/core';
 import { WebSocketShard, WebSocketManager } from '@fluxerjs/ws';
 import mongoose from 'mongoose';
@@ -141,22 +141,22 @@ try {
   process.exit(1);
 }
 
-if (config.sentry.dsn) {
-  log.ok('Sentry', `Initialized (env: ${config.sentry.environment})`);
+if (config.glitchtip.dsn) {
+  log.ok('GlitchTip', `Initialized (env: ${config.glitchtip.environment})`);
 
   const originalConsoleError = console.error;
   console.error = (...args: any[]) => {
     originalConsoleError.apply(console, args);
     const err = args.find(a => a instanceof Error);
     if (err) {
-      Sentry.captureException(err);
+      GlitchTip.captureException(err);
     } else {
       const message = args.map(a => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ');
-      Sentry.captureMessage(message, 'error');
+      GlitchTip.captureMessage(message, 'error');
     }
   };
 } else {
-  log.info('Sentry', 'No DSN configured - error tracking disabled');
+  log.info('GlitchTip', 'No DSN configured - error tracking disabled');
 }
 
 const BOT_PRESENCE = {
@@ -371,7 +371,7 @@ const WS_WATCHDOG_THRESHOLD = 50;
 let lastSuccessfulConnection = Date.now();
 let outageStartedAt: number | null = null;
 const MAX_OUTAGE_DURATION = 30 * 60 * 1000;
-let sentryReportedAtCount = 0;
+let glitchtipReportedAtCount = 0;
 
 client.on(Events.Error, (error: any) => {
   if (isTransientError(error)) {
@@ -393,13 +393,13 @@ client.on(Events.Error, (error: any) => {
       log.warn('Network', `Hiccup ${wsErrorTimestamps.length}/${WS_WATCHDOG_THRESHOLD} - ${error.message || error} - SDK retrying`);
     }
 
-    const sentryThresholds = [10, 20, 35, WS_WATCHDOG_THRESHOLD];
+    const glitchtipThresholds = [10, 20, 35, WS_WATCHDOG_THRESHOLD];
     const count = wsErrorTimestamps.length;
     const outageDuration = outageStartedAt ? Math.round((now - outageStartedAt) / 1000) : 0;
-    for (const threshold of sentryThresholds) {
-      if (count >= threshold && sentryReportedAtCount < threshold) {
-        sentryReportedAtCount = threshold;
-        Sentry.captureMessage(`Gateway connectivity degraded: ${count} WebSocket errors in ${outageDuration}s`, {
+    for (const threshold of glitchtipThresholds) {
+      if (count >= threshold && glitchtipReportedAtCount < threshold) {
+        glitchtipReportedAtCount = threshold;
+        GlitchTip.captureMessage(`Gateway connectivity degraded: ${count} WebSocket errors in ${outageDuration}s`, {
           level: 'warning',
           tags: { source: 'ws_watchdog', threshold: String(threshold) },
           extra: { errorCount: count, outageDurationSeconds: outageDuration, lastError: error.message || String(error) },
@@ -413,7 +413,7 @@ client.on(Events.Error, (error: any) => {
     }
   } else {
     log.error('Client', `${error.message || error} (code: ${error.code || 'unknown'})`);
-    Sentry.captureException(error, {
+    GlitchTip.captureException(error, {
       tags: { source: 'client_error' },
     });
   }
@@ -444,8 +444,8 @@ client.on(Events.Debug, (message: string) => {
 
     if (consecutiveInvalidSessions >= MAX_CONSECUTIVE_INVALID_SESSIONS) {
       log.fatal('Recovery', `${consecutiveInvalidSessions} consecutive invalid sessions - token may be invalid. Exiting for PM2.`);
-      Sentry.captureMessage(`Invalid session circuit breaker: ${consecutiveInvalidSessions} consecutive`, 'fatal');
-      Sentry.flush(2000).then(() => process.exit(1));
+      GlitchTip.captureMessage(`Invalid session circuit breaker: ${consecutiveInvalidSessions} consecutive`, 'fatal');
+      GlitchTip.flush(2000).then(() => process.exit(1));
     }
     return;
   }
@@ -456,8 +456,8 @@ client.on(Events.Debug, (message: string) => {
 
     if (consecutiveClosed4013 > MAX_CONSECUTIVE_CLOSED_4013) {
       log.fatal('Recovery', `${consecutiveClosed4013} consecutive 4013 closes. Exiting for PM2.`);
-      Sentry.captureMessage(`Gateway 4013 circuit breaker: ${consecutiveClosed4013} consecutive`, 'fatal');
-      Sentry.flush(2000).then(() => process.exit(1));
+      GlitchTip.captureMessage(`Gateway 4013 circuit breaker: ${consecutiveClosed4013} consecutive`, 'fatal');
+      GlitchTip.flush(2000).then(() => process.exit(1));
     }
   }
 
@@ -467,7 +467,7 @@ client.on(Events.Ready, () => {
   lastSuccessfulConnection = Date.now();
   outageStartedAt = null;
   wsErrorTimestamps.length = 0;
-  sentryReportedAtCount = 0;
+  glitchtipReportedAtCount = 0;
 
   if (consecutiveInvalidSessions > 0) {
     log.ok('Recovery', `Gateway accepted session after ${consecutiveInvalidSessions} invalid session(s)`);
@@ -521,7 +521,7 @@ client.on(Events.Resumed, () => {
   lastSuccessfulConnection = Date.now();
   outageStartedAt = null;
   wsErrorTimestamps.length = 0;
-  sentryReportedAtCount = 0;
+  glitchtipReportedAtCount = 0;
 
   if (client.options.presence) {
     try {
@@ -540,7 +540,7 @@ setInterval(() => {
 
   if (sinceLastSuccess > 15 * 60 * 1000 && wsErrorTimestamps.length > 10) {
     log.warn('Health', `No connection in ${Math.round(sinceLastSuccess / 60000)}min - ${wsErrorTimestamps.length} errors - SDK retrying`);
-    Sentry.captureMessage(`Sustained gateway outage: no connection in ${Math.round(sinceLastSuccess / 60000)}min`, {
+    GlitchTip.captureMessage(`Sustained gateway outage: no connection in ${Math.round(sinceLastSuccess / 60000)}min`, {
       level: 'error',
       tags: { source: 'health_monitor' },
       extra: { minutesSinceLastSuccess: Math.round(sinceLastSuccess / 60000), errorCount: wsErrorTimestamps.length },
@@ -574,7 +574,7 @@ process.on('unhandledRejection', (reason: any) => {
     log.warn('Rejection', `${reason.message} - continuing`);
     return;
   }
-  Sentry.captureException(reason);
+  GlitchTip.captureException(reason);
   log.error('Rejection', reason?.message || reason);
 });
 
@@ -583,7 +583,7 @@ process.on('uncaughtException', (error) => {
     log.warn('Exception', `${error.message} - continuing`);
     return;
   }
-  Sentry.captureException(error);
+  GlitchTip.captureException(error);
   log.fatal('Exception', error.message || error);
   process.exit(1);
 });
@@ -603,8 +603,8 @@ async function gracefulShutdown(signal: string): Promise<void> {
     await mongoose.disconnect();
     log.step('MongoDB disconnected', null);
 
-    // Flush pending Sentry events before exit
-    await Sentry.close(2000);
+    // Flush pending GlitchTip events before exit
+    await GlitchTip.close(2000);
 
     log.ok('Shutdown', 'Clean exit');
     process.exit(0);

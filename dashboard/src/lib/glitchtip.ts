@@ -1,27 +1,27 @@
-import * as Sentry from '@sentry/react';
+import * as GlitchTipClient from '@sentry/react';
 
-const dsn = import.meta.env.VITE_SENTRY_DSN || '';
-const environment = import.meta.env.VITE_SENTRY_ENVIRONMENT || import.meta.env.MODE || 'production';
+const dsn = import.meta.env.VITE_GLITCHTIP_DSN || '';
+const environment = import.meta.env.VITE_GLITCHTIP_ENVIRONMENT || import.meta.env.MODE || 'production';
 
 if (dsn) {
-  Sentry.init({
+  GlitchTipClient.init({
     dsn,
     environment,
     release: `fluxy-dashboard@2.0.0`,
 
     tracesSampleRate: 0.1,
 
-    tracePropagationTargets: ["localhost", /^https:\/\/yourserver\.io\/api/],
+    tracePropagationTargets: ['localhost', /^https:\/\/yourserver\.io\/api/],
 
     replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 1.0,
     integrations: [
-      Sentry.replayIntegration({
+      GlitchTipClient.replayIntegration({
         maskAllText: false,
         maskAllInputs: true,
         blockAllMedia: false,
       }),
-      Sentry.browserTracingIntegration(),
+      GlitchTipClient.browserTracingIntegration(),
     ],
 
     beforeSend(event) {
@@ -39,9 +39,9 @@ if (dsn) {
     },
   });
 
-  console.log(`[Sentry] Dashboard SDK initialized (env: ${environment})`);
+  console.log(`[GlitchTip] Dashboard SDK initialized (env: ${environment})`);
 } else {
-  console.log('[Sentry] No VITE_SENTRY_DSN - dashboard error tracking disabled');
+  console.log('[GlitchTip] No VITE_GLITCHTIP_DSN - dashboard error tracking disabled');
 }
 
-export { Sentry };
+export { GlitchTipClient as GlitchTip };

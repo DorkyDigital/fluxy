@@ -1,4 +1,4 @@
-import './lib/sentry';
+import './lib/glitchtip';
 import { initPosthogFromPrefs } from './lib/posthog';
 initPosthogFromPrefs();
 

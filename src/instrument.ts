@@ -1,31 +1,33 @@
 import dotenv from 'dotenv';
-import * as Sentry from '@sentry/node';
+import * as GlitchTip from '@sentry/node';
 
 dotenv.config();
 
-const dsn = process.env.SENTRY_DSN || '';
+const dsn = process.env.GLITCHTIP_DSN || '';
+const environment = process.env.GLITCHTIP_ENVIRONMENT || process.env.NODE_ENV || 'production';
+const debug = process.env.GLITCHTIP_DEBUG === 'true';
 
 if (dsn) {
-  Sentry.init({
+  GlitchTip.init({
     dsn,
-    environment: process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV || 'production',
+    environment,
     release: `fluxy@2.0.0`,
     tracesSampleRate: 0,
     sendDefaultPii: true,
-    debug: process.env.SENTRY_DEBUG === 'true',
+    debug,
   });
-  console.log(`[Sentry] SDK initialized (dsn: ${dsn.substring(0, 30)}...)`);
+  console.log(`[GlitchTip] SDK initialized (dsn: ${dsn.substring(0, 30)}...)`);
 
-  Sentry.captureMessage('Fluxy process started', { level: 'info', tags: { source: 'startup' } });
-  Sentry.flush(5000).then((flushed) => {
+  GlitchTip.captureMessage('Fluxy process started', { level: 'info', tags: { source: 'startup' } });
+  GlitchTip.flush(5000).then((flushed) => {
     if (flushed) {
-      console.log('[Sentry] Startup event sent successfully');
+      console.log('[GlitchTip] Startup event sent successfully');
     } else {
-      console.error('[Sentry] WARNING: Failed to flush startup event - events may not be reaching Sentry');
+      console.error('[GlitchTip] WARNING: Failed to flush startup event - events may not be reaching the collector');
     }
   }).catch((err) => {
-    console.error('[Sentry] Flush error:', err);
+    console.error('[GlitchTip] Flush error:', err);
   });
 } else {
-  console.log('[Sentry] No SENTRY_DSN found in environment - disabled');
+  console.log('[GlitchTip] No GLITCHTIP_DSN found in environment - disabled');
 }

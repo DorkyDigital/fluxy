@@ -26,7 +26,7 @@ export default defineConfig({
             '@radix-ui/react-toast',
           ],
           'vendor-recharts': ['recharts'],
-          'vendor-sentry': ['@sentry/react'],
+          'vendor-glitchtip': ['@sentry/react'],
         },
       },
     },

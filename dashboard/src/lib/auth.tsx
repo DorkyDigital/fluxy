@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { api, type UserInfo } from './api';
-import { Sentry } from './sentry';
+import { GlitchTip } from './glitchtip';
 import { getPosthog } from './posthog';
 
 interface AuthContextType {
@@ -22,7 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const userData = await api.get<UserInfo>('/auth/me');
       setUser(userData);
-      Sentry.setUser({ id: userData.id, username: userData.username });
+      GlitchTip.setUser({ id: userData.id, username: userData.username });
       getPosthog()?.identify(userData.id, { username: userData.username });
     } catch {
       setUser(null);
@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const userData = await api.get<UserInfo>('/auth/me');
       setUser(userData);
-      Sentry.setUser({ id: userData.id, username: userData.username });
+      GlitchTip.setUser({ id: userData.id, username: userData.username });
       getPosthog()?.identify(userData.id, { username: userData.username });
     } catch {
       setUser(null);
@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     try { await api.post('/auth/logout'); } catch { /* ignore */ }
     setUser(null);
-    Sentry.setUser(null);
+    GlitchTip.setUser(null);
     getPosthog()?.reset();
   }, []);
 

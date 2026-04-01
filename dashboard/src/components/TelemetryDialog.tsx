@@ -55,11 +55,11 @@ export function TelemetryDialog({ open, onOpenChange }: TelemetryDialogProps) {
                 </div>
 
                 <div className="px-6 py-5 space-y-5">
-                    {/* Sentry section */}
+                    {/* GlitchTip section */}
                     <div>
                         <div className="flex items-center gap-2 mb-1">
                             <ShieldCheck className="h-4 w-4 text-green-400" />
-                            <p className="text-sm font-medium text-white">Error tracking <span className="text-xs font-normal text-green-400 ml-1">(Sentry · always on)</span></p>
+                            <p className="text-sm font-medium text-white">Error tracking <span className="text-xs font-normal text-green-400 ml-1">(GlitchTip · always on)</span></p>
                         </div>
                         <p className="text-xs text-gray-400 leading-relaxed">
                             Captures runtime errors and stack traces so crashes can be investigated and fixed.

@@ -1,4 +1,4 @@
-import { Sentry } from './sentry';
+import { GlitchTip } from './glitchtip';
 
 const API_BASE = '/api';
 
@@ -49,7 +49,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     const error = new Error(body.error || `HTTP ${res.status}`);
 
     if (res.status !== 401 && res.status !== 403) {
-      Sentry.captureException(error, {
+      GlitchTip.captureException(error, {
         tags: { api_path: path, status: res.status },
         contexts: { response: { status: res.status, body } },
       });

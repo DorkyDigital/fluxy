@@ -64,7 +64,7 @@ Full list is in `.env.example`. The ones you'll actually touch:
 | `FLUXER_OAUTH_CLIENT_SECRET` | | - | OAuth client secret |
 | `FLUXER_OAUTH_REDIRECT_URI` | | - | OAuth redirect URI |
 | `DASHBOARD_URL` | | - | Dashboard origin for CORS |
-| `SENTRY_DSN` | | - | Optional error reporting |
+| `GLITCHTIP_DSN` | | - | Optional error reporting |
 
 ### Scripts
 

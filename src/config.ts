@@ -28,9 +28,9 @@ const config: BotConfig = {
     clientSecret: process.env.FLUXER_OAUTH_CLIENT_SECRET || null,
     redirectUri: process.env.FLUXER_OAUTH_REDIRECT_URI || null,
   },
-  sentry: {
-    dsn: process.env.SENTRY_DSN || null,
-    environment: process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV || 'production',
+  glitchtip: {
+    dsn: process.env.GLITCHTIP_DSN || null,
+    environment: process.env.GLITCHTIP_ENVIRONMENT || process.env.NODE_ENV || 'production',
   },
   validate(): boolean {
     const required: [string, string][] = [

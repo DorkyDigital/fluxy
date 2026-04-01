@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import * as Sentry from '@sentry/node';
+import * as GlitchTip from '@sentry/node';
 import type { Client } from '@fluxerjs/core';
 import type { BotEvent } from '../types';
 
@@ -42,13 +42,13 @@ export default class EventHandler {
               const result = event.execute(...args, this.client);
               if (result && typeof (result as any).catch === 'function') {
                 (result as any).catch((err: Error) => {
-                  Sentry.captureException(err, { tags: { event: event.name } });
-                  console.error(`[Sentry] Unhandled error in event ${event.name}:`, err);
+                  GlitchTip.captureException(err, { tags: { event: event.name } });
+                  console.error(`[GlitchTip] Unhandled error in event ${event.name}:`, err);
                 });
               }
             } catch (err) {
-              Sentry.captureException(err, { tags: { event: event.name } });
-              console.error(`[Sentry] Unhandled error in event ${event.name}:`, err);
+              GlitchTip.captureException(err, { tags: { event: event.name } });
+              console.error(`[GlitchTip] Unhandled error in event ${event.name}:`, err);
             }
           });
         } else {
@@ -57,13 +57,13 @@ export default class EventHandler {
               const result = event.execute(...args, this.client);
               if (result && typeof (result as any).catch === 'function') {
                 (result as any).catch((err: Error) => {
-                  Sentry.captureException(err, { tags: { event: event.name } });
-                  console.error(`[Sentry] Unhandled error in event ${event.name}:`, err);
+                  GlitchTip.captureException(err, { tags: { event: event.name } });
+                  console.error(`[GlitchTip] Unhandled error in event ${event.name}:`, err);
                 });
               }
             } catch (err) {
-              Sentry.captureException(err, { tags: { event: event.name } });
-              console.error(`[Sentry] Unhandled error in event ${event.name}:`, err);
+              GlitchTip.captureException(err, { tags: { event: event.name } });
+              console.error(`[GlitchTip] Unhandled error in event ${event.name}:`, err);
             }
           });
         }

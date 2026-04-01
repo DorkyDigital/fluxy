@@ -35,7 +35,7 @@ export function TelemetryNotice({ renderTrigger }: {
                             Telemetry &amp; privacy
                         </p>
                         <p className="text-xs text-gray-400 mt-0.5">
-                            Fluxy uses <span className="text-gray-200">Sentry</span> for error tracking (always&nbsp;on) and{' '}
+                            Fluxy uses <span className="text-gray-200">GlitchTip</span> for error tracking (always&nbsp;on) and{' '}
                             <span className="text-gray-200">PostHog</span> for optional usage analytics - off by default.{' '}
                             <button
                                 onClick={() => setDialogOpen(true)}

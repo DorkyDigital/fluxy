@@ -2,7 +2,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import * as Sentry from '@sentry/node';
+import * as GlitchTip from '@sentry/node';
 import { PermissionFlags, EmbedBuilder } from '@fluxerjs/core';
 import type { Client, Message } from '@fluxerjs/core';
 import type { Command } from '../types';
@@ -260,7 +260,7 @@ export default class CommandHandler {
         console.warn(`[${guildName}] Missing permissions during !${commandName}: ${error.message}`);
       } else {
         console.error(`[${guildName}] Error in !${commandName}: ${error.message || error}`);
-        Sentry.captureException(error, {
+        GlitchTip.captureException(error, {
           tags: { command: commandName, guild: guildName },
           extra: { args, guildId, userId: (message as any).author?.id },
         });

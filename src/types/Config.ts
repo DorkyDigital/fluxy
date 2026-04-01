@@ -23,7 +23,7 @@ export interface BotConfig {
     clientSecret: string | null;
     redirectUri: string | null;
   };
-  sentry: {
+  glitchtip: {
     dsn: string | null;
     environment: string;
   };
