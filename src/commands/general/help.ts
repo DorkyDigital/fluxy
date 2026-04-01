@@ -148,7 +148,7 @@ const command: Command = {
         }
 
         embed.addFields({ name: 'Category', value: `${meta.label}`, inline: true });
-        embed.setFooter({ text: `${prefix}help [command] \u2022 Fluxy Docs: fluxy.dorcus.digital` });
+        embed.setFooter({ text: `${prefix}help [command] \u2022 Fluxy Docs: docs.fluxy.gay` });
         embed.setTimestamp(new Date());
 
         try {

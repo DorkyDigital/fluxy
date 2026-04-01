@@ -80,7 +80,7 @@ async function handleMention(message: any, client: any): Promise<void> {
     .setDescription(
       `My prefix in this server is **\`${prefix}\`**\n` +
       `Use \`${prefix}help\` to see all commands, or \`${prefix}help <command>\` for details on a specific one.\n\n` +
-      `**📖 [Full Documentation](https://fluxy.dorcus.digital)**`
+      `**📖 [Full Documentation](https://docs.fluxy.gay)**`
     )
     .setColor(0x6c72f8)
     .setTimestamp(new Date())
@@ -100,7 +100,7 @@ async function handleMention(message: any, client: any): Promise<void> {
 
   await message.reply({ embeds: [embed] }).catch(() => {
     message.reply(
-      `My prefix here is **\`${prefix}\`** - use \`${prefix}help\` to see all commands.\n📖 Docs: https://fluxy.dorcus.digital`
+      `My prefix here is **\`${prefix}\`** - use \`${prefix}help\` to see all commands.\n📖 Docs: https://docs.fluxy.gay`
     ).catch(() => { });
   });
 }

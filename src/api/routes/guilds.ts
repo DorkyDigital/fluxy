@@ -10,6 +10,7 @@ import { broadcastSettingsUpdate } from '../ws/settingsWs';
 import { generateTranscriptHtml } from '../../utils/transcriptGenerator';
 import { validateSettingsUpdate } from '../middleware/settingsValidator';
 import { t, normalizeLocale } from '../../i18n';
+import { encodeReactionForRoute } from '../../utils/encodeReactionForRoute';
 
 const ALLOWED_SETTINGS_FIELDS = new Set([
   'prefixes',
@@ -395,8 +396,13 @@ export function createGuildsRouter(client: Client, requireGuildAccess: RequestHa
       }
 
       try {
-        await client.rest.put(Routes.channelMessageReaction(targetChannelId, panelMsgId, emoji));
-      } catch { /* Non-fatal */ }
+        const encoded = encodeReactionForRoute(emoji);
+        await client.rest.put(
+          `${Routes.channelMessageReaction(targetChannelId, panelMsgId, encoded)}/@me`
+        );
+      } catch (reactErr: any) {
+        console.warn(`[ticket-setup] Failed to add panel reaction for ${guildId}: ${reactErr?.message || reactErr}`);
+      }
 
       settings.ticketSetupChannelId = targetChannelId;
       settings.ticketSetupMessageId = panelMsgId;
@@ -501,7 +507,10 @@ export function createGuildsRouter(client: Client, requireGuildAccess: RequestHa
       const panelMessageId = msgRes?.id;
 
       try {
-        await client.rest.put(Routes.channelMessageReaction(panelChannelId, panelMessageId, '✅') + '/@me');
+        const checkEncoded = encodeReactionForRoute('✅');
+        await client.rest.put(
+          `${Routes.channelMessageReaction(panelChannelId, panelMessageId, checkEncoded)}/@me`
+        );
       } catch (err: any) {
         console.error(`[verification-setup] Failed to add reaction:`, err);
       }

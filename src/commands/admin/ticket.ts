@@ -4,6 +4,8 @@ import Ticket from '../../models/Ticket';
 import settingsCache from '../../utils/settingsCache';
 import isNetworkError from '../../utils/isNetworkError';
 import { EmbedBuilder, PermissionFlags } from '@fluxerjs/core';
+import { Routes } from '@fluxerjs/types';
+import { encodeReactionForRoute } from '../../utils/encodeReactionForRoute';
 import { generateTranscriptHtml } from '../../utils/transcriptGenerator';
 import { t, normalizeLocale } from '../../i18n';
 
@@ -170,7 +172,7 @@ export async function createTicketForUser(guild: any, userId: string, settings: 
   return { success: true, ticketNumber, channelId: channel.id };
 }
 
-async function postTicketPanel(targetChannel: any, guild: any, settings: any, _client: any): Promise<any> {
+async function postTicketPanel(targetChannel: any, guild: any, settings: any, client: any): Promise<any> {
   const lang = normalizeLocale(settings?.language);
   const emoji = settings.ticketEmoji || '\uD83C\uDFAB';
 
@@ -182,10 +184,30 @@ async function postTicketPanel(targetChannel: any, guild: any, settings: any, _c
 
   const panelMsg = await targetChannel.send({ embeds: [embed] });
 
+  let emojiForReact = emoji;
+  if (typeof client?.resolveEmoji === 'function') {
+    try {
+      const resolved = await client.resolveEmoji(emoji, guild.id);
+      if (typeof resolved === 'string' && resolved.trim()) emojiForReact = resolved.trim();
+    } catch { /* use raw */ }
+  }
+
+  const restPutReaction = async () => {
+    const encoded = encodeReactionForRoute(emojiForReact);
+    await client.rest.put(
+      `${Routes.channelMessageReaction(targetChannel.id, panelMsg.id, encoded)}/@me`
+    );
+  };
+
   try {
-    await panelMsg.react(emoji);
+    await panelMsg.react(emojiForReact);
   } catch (err: any) {
-    console.warn(`[${guild.name}] Failed to add ticket reaction: ${err.message}`);
+    console.warn(`[${guild.name}] ticket panel react() failed, trying REST: ${err.message}`);
+    try {
+      await restPutReaction();
+    } catch (restErr: any) {
+      console.warn(`[${guild.name}] Failed to add ticket reaction: ${restErr.message}`);
+    }
   }
 
   settings.ticketSetupChannelId = targetChannel.id;
