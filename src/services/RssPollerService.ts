@@ -19,6 +19,28 @@ interface DueFeed {
   pollIntervalMinutes: number;
 }
 
+interface ProcessFeedResult {
+  status: 'not_modified' | 'bootstrapped' | 'published' | 'no_new_items' | 'failed';
+  publishedCount: number;
+  error: string | null;
+}
+
+export interface ForcePollResult {
+  requestedFeedId: string | null;
+  matchedFeeds: number;
+  processed: number;
+  publishedItems: number;
+  failed: number;
+  skipped: number;
+  reason: 'ok' | 'busy' | 'rss_disabled' | 'no_feeds' | 'feed_not_found' | 'no_eligible_feeds';
+  details: Array<{
+    feedId: string;
+    status: ProcessFeedResult['status'];
+    publishedCount: number;
+    error: string | null;
+  }>;
+}
+
 function truncate(value: string, maxLength: number): string {
   if (value.length <= maxLength) return value;
   return value.slice(0, Math.max(0, maxLength - 3)) + '...';
@@ -71,6 +93,141 @@ class RssPollerService {
       clearInterval(this.timer);
       this.timer = null;
       log.info('RSS', 'RSS poller stopped');
+    }
+  }
+
+  getRuntimeState(): { started: boolean; running: boolean; hasClient: boolean } {
+    return {
+      started: this.timer !== null,
+      running: this.running,
+      hasClient: this.client !== null,
+    };
+  }
+
+  async forcePollGuild(client: Client, guildId: string, feedId?: string): Promise<ForcePollResult> {
+    const requestedFeedId = feedId || null;
+
+    if (this.running) {
+      return {
+        requestedFeedId,
+        matchedFeeds: 0,
+        processed: 0,
+        publishedItems: 0,
+        failed: 0,
+        skipped: 0,
+        reason: 'busy',
+        details: [],
+      };
+    }
+
+    const settings = await settingsCache.get(guildId);
+    const rss = normalizeRssSettings((settings as any)?.rss);
+
+    if (!rss || !rss.enabled) {
+      return {
+        requestedFeedId,
+        matchedFeeds: 0,
+        processed: 0,
+        publishedItems: 0,
+        failed: 0,
+        skipped: 0,
+        reason: 'rss_disabled',
+        details: [],
+      };
+    }
+
+    if (rss.feeds.length === 0) {
+      return {
+        requestedFeedId,
+        matchedFeeds: 0,
+        processed: 0,
+        publishedItems: 0,
+        failed: 0,
+        skipped: 0,
+        reason: 'no_feeds',
+        details: [],
+      };
+    }
+
+    const feeds = requestedFeedId
+      ? rss.feeds.filter((feed) => feed?.id === requestedFeedId)
+      : rss.feeds;
+
+    if (requestedFeedId && feeds.length === 0) {
+      return {
+        requestedFeedId,
+        matchedFeeds: 0,
+        processed: 0,
+        publishedItems: 0,
+        failed: 0,
+        skipped: 0,
+        reason: 'feed_not_found',
+        details: [],
+      };
+    }
+
+    const eligibleFeeds = feeds.filter((feed) => feed?.enabled && feed?.id && feed?.channelId);
+
+    if (eligibleFeeds.length === 0) {
+      return {
+        requestedFeedId,
+        matchedFeeds: feeds.length,
+        processed: 0,
+        publishedItems: 0,
+        failed: 0,
+        skipped: feeds.length,
+        reason: 'no_eligible_feeds',
+        details: [],
+      };
+    }
+
+    const stateDocs = await RssFeedState.find({
+      guildId,
+      feedId: { $in: eligibleFeeds.map((feed) => feed.id) },
+    }).lean();
+    const stateByFeedId = new Map(stateDocs.map((state) => [state.feedId, state as IRssFeedState]));
+    const pollIntervalMinutes = clampPollIntervalMinutes(rss.pollIntervalMinutes);
+
+    this.running = true;
+
+    try {
+      const details: ForcePollResult['details'] = [];
+      let processed = 0;
+      let failed = 0;
+      let publishedItems = 0;
+
+      for (const feed of eligibleFeeds) {
+        const result = await this.processFeed(client, {
+          guildId,
+          feed,
+          state: stateByFeedId.get(feed.id) ?? null,
+          pollIntervalMinutes,
+        });
+
+        processed += 1;
+        publishedItems += result.publishedCount;
+        if (result.status === 'failed') failed += 1;
+
+        details.push({
+          feedId: feed.id,
+          status: result.status,
+          publishedCount: result.publishedCount,
+          error: result.error,
+        });
+      }
+
+      return {
+        requestedFeedId,
+        matchedFeeds: feeds.length,
+        processed,
+        publishedItems,
+        failed,
+        skipped: feeds.length - eligibleFeeds.length,
+        reason: 'ok',
+        details,
+      };
+    } finally {
+      this.running = false;
     }
   }
 
@@ -142,7 +299,7 @@ class RssPollerService {
     return dueFeeds;
   }
 
-  private async processFeed(client: Client, due: DueFeed): Promise<void> {
+  private async processFeed(client: Client, due: DueFeed): Promise<ProcessFeedResult> {
     const now = new Date();
     const { guildId, feed, state } = due;
 
@@ -177,7 +334,11 @@ class RssPollerService {
           },
           { upsert: true, setDefaultsOnInsert: true },
         );
-        return;
+        return {
+          status: 'not_modified',
+          publishedCount: 0,
+          error: null,
+        };
       }
 
       const existingSeen = Array.isArray(state?.seenItemIds) ? state!.seenItemIds : [];
@@ -201,7 +362,11 @@ class RssPollerService {
           },
           { upsert: true, setDefaultsOnInsert: true },
         );
-        return;
+        return {
+          status: 'bootstrapped',
+          publishedCount: 0,
+          error: null,
+        };
       }
 
       const unseen = parsed.items.filter((item) => !seenSet.has(item.key));
@@ -283,6 +448,12 @@ class RssPollerService {
         },
         { upsert: true, setDefaultsOnInsert: true },
       );
+
+      return {
+        status: toPublish.length > 0 ? 'published' : 'no_new_items',
+        publishedCount: toPublish.length,
+        error: null,
+      };
     } catch (err: any) {
       const nextFailureCount = (state?.consecutiveFailures ?? 0) + 1;
       await RssFeedState.findOneAndUpdate(
@@ -300,6 +471,12 @@ class RssPollerService {
       if (nextFailureCount <= 3 || nextFailureCount % 10 === 0) {
         log.warn('RSS', `[${guildId}] feed ${feed.id} failed (${nextFailureCount}): ${err?.message || err}`);
       }
+
+      return {
+        status: 'failed',
+        publishedCount: 0,
+        error: truncate(err?.message || String(err), 1000),
+      };
     }
   }
 }

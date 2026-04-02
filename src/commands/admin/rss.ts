@@ -5,10 +5,13 @@ import type { IRssFeed, IRssSettings } from '../../types';
 import GuildSettings from '../../models/GuildSettings';
 import RssFeedState from '../../models/RssFeedState';
 import config from '../../config';
+import rssPollerService from '../../services/RssPollerService';
 import isNetworkError from '../../utils/isNetworkError';
 import settingsCache from '../../utils/settingsCache';
 import { fetchFeed } from '../../utils/rssFeed';
 import { clampItemsPerPoll, clampPollIntervalMinutes } from '../../utils/rssDefaults';
+
+const OWNER_ONLY_SUBCOMMANDS = new Set(['debug', 'forcepoll', 'force', 'pollnow']);
 
 function parseChannelId(raw?: string): string | null {
   if (!raw) return null;
@@ -89,6 +92,28 @@ function truncate(value: string, maxLength: number): string {
   return value.slice(0, Math.max(0, maxLength - 3)) + '...';
 }
 
+function isBotOwner(message: any): boolean {
+  return Boolean(config.ownerId && String(message?.author?.id) === String(config.ownerId));
+}
+
+function toIso(value: Date | string | null | undefined): string {
+  if (!value) return 'never';
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return 'invalid date';
+  return date.toISOString();
+}
+
+function formatDuration(ms: number): string {
+  const clamped = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(clamped / 3600);
+  const m = Math.floor((clamped % 3600) / 60);
+  const s = clamped % 60;
+
+  if (h > 0) return `${h}h ${m}m ${s}s`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
 function findFeedByRef(feeds: IRssFeed[], ref: string): { feed: IRssFeed; index: number } | null {
   const byIndex = parseInt(ref, 10);
   if (!Number.isNaN(byIndex) && byIndex >= 1 && byIndex <= feeds.length) {
@@ -113,7 +138,7 @@ async function saveSettings(settings: any, guildId: string): Promise<void> {
 const command: Command = {
   name: 'rss',
   description: 'Manage RSS subscriptions for this server.',
-  usage: '<add|list|remove|pause|resume|interval|test|status> ...',
+  usage: '<add|list|remove|pause|resume|interval|test|status|debug|forcepoll> ...',
   category: 'admin',
   permissions: ['ManageGuild'],
   cooldown: 3,
@@ -126,7 +151,29 @@ const command: Command = {
     if (!guild) return void await message.reply('This command can only be used in a server.');
 
     const sub = args[0]?.toLowerCase();
+    const owner = isBotOwner(message);
+
+    if (sub && OWNER_ONLY_SUBCOMMANDS.has(sub) && !owner) {
+      return void await message.reply('This RSS subcommand is restricted to the bot owner.');
+    }
+
     if (!sub || sub === 'help') {
+      const commandLines = [
+        `\`${prefix}rss add <#channel> <url|/rsshub/route> [@role]\``,
+        `\`${prefix}rss list\``,
+        `\`${prefix}rss remove <index|feedId>\``,
+        `\`${prefix}rss pause <index|feedId>\``,
+        `\`${prefix}rss resume <index|feedId>\``,
+        `\`${prefix}rss interval <minutes>\``,
+        `\`${prefix}rss test <index|feedId|url|/rsshub/route>\``,
+        `\`${prefix}rss status\``,
+      ];
+
+      if (owner) {
+        commandLines.push(`\`${prefix}rss debug [index|feedId]\` (owner-only)`);
+        commandLines.push(`\`${prefix}rss forcepoll [index|feedId]\` (owner-only)`);
+      }
+
       const embed = new EmbedBuilder()
         .setTitle('RSS Setup & RSSHub Guide')
         .setDescription(
@@ -138,16 +185,7 @@ const command: Command = {
         .addFields(
           {
             name: 'Commands',
-            value: [
-              `\`${prefix}rss add <#channel> <url|/rsshub/route> [@role]\``,
-              `\`${prefix}rss list\``,
-              `\`${prefix}rss remove <index|feedId>\``,
-              `\`${prefix}rss pause <index|feedId>\``,
-              `\`${prefix}rss resume <index|feedId>\``,
-              `\`${prefix}rss interval <minutes>\``,
-              `\`${prefix}rss test <index|feedId|url|/rsshub/route>\``,
-              `\`${prefix}rss status\``,
-            ].join('\n'),
+            value: commandLines.join('\n'),
             inline: false,
           },
           {
@@ -422,6 +460,134 @@ const command: Command = {
         }
 
         return void await message.reply({ embeds: [embed] });
+      }
+
+      if (sub === 'debug') {
+        if (rss.feeds.length === 0) {
+          return void await message.reply(`No RSS feeds configured. Use ${prefix}rss add to create one.`);
+        }
+
+        const ref = args[1];
+        let feeds = rss.feeds;
+
+        if (ref) {
+          const found = findFeedByRef(rss.feeds, ref);
+          if (!found) return void await message.reply('Feed not found. Use rss list to check indexes and IDs.');
+          feeds = [found.feed];
+        }
+
+        const states = await RssFeedState.find({
+          guildId: guild.id,
+          feedId: { $in: feeds.map((feed) => feed.id) },
+        }).lean();
+        const stateByFeedId = new Map(states.map((state: any) => [state.feedId, state]));
+
+        const runtime = rssPollerService.getRuntimeState();
+        const intervalMinutes = clampPollIntervalMinutes(rss.pollIntervalMinutes);
+        const nowMs = Date.now();
+        const visibleFeeds = feeds.slice(0, 10);
+
+        const embed = new EmbedBuilder()
+          .setTitle('RSS Debug (Owner Only)')
+          .setDescription(
+            [
+              `Poller runtime: ${runtime.started ? 'started' : 'stopped'} • ${runtime.running ? 'busy' : 'idle'} • client=${runtime.hasClient ? 'attached' : 'none'}`,
+              `Guild RSS enabled: ${rss.enabled ? 'true' : 'false'} • Poll interval: ${intervalMinutes} minute(s)`,
+            ].join('\n'),
+          )
+          .setColor(0xe67e22)
+          .setTimestamp(new Date());
+
+        for (const feed of visibleFeeds) {
+          const state = stateByFeedId.get(feed.id) as any;
+          const lastCheckedMs = state?.lastCheckedAt ? new Date(state.lastCheckedAt).getTime() : 0;
+          const nextDueMs = lastCheckedMs > 0 ? lastCheckedMs + intervalMinutes * 60_000 : 0;
+          const dueNow = nextDueMs === 0 || nowMs >= nextDueMs;
+          const source = feed.sourceType === 'rsshub' ? feed.route : feed.url;
+
+          const lines = [
+            `Status: ${feed.enabled ? 'enabled' : 'paused'}`,
+            `Source: ${truncate(source || 'unknown', 160)}`,
+            `Last checked: ${toIso(state?.lastCheckedAt)}`,
+            `Next due: ${dueNow ? 'now' : `${toIso(new Date(nextDueMs))} (in ${formatDuration(nextDueMs - nowMs)})`}`,
+            `Last success: ${toIso(state?.lastSuccessAt)}`,
+            `Failures: ${state?.consecutiveFailures ?? 0}`,
+            `Seen IDs: ${Array.isArray(state?.seenItemIds) ? state.seenItemIds.length : 0}`,
+            `ETag: ${state?.etag ? 'set' : 'none'}`,
+            `Last error: ${state?.lastError ? truncate(String(state.lastError), 220) : 'none'}`,
+          ];
+
+          embed.addFields({
+            name: truncate(feed.name || feed.id, 256),
+            value: truncate(lines.join('\n'), 1000),
+            inline: false,
+          });
+        }
+
+        if (feeds.length > visibleFeeds.length) {
+          embed.addFields({
+            name: 'Note',
+            value: `Showing ${visibleFeeds.length}/${feeds.length} feeds to stay within Discord embed limits.`,
+            inline: false,
+          });
+        }
+
+        return void await message.reply({ embeds: [embed] });
+      }
+
+      if (sub === 'forcepoll' || sub === 'force' || sub === 'pollnow') {
+        const ref = args[1];
+        let targetFeedId: string | undefined;
+
+        if (ref) {
+          const found = findFeedByRef(rss.feeds, ref);
+          if (!found) return void await message.reply('Feed not found. Use rss list to check indexes and IDs.');
+          targetFeedId = found.feed.id;
+        }
+
+        const result = await rssPollerService.forcePollGuild(client, guild.id, targetFeedId);
+
+        if (result.reason === 'busy') {
+          return void await message.reply('RSS poller is currently running. Wait a few seconds and try again.');
+        }
+        if (result.reason === 'rss_disabled') {
+          return void await message.reply('RSS is disabled for this guild, so force-poll is unavailable.');
+        }
+        if (result.reason === 'no_feeds') {
+          return void await message.reply(`No RSS feeds configured. Use ${prefix}rss add to create one.`);
+        }
+        if (result.reason === 'feed_not_found') {
+          return void await message.reply('Feed not found in this guild.');
+        }
+        if (result.reason === 'no_eligible_feeds') {
+          return void await message.reply('No eligible feeds to poll (feeds may be paused or missing channel IDs).');
+        }
+
+        const lines = [
+          targetFeedId ? `Force poll completed for feed \`${targetFeedId}\`.` : 'Force poll completed for this guild.',
+          `Matched feeds: ${result.matchedFeeds}`,
+          `Processed: ${result.processed}`,
+          `Published items: ${result.publishedItems}`,
+          `Failed: ${result.failed}`,
+        ];
+
+        if (result.skipped > 0) {
+          lines.push(`Skipped: ${result.skipped}`);
+        }
+
+        const detailLines = result.details.slice(0, 5).map((detail) => {
+          const status = detail.status.replace(/_/g, ' ');
+          const published = detail.publishedCount > 0 ? `, published=${detail.publishedCount}` : '';
+          const error = detail.error ? `, error=${truncate(detail.error, 80)}` : '';
+          return `- ${detail.feedId}: ${status}${published}${error}`;
+        });
+
+        if (detailLines.length > 0) {
+          lines.push('Details:');
+          lines.push(...detailLines);
+        }
+
+        return void await message.reply(lines.join('\n'));
       }
 
       return void await message.reply(`Unknown subcommand. Use ${prefix}rss help.`);

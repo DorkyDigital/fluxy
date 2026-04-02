@@ -285,4 +285,82 @@ describe('RssPollerService', () => {
     );
     expect(mockLogWarn).toHaveBeenCalled();
   });
+
+  test('forcePollGuild returns busy while poller is running', async () => {
+    const client = makeClient(jest.fn().mockResolvedValue(undefined));
+    (rssPollerService as any).running = true;
+
+    const result = await rssPollerService.forcePollGuild(client, 'g1');
+
+    expect(result.reason).toBe('busy');
+    expect(result.processed).toBe(0);
+    expect(mockSettingsGet).not.toHaveBeenCalled();
+  });
+
+  test('forcePollGuild processes feeds immediately and returns summary', async () => {
+    const sendMock = jest.fn().mockResolvedValue(undefined);
+    const client = makeClient(sendMock);
+
+    mockSettingsGet.mockResolvedValue({
+      guildId: 'g1',
+      rss: {
+        enabled: true,
+        pollIntervalMinutes: 15,
+        feeds: [makeFeed({ format: 'text' })],
+      },
+    });
+
+    mockRssFind.mockReturnValue({
+      lean: jest.fn().mockResolvedValue([
+        {
+          guildId: 'g1',
+          feedId: 'feed-1',
+          seenItemIds: ['item-1'],
+          consecutiveFailures: 0,
+          lastCheckedAt: new Date('2026-01-01T00:00:00.000Z'),
+        },
+      ]),
+    });
+
+    mockFetchFeed.mockResolvedValue({
+      feedUrl: 'https://example.com/feed.xml',
+      title: 'Fluxy Feed',
+      link: 'https://example.com',
+      description: null,
+      etag: 'etag-2',
+      lastModified: 'Thu, 02 Apr 2026 00:00:00 GMT',
+      notModified: false,
+      items: [
+        {
+          key: 'item-2',
+          title: 'Second item',
+          link: 'https://example.com/2',
+          description: null,
+          publishedAt: null,
+          author: null,
+          imageUrl: null,
+        },
+        {
+          key: 'item-1',
+          title: 'First item',
+          link: 'https://example.com/1',
+          description: null,
+          publishedAt: null,
+          author: null,
+          imageUrl: null,
+        },
+      ],
+    });
+
+    mockRssFindOneAndUpdate.mockResolvedValue(null);
+
+    const result = await rssPollerService.forcePollGuild(client, 'g1');
+
+    expect(result.reason).toBe('ok');
+    expect(result.processed).toBe(1);
+    expect(result.publishedItems).toBe(1);
+    expect(result.failed).toBe(0);
+    expect(result.details[0].status).toBe('published');
+    expect(sendMock).toHaveBeenCalledTimes(1);
+  });
 });
