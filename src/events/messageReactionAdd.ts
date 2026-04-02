@@ -11,6 +11,7 @@ import StarboardMessage from '../models/StarboardMessage';
 import { PermissionFlags, EmbedBuilder } from '@fluxerjs/core';
 import { getActiveStarboards, getStarEmoji, getStarColor } from '../utils/starboardBoards';
 import { t, normalizeLocale } from '../i18n';
+import { handlePaginatorReaction } from '../utils/reactionPaginator';
 
 const EMOJI_APPLY = '✅';
 const EMOJI_DECLINE = '❌';
@@ -61,6 +62,10 @@ const event: BotEvent = {
 
       const guild = client.guilds.get(guildId);
       if (!guild) return;
+
+      if (await handlePaginatorReaction(client, reaction, user)) {
+        return;
+      }
 
       const settings: any = await settingsCache.get(guild.id);
       if (!settings) return;

@@ -10,7 +10,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Separator } from '../components/ui/separator';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import EmojiPicker, { type EmojiClickData, Theme } from 'emoji-picker-react';
 import {
   ArrowLeft, Settings, Shield, MessageSquare, Gavel,
@@ -1043,6 +1043,14 @@ function RssTab({ settings, guild, onSave, saving }: TabProps) {
           <CardDescription>Configure RSS/Atom URLs or RSSHub routes and post updates into your channels.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="rounded-md border border-white/10 bg-[hsl(var(--muted))] px-3 py-3 space-y-1 text-xs text-gray-300">
+            <p className="font-medium text-white">RSSHub Quick Guide</p>
+            <p>Use full URLs for RSS/Atom sources: https://example.com/feed.xml</p>
+            <p>Use path-only routes for RSSHub sources: /github/issue/dorkydigital/fluxy</p>
+            <p>For X/Twitter accounts, most RSSHub instances use: /twitter/user/username</p>
+            <p>Do not include the RSSHub domain in the route input.</p>
+          </div>
+
           <div className="flex items-center justify-between">
             <div>
               <Label className="text-sm font-medium text-white">Enable RSS Polling</Label>
@@ -1141,8 +1149,13 @@ function RssTab({ settings, guild, onSave, saving }: TabProps) {
                     onChange={e => updateFeed(feed.id, feed.sourceType === 'rss'
                       ? { url: e.target.value }
                       : { route: e.target.value })}
-                    placeholder={feed.sourceType === 'rss' ? 'https://example.com/feed.xml' : '/github/issue/user/repo'}
+                    placeholder={feed.sourceType === 'rss' ? 'https://example.com/feed.xml' : '/twitter/user/dogbonewish'}
                   />
+                  <p className="text-xs text-gray-500">
+                    {feed.sourceType === 'rss'
+                      ? 'Use a full http(s) feed URL.'
+                      : 'Use a route path starting with /. Example: /twitter/user/dogbonewish'}
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -2774,18 +2787,38 @@ function SaveButton({ onClick, saving }: { onClick: () => void; saving?: boolean
 
 export function GuildSettings() {
   const { guildId } = useParams<{ guildId: string }>();
-  const { guild, settings, loading, saving, error, saveError, updateSettings, refetchSettings } = useGuildData(guildId);
-  const [saveSuccess, setSaveSuccess] = useState(false);
+  const { guild, settings, loading, saving, error, updateSettings, refetchSettings } = useGuildData(guildId);
+  const [saveNotice, setSaveNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const saveNoticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showSaveNotice = useCallback((notice: { type: 'success' | 'error'; message: string }) => {
+    setSaveNotice(notice);
+    if (saveNoticeTimeoutRef.current) clearTimeout(saveNoticeTimeoutRef.current);
+    saveNoticeTimeoutRef.current = setTimeout(() => {
+      setSaveNotice(null);
+      saveNoticeTimeoutRef.current = null;
+    }, 3000);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (saveNoticeTimeoutRef.current) {
+        clearTimeout(saveNoticeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleSave = useCallback(async (patch: Partial<GuildSettingsType>) => {
-    setSaveSuccess(false);
     try {
       await updateSettings(patch);
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
-    } catch {
+      showSaveNotice({ type: 'success', message: 'Settings saved' });
+    } catch (err: any) {
+      showSaveNotice({
+        type: 'error',
+        message: err?.message || 'Failed to save settings',
+      });
     }
-  }, [updateSettings]);
+  }, [showSaveNotice, updateSettings]);
 
   if (loading) {
     return (
@@ -2831,8 +2864,6 @@ export function GuildSettings() {
             <Loader2 className="h-4 w-4 animate-spin" /> Saving...
           </div>
         )}
-        {saveSuccess && <Badge className="bg-green-600">Saved!</Badge>}
-        {saveError && <Badge variant="destructive">{saveError}</Badge>}
       </div>
 
       {/* Tabs */}
@@ -2867,6 +2898,21 @@ export function GuildSettings() {
         <TabsContent value="verification"><VerificationTab {...tabProps} /></TabsContent>
         <TabsContent value="starboard"><StarboardTab {...tabProps} /></TabsContent>
       </Tabs>
+
+      {saveNotice && (
+        <div className="fixed top-5 right-5 z-50 w-[calc(100vw-2rem)] max-w-sm">
+          <div
+            className={[
+              'rounded-lg border px-4 py-2 text-sm font-medium shadow-lg backdrop-blur-sm',
+              saveNotice.type === 'success'
+                ? 'border-green-500/40 bg-green-500/20 text-green-100'
+                : 'border-red-500/40 bg-red-500/20 text-red-100',
+            ].join(' ')}
+          >
+            {saveNotice.message}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

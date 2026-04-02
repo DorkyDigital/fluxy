@@ -1,13 +1,14 @@
 import { EmbedBuilder } from '@fluxerjs/core';
 import type { Command } from '../../types';
 import isNetworkError from '../../utils/isNetworkError';
+import { registerReactionPaginator } from '../../utils/reactionPaginator';
 import settingsCache from '../../utils/settingsCache';
 import { t, normalizeLocale } from '../../i18n';
 
 const command: Command = {
   name: 'inrole',
   description: 'List every member who has a specific role',
-  usage: '<@role or role ID> [page]',
+  usage: '<@role or role ID> [starting page]',
   category: 'info',
   cooldown: 10,
 
@@ -76,26 +77,47 @@ const command: Command = {
         page = parsed;
       }
 
-      const start = (page - 1) * PAGE_SIZE;
-      const displayed = withRole.slice(start, start + PAGE_SIZE);
+      const pageEmbeds = Array.from({ length: totalPages }, (_, pageIndex) => {
+        const start = pageIndex * PAGE_SIZE;
+        const displayed = withRole.slice(start, start + PAGE_SIZE);
 
-      const list = displayed
-        .map((m: any) => m.user ? `<@${m.id}> (${m.user.username})` : `<@${m.id}>`)
-        .join('\n');
+        const list = displayed
+          .map((m: any) => m.user ? `<@${m.id}> (${m.user.username})` : `<@${m.id}>`)
+          .join('\n');
 
-      const footerParts = [t(lang, 'commands.inrole.footerTotal', { memberCount: withRole.length })];
+        const footerParts = [t(lang, 'commands.inrole.footerTotal', { memberCount: withRole.length })];
+        if (totalPages > 1) {
+          footerParts.push(`${t(lang, 'commands.inrole.footerPageHint', { page: pageIndex + 1, totalPages, prefix })} • ⬅️/➡️`);
+        }
+
+        return new EmbedBuilder()
+          .setTitle(t(lang, 'commands.inrole.embedTitle', { roleName: role.name }))
+          .setColor(role.color || 0x5865F2)
+          .setDescription(list)
+          .setFooter({ text: footerParts.join(' \u00b7 ') })
+          .setTimestamp(new Date());
+      });
+
+      const sentMessage: any = await message.reply({ embeds: [pageEmbeds[page - 1]] });
+
       if (totalPages > 1) {
-        footerParts.push(t(lang, 'commands.inrole.footerPageHint', { page, totalPages, prefix }));
+        const ownerUserId = String((message as any).author?.id ?? (message as any).authorId ?? '');
+        const responseChannelId = String(sentMessage?.channelId ?? (message as any).channelId ?? '');
+        const responseMessageId = String(sentMessage?.id ?? '');
+
+        if (ownerUserId && responseChannelId && responseMessageId) {
+          await registerReactionPaginator(client, {
+            messageId: responseMessageId,
+            channelId: responseChannelId,
+            ownerUserId,
+            pages: pageEmbeds,
+            initialPageIndex: page - 1,
+            ttlMs: 3 * 60 * 1000,
+          });
+        }
       }
 
-      const embed = new EmbedBuilder()
-        .setTitle(t(lang, 'commands.inrole.embedTitle', { roleName: role.name }))
-        .setColor(role.color || 0x5865F2)
-        .setDescription(list)
-        .setFooter({ text: footerParts.join(' \u00b7 ') })
-        .setTimestamp(new Date());
-
-      return void await message.reply({ embeds: [embed] });
+      return;
 
     } catch (error: any) {
       const guildName = guild?.name || 'Unknown Server';

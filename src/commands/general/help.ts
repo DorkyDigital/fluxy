@@ -5,6 +5,7 @@ import isNetworkError from '../../utils/isNetworkError';
 import settingsCache from '../../utils/settingsCache';
 import { hasAnyPermission } from '../../utils/permissions';
 import { t, normalizeLocale } from '../../i18n';
+import { registerReactionPaginator } from '../../utils/reactionPaginator';
 
 const ACCENT_COLOR = 0xf1c40f;
 
@@ -16,6 +17,22 @@ const CATEGORY_META: Record<string, { label: string; description: string }> = {
 };
 
 const CATEGORY_ORDER = ['moderation', 'admin', 'info', 'general'];
+const CATEGORY_ALIASES: Record<string, string> = {
+  mod: 'moderation',
+  moderation: 'moderation',
+  admin: 'admin',
+  administration: 'admin',
+  info: 'info',
+  information: 'info',
+  general: 'general',
+  misc: 'general',
+};
+
+type HelpCategoryPage = {
+  key: string;
+  meta: { label: string; description?: string };
+  commands: Command[];
+};
 
 function getMemberRoleIds(member: any | null): string[] {
   if (!member?.roles) return [];
@@ -66,6 +83,120 @@ function isCommandDisabledInGuild(cmd: Command, disabled: unknown): boolean {
   return disabled.includes(cmd.name) || disabled.includes(cmd.category);
 }
 
+function sanitizeHelpQuery(raw: string): string {
+  return raw.toLowerCase().replace(/^[^\w]+/, '').trim();
+}
+
+function categorySlug(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function findCategoryStartIndex(query: string, categories: HelpCategoryPage[]): number {
+  const normalized = sanitizeHelpQuery(query);
+  if (!normalized) return -1;
+
+  const directIndex = categories.findIndex((c) => c.key === normalized);
+  if (directIndex >= 0) return directIndex;
+
+  const aliasTarget = CATEGORY_ALIASES[normalized];
+  if (aliasTarget) {
+    const aliasIndex = categories.findIndex((c) => c.key === aliasTarget);
+    if (aliasIndex >= 0) return aliasIndex;
+  }
+
+  const slug = categorySlug(normalized);
+  return categories.findIndex((c) => categorySlug(c.meta.label) === slug);
+}
+
+async function buildVisibleHelpCategories(opts: {
+  commandHandler: any;
+  message: any;
+  isOwner: boolean;
+  member: any | null;
+  disabledCommands: unknown;
+  guildSettings: any;
+}): Promise<HelpCategoryPage[]> {
+  const categories = opts.commandHandler.getCommandsByCategory();
+  const sorted = CATEGORY_ORDER.filter(c => categories[c])
+    .concat(Object.keys(categories).filter(c => !CATEGORY_ORDER.includes(c)));
+
+  const pages: HelpCategoryPage[] = [];
+  for (const cat of sorted) {
+    const cmds = categories[cat];
+    if (!cmds || cat === 'owner') continue;
+
+    const visible: Command[] = [];
+    for (const cmd of cmds) {
+      if (await canUserSeeCommand({
+        message: opts.message,
+        cmd,
+        isOwner: opts.isOwner,
+        member: opts.member,
+        disabledCommands: opts.disabledCommands,
+        guildSettings: opts.guildSettings,
+      })) {
+        visible.push(cmd);
+      }
+    }
+
+    if (visible.length === 0) continue;
+    pages.push({
+      key: cat,
+      meta: CATEGORY_META[cat] ?? { label: cat },
+      commands: visible,
+    });
+  }
+
+  return pages;
+}
+
+function buildCategoryEmbed(opts: {
+  category: HelpCategoryPage;
+  prefix: string;
+  lang: string;
+  pageNumber: number;
+  totalPages: number;
+}): EmbedBuilder {
+  const commandList = opts.category.commands.map((cmd: Command) => `\`${cmd.name}\``).join('  ');
+  const description = opts.category.meta.description
+    ? `${opts.category.meta.description}\n\n${commandList}`
+    : commandList;
+
+  const footerParts = [t(opts.lang, 'commands.help.menuFooter', { prefix: opts.prefix })];
+  if (opts.totalPages > 1) {
+    footerParts.push(`${opts.pageNumber}/${opts.totalPages}`);
+    footerParts.push('⬅️/➡️');
+  }
+
+  return new EmbedBuilder()
+    .setTitle(`${t(opts.lang, 'commands.help.menuTitle')} - ${opts.category.meta.label}`)
+    .setDescription(description)
+    .setColor(ACCENT_COLOR)
+    .setFooter({ text: footerParts.join(' • ') })
+    .setTimestamp(new Date());
+}
+
+function buildTextCategoryList(opts: {
+  categories: HelpCategoryPage[];
+  prefix: string;
+  lang: string;
+  startIndex: number;
+  showOnlyStartCategory: boolean;
+}): string {
+  const lines = [t(opts.lang, 'commands.help.commandListHeader', { prefix: opts.prefix }), ''];
+  const list = opts.showOnlyStartCategory
+    ? opts.categories.slice(opts.startIndex, opts.startIndex + 1)
+    : opts.categories;
+
+  for (const category of list) {
+    lines.push(`**${category.meta.label}**${category.meta.description ? ` - ${category.meta.description}` : ''}`);
+    lines.push(category.commands.map((cmd: Command) => `\`${cmd.name}\``).join('  '));
+    lines.push('');
+  }
+
+  return lines.join('\n');
+}
+
 async function canUserSeeCommand(opts: {
   message: any;
   cmd: Command;
@@ -101,8 +232,8 @@ async function canUserSeeCommand(opts: {
 
 const command: Command = {
   name: 'help',
-  description: 'Show all commands, or detailed info on a specific command.',
-  usage: '[command]',
+  description: 'Show all commands, detailed info for one command, or a specific category page.',
+  usage: '[command/category]',
   category: 'general',
   cooldown: 5,
 
@@ -120,97 +251,107 @@ const command: Command = {
 
     try {
       if (args[0]) {
-        const commandName = args[0].toLowerCase().replace(/^[^\w]/, '');
+        const commandName = sanitizeHelpQuery(args[0]);
         const cmd = commandHandler.getCommand(commandName);
 
         const visible = cmd && await canUserSeeCommand({ message, cmd, isOwner, member, disabledCommands, guildSettings });
-        if (!cmd || !visible) {
-          return void await message
-            .reply(t(lang, 'commands.help.errors.commandNotFound', { commandName, prefix }))
-            .catch(() => {});
-        }
+        if (cmd && visible) {
+          const usageStr = `\`${prefix}${cmd.name}${cmd.usage ? ' ' + cmd.usage : ''}\``;
+          const meta = CATEGORY_META[cmd.category] ?? { label: cmd.category };
 
-        const usageStr = `\`${prefix}${cmd.name}${cmd.usage ? ' ' + cmd.usage : ''}\``;
-        const meta = CATEGORY_META[cmd.category] ?? { label: cmd.category };
+          const embed = new EmbedBuilder()
+            .setTitle(`${cmd.name}`)
+            .setDescription(Array.isArray(cmd.description) ? cmd.description.join('\n') : (cmd.description || 'No description provided.'))
+            .setColor(ACCENT_COLOR)
+            .addFields({ name: 'Usage', value: usageStr, inline: false });
 
-        const embed = new EmbedBuilder()
-          .setTitle(`${cmd.name}`)
-          .setDescription(Array.isArray(cmd.description) ? cmd.description.join('\n') : (cmd.description || 'No description provided.'))
-          .setColor(ACCENT_COLOR)
-          .addFields({ name: 'Usage', value: usageStr, inline: false });
+          if (cmd.permissions?.length) {
+            embed.addFields({ name: 'Permission Required', value: cmd.permissions.join(', '), inline: true });
+          }
+          if (cmd.aliases?.length) {
+            embed.addFields({ name: 'Aliases', value: cmd.aliases.map((a: string) => `\`${a}\``).join('  '), inline: true });
+          }
+          if (cmd.cooldown) {
+            embed.addFields({ name: 'Cooldown', value: `${cmd.cooldown}s`, inline: true });
+          }
 
-        if (cmd.permissions?.length) {
-          embed.addFields({ name: 'Permission Required', value: cmd.permissions.join(', '), inline: true });
-        }
-        if (cmd.aliases?.length) {
-          embed.addFields({ name: 'Aliases', value: cmd.aliases.map((a: string) => `\`${a}\``).join('  '), inline: true });
-        }
-        if (cmd.cooldown) {
-          embed.addFields({ name: 'Cooldown', value: `${cmd.cooldown}s`, inline: true });
-        }
+          embed.addFields({ name: 'Category', value: `${meta.label}`, inline: true });
+          embed.setFooter({ text: `${prefix}help [command/category] • Fluxy Docs: docs.fluxy.gay` });
+          embed.setTimestamp(new Date());
 
-        embed.addFields({ name: 'Category', value: `${meta.label}`, inline: true });
-        embed.setFooter({ text: `${prefix}help [command] \u2022 Fluxy Docs: docs.fluxy.gay` });
-        embed.setTimestamp(new Date());
-
-        try {
-          return void await message.reply({ embeds: [embed] });
-        } catch {
-          const lines = [
-            `**${cmd.name}** - ${Array.isArray(cmd.description) ? cmd.description[0] : cmd.description || ''}`,
-            `Usage: ${usageStr}`,
-            cmd.permissions?.length ? `Permission: ${cmd.permissions.join(', ')}` : '',
-            cmd.aliases?.length    ? `Aliases: ${cmd.aliases.join(', ')}` : '',
-          ].filter(Boolean);
-          return void await message.reply(lines.join('\n')).catch(() => {});
+          try {
+            return void await message.reply({ embeds: [embed] });
+          } catch {
+            const lines = [
+              `**${cmd.name}** - ${Array.isArray(cmd.description) ? cmd.description[0] : cmd.description || ''}`,
+              `Usage: ${usageStr}`,
+              cmd.permissions?.length ? `Permission: ${cmd.permissions.join(', ')}` : '',
+              cmd.aliases?.length    ? `Aliases: ${cmd.aliases.join(', ')}` : '',
+            ].filter(Boolean);
+            return void await message.reply(lines.join('\n')).catch(() => {});
+          }
         }
       }
 
-      const categories = commandHandler.getCommandsByCategory();
-      const sorted = CATEGORY_ORDER.filter(c => categories[c])
-        .concat(Object.keys(categories).filter(c => !CATEGORY_ORDER.includes(c)));
+      const visibleCategories = await buildVisibleHelpCategories({
+        commandHandler,
+        message,
+        isOwner,
+        member,
+        disabledCommands,
+        guildSettings,
+      });
 
-      const embed = new EmbedBuilder()
-        .setTitle(t(lang, 'commands.help.menuTitle'))
-        .setDescription(t(lang, 'commands.help.menuDescription', { prefix }))
-        .setColor(ACCENT_COLOR)
-        .setFooter({ text: t(lang, 'commands.help.menuFooter', { prefix }) })
-        .setTimestamp(new Date());
-
-      for (const cat of sorted) {
-        const cmds = categories[cat];
-        if (!cmds) continue;
-        if (cat === 'owner') continue;
-        const visible: Command[] = [];
-        for (const c of cmds) {
-          if (await canUserSeeCommand({ message, cmd: c, isOwner, member, disabledCommands, guildSettings })) visible.push(c);
-        }
-        if (visible.length === 0) continue;
-        const meta = CATEGORY_META[cat] ?? { label: cat };
-        const cmdList = visible.map((cmd: Command) => `\`${cmd.name}\``).join('  ');
-        const value = meta.description ? `${meta.description}\n${cmdList}` : cmdList;
-        embed.addFields({ name: meta.label, value, inline: false });
+      if (visibleCategories.length === 0) {
+        return void await message.reply(t(lang, 'commands.help.errors.generic')).catch(() => {});
       }
+
+      const startIndex = args[0] ? findCategoryStartIndex(args[0], visibleCategories) : 0;
+      if (args[0] && startIndex < 0) {
+        const commandName = sanitizeHelpQuery(args[0]);
+        return void await message
+          .reply(t(lang, 'commands.help.errors.commandNotFound', { commandName, prefix }))
+          .catch(() => {});
+      }
+
+      const pages = visibleCategories.map((category, index) => {
+        return buildCategoryEmbed({
+          category,
+          prefix,
+          lang,
+          pageNumber: index + 1,
+          totalPages: visibleCategories.length,
+        });
+      });
 
       try {
-        await message.reply({ embeds: [embed] });
-      } catch {
-        const lines = [t(lang, 'commands.help.commandListHeader', { prefix }), ''];
-        for (const cat of sorted) {
-          const cmds = categories[cat];
-          if (!cmds) continue;
-          if (cat === 'owner') continue;
-          const visible: Command[] = [];
-          for (const c of cmds) {
-            if (await canUserSeeCommand({ message, cmd: c, isOwner, member, disabledCommands, guildSettings })) visible.push(c);
+        const sentMessage: any = await message.reply({ embeds: [pages[startIndex]] });
+
+        if (pages.length > 1) {
+          const ownerUserId = String((message as any).author?.id ?? (message as any).authorId ?? '');
+          const responseChannelId = String(sentMessage?.channelId ?? (message as any).channelId ?? '');
+          const responseMessageId = String(sentMessage?.id ?? '');
+
+          if (ownerUserId && responseChannelId && responseMessageId) {
+            await registerReactionPaginator(client, {
+              messageId: responseMessageId,
+              channelId: responseChannelId,
+              ownerUserId,
+              pages,
+              initialPageIndex: startIndex,
+              ttlMs: 3 * 60 * 1000,
+            });
           }
-          if (visible.length === 0) continue;
-          const meta = CATEGORY_META[cat] ?? { label: cat };
-          lines.push(`**${meta.label}**${meta.description ? ` - ${meta.description}` : ''}`);
-          lines.push(visible.map((c: Command) => `\`${c.name}\``).join('  '));
-          lines.push('');
         }
-        return void await message.reply(lines.join('\n')).catch(() => {});
+      } catch {
+        const text = buildTextCategoryList({
+          categories: visibleCategories,
+          prefix,
+          lang,
+          startIndex: Math.max(0, startIndex),
+          showOnlyStartCategory: Boolean(args[0]),
+        });
+        return void await message.reply(text).catch(() => {});
       }
 
     } catch (error: any) {

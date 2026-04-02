@@ -128,8 +128,13 @@ const command: Command = {
     const sub = args[0]?.toLowerCase();
     if (!sub || sub === 'help') {
       const embed = new EmbedBuilder()
-        .setTitle('RSS Setup')
-        .setDescription('Manage RSS/Atom feeds and RSSHub routes for your server.')
+        .setTitle('RSS Setup & RSSHub Guide')
+        .setDescription(
+          [
+            'Manage RSS/Atom feeds and RSSHub routes for your server.',
+            `Limit: ${config.rss.maxFeedsPerGuild} feeds • Minimum interval: ${config.rss.minPollIntervalMinutes} minutes`,
+          ].join('\n'),
+        )
         .addFields(
           {
             name: 'Commands',
@@ -142,6 +147,34 @@ const command: Command = {
               `\`${prefix}rss interval <minutes>\``,
               `\`${prefix}rss test <index|feedId|url|/rsshub/route>\``,
               `\`${prefix}rss status\``,
+            ].join('\n'),
+            inline: false,
+          },
+          {
+            name: 'Source Format',
+            value: [
+              'RSS/Atom: use full URL (https://...)',
+              'RSSHub: use route path only (must start with /)',
+              `RSSHub base URL: ${config.rss.rsshubBaseUrl}`,
+            ].join('\n'),
+            inline: false,
+          },
+          {
+            name: 'Examples',
+            value: [
+              `\`${prefix}rss test https://hnrss.org/frontpage\``,
+              `\`${prefix}rss test /twitter/user/dogbonewish\``,
+              `\`${prefix}rss add <#updates> /github/issue/vercel/next.js @News\``,
+              `\`${prefix}rss add <#updates> /twitter/user/username\``,
+              'Tip: most instances use /twitter/... for X profiles, not /x/...',
+            ].join('\n'),
+            inline: false,
+          },
+          {
+            name: 'Troubleshooting',
+            value: [
+              'No immediate posts after add is normal: first poll seeds existing items.',
+              'Use rss test first, then rss add, then rss status to monitor errors.',
             ].join('\n'),
             inline: false,
           },
