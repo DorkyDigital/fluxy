@@ -220,9 +220,10 @@ function isPrivateIPv6(address: string): boolean {
 
 function isPrivateAddress(address: string): boolean {
   const family = net.isIP(address);
+  if (family === 0) return false;
   if (family === 4) return isPrivateIPv4(address);
   if (family === 6) return isPrivateIPv6(address);
-  return true;
+  return false;
 }
 
 async function assertSafeTarget(urlString: string): Promise<void> {
