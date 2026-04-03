@@ -7,6 +7,7 @@ import StarboardMessage from '../models/StarboardMessage';
 import { Routes } from '@fluxerjs/types';
 import { EmbedBuilder } from '@fluxerjs/core';
 import { getActiveStarboards, getStarEmoji, getStarColor } from '../utils/starboardBoards';
+import { isReactionOnBotMessage } from '../utils/reactionLogFilter';
 
 const event: BotEvent = {
   name: 'messageReactionRemove',
@@ -24,26 +25,29 @@ const event: BotEvent = {
       const settings: any = await settingsCache.get(guild.id);
       if (!settings) return;
 
-      const emojiDisplay = reaction.emoji.id
-        ? `<:${reaction.emoji.name}:${reaction.emoji.id}>`
-        : reaction.emoji.name;
+      const targetMessageIsBotAuthored = await isReactionOnBotMessage(client, reaction);
+      if (!targetMessageIsBotAuthored) {
+        const emojiDisplay = reaction.emoji.id
+          ? `<:${reaction.emoji.name}:${reaction.emoji.id}>`
+          : reaction.emoji.name;
 
-      await logServerEvent(
-        guild,
-        'Reaction Removed',
-        0x95a5a6,
-        [
-          { name: 'User', value: `<@${user.id}>`, inline: true },
-          { name: 'Emoji', value: emojiDisplay, inline: true },
-          { name: 'Channel', value: `<#${reaction.channelId}>`, inline: true },
-        ],
-        client,
-        {
-          description: `[Jump to message](https://fluxer.app/channels/${reaction.guildId}/${reaction.channelId}/${reaction.messageId})`,
-          footer: `Message ID: ${reaction.messageId}`,
-          eventType: 'reaction_remove',
-        }
-      ).catch(() => { });
+        await logServerEvent(
+          guild,
+          'Reaction Removed',
+          0x95a5a6,
+          [
+            { name: 'User', value: `<@${user.id}>`, inline: true },
+            { name: 'Emoji', value: emojiDisplay, inline: true },
+            { name: 'Channel', value: `<#${reaction.channelId}>`, inline: true },
+          ],
+          client,
+          {
+            description: `[Jump to message](https://fluxer.app/channels/${reaction.guildId}/${reaction.channelId}/${reaction.messageId})`,
+            footer: `Message ID: ${reaction.messageId}`,
+            eventType: 'reaction_remove',
+          }
+        ).catch(() => { });
+      }
 
       const starboards = getActiveStarboards(settings);
       if (starboards.length > 0) {

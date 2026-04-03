@@ -58,6 +58,7 @@ jest.mock('@fluxerjs/core', () => {
     setColor(value: number) { this.data.color = value; return this; }
     setFooter(value: unknown) { this.data.footer = value; return this; }
     setTimestamp(value: unknown) { this.data.timestamp = value; return this; }
+    setAuthor(value: unknown) { this.data.author = value; return this; }
     addFields(value: unknown) {
       (this.data.fields as unknown[]).push(value);
       return this;
@@ -417,5 +418,80 @@ describe('RssPollerService', () => {
     expect(result.failed).toBe(0);
     expect(result.details[0].status).toBe('published');
     expect(sendMock).toHaveBeenCalledTimes(1);
+  });
+
+  test('embed output removes duplicate title text and keeps clean link field', async () => {
+    const sendMock = jest.fn().mockResolvedValue(undefined);
+    const client = makeClient(sendMock);
+
+    mockSettingsGet.mockResolvedValue({
+      guildId: 'g1',
+      rss: {
+        enabled: true,
+        pollIntervalMinutes: 15,
+        feeds: [makeFeed({ format: 'embed', mentionRoleId: null })],
+      },
+    });
+
+    mockRssFind.mockReturnValue({
+      lean: jest.fn().mockResolvedValue([
+        {
+          guildId: 'g1',
+          feedId: 'feed-1',
+          seenItemIds: ['item-1'],
+          consecutiveFailures: 0,
+          lastCheckedAt: new Date('2026-01-01T00:00:00.000Z'),
+        },
+      ]),
+    });
+
+    mockFetchFeed.mockResolvedValue({
+      feedUrl: 'https://example.com/feed.xml',
+      title: 'Fluxy Feed',
+      link: 'https://example.com',
+      description: null,
+      etag: 'etag-3',
+      lastModified: 'Thu, 02 Apr 2026 00:00:00 GMT',
+      notModified: false,
+      items: [
+        {
+          key: 'item-2',
+          title: 'RT Hello World',
+          link: 'https://example.com/2',
+          description: 'RT Hello World - this is the summary https://example.com/2',
+          publishedAt: null,
+          author: 'bone',
+          imageUrl: null,
+        },
+        {
+          key: 'item-1',
+          title: 'First item',
+          link: 'https://example.com/1',
+          description: null,
+          publishedAt: null,
+          author: null,
+          imageUrl: null,
+        },
+      ],
+    });
+
+    mockRssFindOneAndUpdate.mockResolvedValue(null);
+
+    (rssPollerService as any).client = client;
+    await (rssPollerService as any).pollTick();
+
+    expect(sendMock).toHaveBeenCalledTimes(1);
+    const payload = sendMock.mock.calls[0][0];
+    expect(payload.embeds).toHaveLength(1);
+
+    const embed = payload.embeds[0].data;
+    expect(embed.title).toBe('RT Hello World');
+    expect(embed.description).toBe('this is the summary');
+    expect(embed.fields).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'Link', value: 'https://example.com/2' }),
+      ]),
+    );
+    expect(embed.author).toEqual(expect.objectContaining({ name: 'bone' }));
   });
 });

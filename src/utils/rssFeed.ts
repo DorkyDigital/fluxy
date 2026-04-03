@@ -50,6 +50,55 @@ const xmlParser = new XMLParser({
   textNodeName: '#text',
 });
 
+const NAMED_HTML_ENTITIES: Record<string, string> = {
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  apos: "'",
+  nbsp: ' ',
+  ndash: '-',
+  mdash: '—',
+  hellip: '...',
+  rsquo: "'",
+  lsquo: "'",
+  rdquo: '"',
+  ldquo: '"',
+};
+
+function decodeHtmlEntities(raw: string): string {
+  return raw.replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]+);/g, (match, entity) => {
+    if (!entity) return match;
+
+    if (entity[0] === '#') {
+      const isHex = entity[1]?.toLowerCase() === 'x';
+      const value = isHex
+        ? parseInt(entity.slice(2), 16)
+        : parseInt(entity.slice(1), 10);
+
+      if (!Number.isInteger(value) || value <= 0 || value > 0x10ffff) {
+        return match;
+      }
+
+      try {
+        return String.fromCodePoint(value);
+      } catch {
+        return match;
+      }
+    }
+
+    const decoded = NAMED_HTML_ENTITIES[entity.toLowerCase()];
+    return decoded ?? match;
+  });
+}
+
+function normalizeFeedText(raw: string): string {
+  return decodeHtmlEntities(raw)
+    .replace(/\u00a0/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function toArray<T>(value: T | T[] | undefined | null): T[] {
   if (Array.isArray(value)) return value;
   if (value === undefined || value === null) return [];
@@ -58,8 +107,8 @@ function toArray<T>(value: T | T[] | undefined | null): T[] {
 
 function readString(value: unknown): string | null {
   if (typeof value === 'string') {
-    const trimmed = value.trim();
-    return trimmed.length > 0 ? trimmed : null;
+    const normalized = normalizeFeedText(value);
+    return normalized.length > 0 ? normalized : null;
   }
 
   if (typeof value === 'number' || typeof value === 'boolean') {
@@ -69,8 +118,8 @@ function readString(value: unknown): string | null {
   if (value && typeof value === 'object') {
     const maybeText = (value as Record<string, unknown>)['#text'];
     if (typeof maybeText === 'string') {
-      const trimmed = maybeText.trim();
-      return trimmed.length > 0 ? trimmed : null;
+      const normalized = normalizeFeedText(maybeText);
+      return normalized.length > 0 ? normalized : null;
     }
   }
 
@@ -91,9 +140,10 @@ function stripHtml(raw: string | null): string | null {
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
     .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
     .trim();
-  return text.length > 0 ? text : null;
+
+  const normalized = normalizeFeedText(text);
+  return normalized.length > 0 ? normalized : null;
 }
 
 function extractImageFromHtml(raw: string | null): string | null {

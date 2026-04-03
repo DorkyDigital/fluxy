@@ -46,6 +46,54 @@ function truncate(value: string, maxLength: number): string {
   return value.slice(0, Math.max(0, maxLength - 3)) + '...';
 }
 
+function normalizeSummaryText(value: string): string {
+  return value.replace(/\s+/g, ' ').trim();
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function removeTitlePrefix(title: string, summary: string): string {
+  const normalizedTitle = normalizeSummaryText(title);
+  if (!normalizedTitle) return summary;
+
+  const normalizedSummary = normalizeSummaryText(summary);
+  if (!normalizedSummary) return '';
+
+  if (normalizedSummary.toLowerCase() === normalizedTitle.toLowerCase()) {
+    return '';
+  }
+
+  const titlePrefixPattern = new RegExp(
+    `^${escapeRegExp(normalizedTitle)}(?:\\s*[\\-:|\\u2013\\u2014]\\s*)?`,
+    'i',
+  );
+  return normalizedSummary.replace(titlePrefixPattern, '').trim();
+}
+
+function removeTrailingLink(summary: string, link: string): string {
+  const normalizedSummary = normalizeSummaryText(summary);
+  const normalizedLink = normalizeSummaryText(link);
+  if (!normalizedSummary || !normalizedLink) return normalizedSummary;
+
+  const trailingLinkPattern = new RegExp(`${escapeRegExp(normalizedLink)}$`, 'i');
+  return normalizedSummary.replace(trailingLinkPattern, '').trim();
+}
+
+function buildEmbedSummary(item: { title: string; description: string | null; link: string }, includeSummary: boolean): string | null {
+  if (!includeSummary || !item.description) return null;
+
+  let summary = normalizeSummaryText(item.description);
+  if (!summary) return null;
+
+  summary = removeTitlePrefix(item.title, summary);
+  summary = removeTrailingLink(summary, item.link);
+
+  if (!summary) return null;
+  return truncate(summary, 900);
+}
+
 function mergeSeen(existing: string[], newestFirst: string[]): string[] {
   const merged = [...newestFirst, ...existing.filter((id) => !newestFirst.includes(id))];
   return merged.slice(0, RSS_MAX_SEEN_ITEM_IDS);
@@ -396,9 +444,9 @@ class RssPollerService {
           } else {
             const sourceTitle = feed.name || parsed.title || 'RSS Feed';
             const title = truncate(item.title || sourceTitle, 256);
-            const summary = feed.includeSummary ? truncate(item.description || '', 800) : '';
+            const summary = buildEmbedSummary(item, feed.includeSummary);
             const description = summary
-              ? `${summary}\n\n${item.link}`
+              ? summary
               : item.link;
 
             const embed = new EmbedBuilder()
@@ -412,10 +460,16 @@ class RssPollerService {
             }
 
             if (item.author) {
+              embed.setAuthor({
+                name: truncate(item.author, 200),
+              });
+            }
+
+            if (summary) {
               embed.addFields({
-                name: 'Author',
-                value: truncate(item.author, 200),
-                inline: true,
+                name: 'Link',
+                value: item.link,
+                inline: false,
               });
             }
 

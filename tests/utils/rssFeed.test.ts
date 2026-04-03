@@ -24,6 +24,21 @@ const RSS_XML = `<?xml version="1.0" encoding="UTF-8"?>
   </channel>
 </rss>`;
 
+const RSS_XML_WITH_ENTITIES = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Example &amp; Feed</title>
+    <link>https://example.com</link>
+    <description>Example</description>
+    <item>
+      <title>RT Test &amp; Stuff</title>
+      <link>https://example.com/item-entity</link>
+      <guid>entity-1</guid>
+      <description><![CDATA[RT Test &amp; Stuff &gt; survivors complain &amp; killers adapt]]></description>
+    </item>
+  </channel>
+</rss>`;
+
 describe('fetchFeed SSRF safety + domain handling', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -92,5 +107,31 @@ describe('fetchFeed SSRF safety + domain handling', () => {
     ).rejects.toThrow('Feed host resolves to a private or loopback address');
 
     expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  test('decodes HTML entities in feed title and item summary text', async () => {
+    mockLookup.mockResolvedValue([{ address: '93.184.216.34', family: 4 }]);
+    (global.fetch as jest.Mock).mockResolvedValue(
+      new Response(RSS_XML_WITH_ENTITIES, {
+        status: 200,
+        headers: { 'content-type': 'application/rss+xml' },
+      }),
+    );
+
+    const result = await fetchFeed(
+      {
+        sourceType: 'rss',
+        url: 'https://example.com/feed.xml',
+        route: null,
+      },
+      {
+        timeoutMs: 5000,
+        maxBodyBytes: 1024 * 1024,
+      },
+    );
+
+    expect(result.title).toBe('Example & Feed');
+    expect(result.items[0].title).toBe('RT Test & Stuff');
+    expect(result.items[0].description).toBe('RT Test & Stuff > survivors complain & killers adapt');
   });
 });

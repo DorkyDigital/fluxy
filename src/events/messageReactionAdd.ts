@@ -12,6 +12,7 @@ import { PermissionFlags, EmbedBuilder } from '@fluxerjs/core';
 import { getActiveStarboards, getStarEmoji, getStarColor } from '../utils/starboardBoards';
 import { t, normalizeLocale } from '../i18n';
 import { handlePaginatorReaction } from '../utils/reactionPaginator';
+import { isReactionOnBotMessage } from '../utils/reactionLogFilter';
 
 const EMOJI_APPLY = '✅';
 const EMOJI_DECLINE = '❌';
@@ -124,26 +125,29 @@ const event: BotEvent = {
         }
       }
 
-      const emojiDisplay = reaction.emoji.id
-        ? `<:${reaction.emoji.name}:${reaction.emoji.id}>`
-        : reaction.emoji.name;
+      const targetMessageIsBotAuthored = await isReactionOnBotMessage(client, reaction);
+      if (!targetMessageIsBotAuthored) {
+        const emojiDisplay = reaction.emoji.id
+          ? `<:${reaction.emoji.name}:${reaction.emoji.id}>`
+          : reaction.emoji.name;
 
-      await logServerEvent(
-        guild,
-        'Reaction Added',
-        0x3498db,
-        [
-          { name: 'User', value: `<@${user.id}>`, inline: true },
-          { name: 'Emoji', value: emojiDisplay, inline: true },
-          { name: 'Channel', value: `<#${reaction.channelId}>`, inline: true },
-        ],
-        client,
-        {
-          description: `[Jump to message](https://fluxer.app/channels/${reaction.guildId}/${reaction.channelId}/${reaction.messageId})`,
-          footer: `Message ID: ${reaction.messageId}`,
-          eventType: 'reaction_add',
-        }
-      ).catch(() => {});
+        await logServerEvent(
+          guild,
+          'Reaction Added',
+          0x3498db,
+          [
+            { name: 'User', value: `<@${user.id}>`, inline: true },
+            { name: 'Emoji', value: emojiDisplay, inline: true },
+            { name: 'Channel', value: `<#${reaction.channelId}>`, inline: true },
+          ],
+          client,
+          {
+            description: `[Jump to message](https://fluxer.app/channels/${reaction.guildId}/${reaction.channelId}/${reaction.messageId})`,
+            footer: `Message ID: ${reaction.messageId}`,
+            eventType: 'reaction_add',
+          }
+        ).catch(() => {});
+      }
 
       if (settings.automod?.antiReactionSpam && settings.automod?.level && settings.automod.level !== 'off') {
         if (!settings.automod.exemptChannels?.includes(reaction.channelId)) {
