@@ -1,5 +1,4 @@
 import log from './consoleLogger';
-import { logInviteCreateFromInvite } from '../events/inviteCreate';
 import { Routes } from '@fluxerjs/types';
 
 const inviteCodesByGuild = new Map<string, Set<string>>();
@@ -32,16 +31,6 @@ export function startInvitePollFallback(
         const data = await client.rest.get(Routes.guildInvites(gid));
         const invites: any[] = Array.isArray(data) ? data : (data?.invites ?? []);
         const nextCodes = new Set(invites.map((i: any) => i.code).filter(Boolean));
-        const prevCodes = inviteCodesByGuild.get(gid) ?? new Set<string>();
-
-        if (label === 'delta') {
-          for (const invite of invites) {
-            if (!prevCodes.has(invite.code)) {
-              await logInviteCreateFromInvite(invite, client, { synthetic: true });
-            }
-          }
-        }
-
         inviteCodesByGuild.set(gid, nextCodes);
       } catch (error: any) {
         if (!permissionWarned.has(gid)) {
