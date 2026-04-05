@@ -1,5 +1,6 @@
 import log from './consoleLogger';
 import { logInviteCreateFromInvite } from '../events/inviteCreate';
+import { Routes } from '@fluxerjs/types';
 
 const inviteCodesByGuild = new Map<string, Set<string>>();
 let pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -28,7 +29,8 @@ export function startInvitePollFallback(
       if (!gid || !shouldProcessGuild(gid)) continue;
 
       try {
-        const invites: any[] = await guild.fetchInvites();
+        const data = await client.rest.get(Routes.guildInvites(gid));
+        const invites: any[] = Array.isArray(data) ? data : (data?.invites ?? []);
         const nextCodes = new Set(invites.map((i: any) => i.code).filter(Boolean));
         const prevCodes = inviteCodesByGuild.get(gid) ?? new Set<string>();
 
