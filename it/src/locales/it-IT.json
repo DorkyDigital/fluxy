@@ -1,0 +1,1149 @@
+{
+  "verification": {
+    "panel": {
+      "title": "🔒 Verifica Server",
+      "description": "**Benvenuto!** Questo server richiede una verifica manuale per aiutare a combattere l'abuso del bot.\n\nReagisci con ✅ sotto per iniziare il processo di verifica.\n\nTi verrà dato un canale privato con un'immagine captcha — digita semplicemente le 6 lettere mostrate per verificare che non sei un bot.",
+      "footer": "La verifica è facile e veloce!"
+    },
+    "setupComplete": {
+      "title": "✅ Configurazione Verifica Completata",
+      "description": "**Category:** Verification\n**Panel Channel:** <#{panelChannelId}>\n**Verified Role:** <@&{verifiedRoleId}>\n\nUsers can now react with ✅ in <#{panelChannelId}> to begin verification.\n\n> **Important:** Make sure to deny `@everyone` the `View Channel` permission on your other channels, and allow the **Verified** role to see them. This ensures unverified users can only see the verification channel."
+    },
+    "captcha": {
+      "title": "🔒 Verifica richiesta",
+      "description": "Benvenuto, <@{userId}>!\n\nDigita le **6 lettere** mostrate nell'immagine qui sopra per verificare te stesso.\n\nHai **{maxAttempts}** tentativo/i. Il codice **non** è sensibile alle maiuscole/minuscole.\nQuesto canale scadrà tra **60 secondi**."
+    },
+    "testChannelCreated": "Canale di verifica di prova creato: <#{channelId}>",
+    "errors": {
+      "serverOnly": "Questo comando può essere usato solo nei server.",
+      "missingPanelChannel": "Specifica un canale o esegui prima `{prefix}verify setup`.",
+      "usageRole": "Utilizzo: `{prefix}verify role <@role>`",
+      "usageCategory": "Utilizzo: `{prefix}verify category <categoryId>`",
+      "usageLog": "Utilizzo: `{prefix}verify log <#canale>` or `{prefix}verify log clear`",
+      "usageTestFirst": "Esegui `{prefix}verify setup` prima per creare la categoria di verifica.",
+      "createTestVerificationChannelFailed": "Impossibile creare il canale di verifica di prova: {error}",
+      "createVerifiedRoleFailed": "Impossibile creare il ruolo di verifica: {error}",
+      "createCategoryFailed": "Impossibile creare la categoria di verifica: {error}",
+      "createPanelChannelFailed": "Impossibile creare il canale \"verificati qui\": {error}",
+      "postPanelFailed": "Impossibile inviare il pannello di verifica: {error}",
+      "postPanelGenericFailed": "Impossibile inviare il pannello: {error}",
+      "generateCaptchaFailed": "Generazione captcha non riuscita: {error}",
+      "updateFailed": "Si è verificato un errore nell'aggiornamento delle impostazioni di verifica.",
+      "invalidRole": "Si prega di menzionare un ruolo valido o fornire un ID ruolo.",
+      "invalidCategory": "Si prega di fornire un ID categoria valido.",
+      "invalidChannel": "Si prega di menzionare un canale valido o fornire un ID canale."
+    },
+    "status": {
+      "title": "Configurazione Verifica",
+      "enabledYes": "Sì",
+      "enabledNo": "No",
+      "notSet": "Non impostato",
+      "maxAttemptsLabel": "Numero massimo di tentativi"
+    },
+    "resetDone": "Le impostazioni di verifica sono state resettate. I canali e i ruoli creati durante la configurazione sono stati **non** cancellati — rimuovili manualmente se necessario.",
+    "result": {
+      "passedTitle": "✅ Verifica Completata!",
+      "passedDescription": "Sei stato verificato. Questo canale verrà eliminato a breve.",
+      "failedTitle": "❌ Verifica fallita",
+      "failedDescription": "Hai usato tutti i tuoi tentativi. Questo canale verrà eliminato. Riprova aggiungendo una reazione al pannello di verifica.",
+      "incorrectTitle": "❌ Non Corretto",
+      "incorrectDescription": "Non era giusto. Hai **{remaining}** tentativo/i rimasto/i."
+    },
+    "log": {
+      "startedTitle": "Verification Started",
+      "startedDescription": "<@{userId}> started a verification attempt.",
+      "passedTitle": "✅ Verifica Superata",
+      "passedDescription": "<@{userId}> ha superato la verifica.",
+      "failedTitle": "❌ Verifica fallita",
+      "failedDescription": "<@{userId}> failed verification (used all attempts).",
+      "cleared": "Canale log di verifica svuotato.",
+      "setDone": "Canale log di verifica impostato a <#{channelId}>."
+    },
+    "panelPosted": "Pannello di verifica pubblicato in <#{channelId}>.",
+    "roleSetDone": "Ruolo verificato impostato a <@&{roleId}>.",
+    "categorySetDone": "Categoria di verifica impostata su `{categoryId}`.",
+    "help": {
+      "title": "Sistema Di Verifica Manuale",
+      "body": "`{prefix}verify setup` - auto-create category, channel, role, and panel\n`{prefix}verify panel [#channel]` - (re-)post the verification panel\n`{prefix}verify role <@role>` - set the verified role\n`{prefix}verify category <id>` - set the verification category\n`{prefix}verify log <#channel>` - set a log channel\n`{prefix}verify status` - show current configuration\n`{prefix}verify reset` - disable and clear settings\n`{prefix}verify test` - open a test verification channel for yourself"
+    }
+  },
+  "language": {
+    "current": "Lingua attuale: `{language}`",
+    "set": "Lingua impostata su `{language}`.",
+    "invalid": "Lingua sconosciuta `{language}`. Disponibile: {available}",
+    "available": "Lingue disponibili: {available}",
+    "usage": "Utilizzo: `{prefix}language set <code>` o `{prefix}language list`"
+  },
+  "commands": {
+    "ping": {
+      "pinging": "Pingando...",
+      "title": "Pong!",
+      "restApi": "API REST",
+      "roundTrip": "Message Round-trip",
+      "footer": "API Fluxer - api.fluxer.app"
+    },
+    "invite": {
+      "title": "Invita Fluxy",
+      "description": "Add Fluxy to your server and get powerful moderation, welcome messages, logging, and more!\n\n**[Click here to invite Fluxy]({inviteUrl})**\n\nNeed help? Join the **[Fluxy Support Server](https://fluxer.gg/fluxy)**.",
+      "footer": "Fluxy - Moderazione resa semplice",
+      "fallback": "**Invita Fluxy sul tuo server:**\n{inviteUrl}\n\nHai bisogno di aiuto? https://fluxer.gg/fluxy"
+    },
+    "myprefix": {
+      "current": "Il tuo prefisso personale è `{prefixValue}`. Usa `{prefix}myprefix clear` per rimuoverlo.",
+      "notSet": "Non hai ancora impostato un prefisso personale. Usa `{prefix}myprefix <prefix>` per impostarne uno.",
+      "fetchFailed": "Impossibile recuperare le tue impostazioni del prefisso.",
+      "cleared": "Il tuo prefisso personale è stato rimosso. Userai quello del server.",
+      "clearFailed": "Impossibile cancellare il tuo prefisso.",
+      "tooLong": "Il prefisso è troppo lungo (max {max} caratteri).",
+      "noSpaces": "Il prefisso non può contenere spazi.",
+      "saved": "Il tuo prefisso personale è stato impostato su `{newPrefix}`. Ora puoi usare `{newPrefix}help` ovunque.",
+      "saveFailed": "Impossibile salvare il tuo prefisso."
+    },
+    "mydata": {
+      "info": "**Dati che Fluxy conserva su di te:**\n- Prefisso personale (se impostato tramite `!myprefix`)\n- Avvertimenti che hai ricevuto nei server\n- Azioni di moderazione che ti coinvolgono (come vittima o moderatore)\n- Messaggi nei ticket che hai inviato nei canali\n- Statistiche di utilizzo dei comandi\n- Ban globale (se applicabile)\n\n`{prefix}mydata export` - ottieni un file con tutti i tuoi dati\n`{prefix}mydata delete` - elimina permanentemente tutti i tuoi dati",
+      "collecting": "Raccolta dei dati... Ti invierò il file di esportazione.",
+      "dmContent": "Ecco tutti i dati che Fluxy ha memorizzato su di te. Questo include avvertimenti, registri di moderazione, partecipazione ai ticket e impostazioni.",
+      "dmSent": "Inviato! Controlla i tuoi DM.",
+      "dmOpenFailed": "Non ho potuto aprire un DM con te. Assicurati che i DM siano aperti.",
+      "dmSendFailed": "Non ho potuto aprire un DM con te. Assicurati che i DM siano aperti e riprova.",
+      "exportFailed": "Qualcosa è andato storto durante la raccolta dei dati. Riprova più tardi.",
+      "deleteConfirm": "**Sei sicur*? * Questo eliminerà definitivamente:\n- Il tuo prefisso personale\n- Tutti i tuoi avvertimenti su ogni server\n- La tua identità nei log di moderazione (diventerai \"[deleted]\")\n- La tua identità nelle trascrizioni dei ticket (diventerai \"Deleted User\")\n- Le tue statistiche di utilizzo dei comandi\n\n**Questo non può essere annullato. *\nEsegui di nuovo `{prefix}mydata delete` entro 60 secondi per confermare.",
+      "deleting": "Eliminazione dei dati...",
+      "deleteDoneHeader": "**Cancellazione dati completata.**",
+      "deleteNoData": "Non è stato trovato alcun dato da eliminare.",
+      "deleteFailed": "Qualcosa è andato storto durante la cancellazione dei dati. Riprova più tardi.",
+      "unknown": "Opzione sconosciuta. Usa `{prefix}mydata info`, `{prefix}mydata export`, o `{prefix}mydata delete`."
+    },
+    "report": {
+      "serverOnly": "This command can only be used in a server.",
+      "missingMessage": "Please include a message with your report. Example: `{prefix}report someone is posting spam in #general`",
+      "tooLong": "Your report is too long (max 1000 characters). Please summarise and try again.",
+      "submitFailedDm": "Your report could not be submitted right now due to a server error. Please try again shortly.",
+      "notConfiguredDm": "Staff reports are not configured on this server yet. Please contact an administrator directly.",
+      "embedTitle": "New Staff Report",
+      "fieldReporter": "Reporter",
+      "fieldUserId": "User ID",
+      "fieldChannel": "Channel",
+      "footer": "This report is only visible to staff",
+      "channelUnavailableDm": "Your report in **{guildName}** could not be delivered because the staff channel is unavailable. Please contact a staff member directly.",
+      "deliveredDm": "Your report in **{guildName}** has been sent to the staff team. Someone will follow up with you directly if needed. Thank you for letting us know.",
+      "permissionsErrorDm": "Your report in **{guildName}** could not be delivered due to a permissions error. Please contact a staff member directly."
+    },
+    "uptime": {
+      "labelUptime": "Uptime",
+      "labelStarted": "Started",
+      "unitDaySingular": "day",
+      "unitDayPlural": "days",
+      "unitHourSingular": "hour",
+      "unitHourPlural": "hours",
+      "unitMinuteSingular": "minute",
+      "unitMinutePlural": "minutes",
+      "unitSecondSingular": "second",
+      "unitSecondPlural": "seconds",
+      "listSeparator": ", ",
+      "response": "**{labelUptime}:** {uptimeString}\n**{labelStarted}:** {startString}"
+    },
+    "inrole": {
+      "serverOnly": "This command can only be used in a server.",
+      "usage": "Usage: `{prefix}inrole <@role> [page]`",
+      "invalidRoleInput": "Please provide a valid role mention or role ID.",
+      "roleNotFound": "That role does not exist in this server.",
+      "membersFetchFailed": "Recupero dei membri del server non riuscito.",
+      "noneWithRole": "Nessun membro ha attualmente il ruolo **{roleName}** .",
+      "invalidPage": "La pagina deve essere un numero a partire da 1.",
+      "pageTooHigh": "Ci sono solo {totalPages} pagine disponibili per questo ruolo.",
+      "embedTitle": "Membri con {roleName}",
+      "footerTotal": "{memberCount} membro/i totale/i",
+      "footerPageHint": "pagina {page}/{totalPages} - esegui {prefix}inrole <role> <page> per vedere altre pagine",
+      "genericError": "Si è verificato un errore durante il recupero dei membri."
+    },
+    "roleinfo": {
+      "serverOnly": "Questo comando può essere usato solo nei server.",
+      "usage": "Utilizzo: `{prefix}roleinfo <@role>`",
+      "invalidRoleInput": "Si prega di fornire un nome di ruolo valido o ID ruolo.",
+      "roleNotFound": "Quel ruolo non esiste in questo server.",
+      "defaultColor": "Predefinito (nessun colore)",
+      "title": "Ruolo: {roleName}",
+      "fieldId": "ID",
+      "fieldColor": "Colore",
+      "fieldPosition": "Posizione",
+      "fieldHoisted": "Separato",
+      "fieldMentionable": "Menzionabile",
+      "fieldManaged": "Gestito",
+      "fieldCreated": "Creato",
+      "unknown": "Sconosciuto",
+      "yes": "Sì",
+      "no": "No",
+      "managedYes": "Sì (bot/integrazione)",
+      "requestedBy": "Richiesto da {username}",
+      "genericError": "Si è verificato un errore durante il recupero delle informazioni."
+    },
+    "serverinfo": {
+      "serverOnly": "Questo comando può essere usato solo nei server.",
+      "title": "Informazioni Server",
+      "fieldName": "Nome",
+      "fieldId": "ID",
+      "fieldOwner": "Proprietario",
+      "fieldMembers": "Membri",
+      "fieldTextChannels": "Canali di Testo",
+      "fieldVoiceChannels": "Canali Vocali",
+      "fieldCategories": "Categorie",
+      "fieldRoles": "Ruoli",
+      "fieldCreated": "Creato",
+      "fieldFeatures": "Funzioni",
+      "none": "Vuoto",
+      "requestedBy": "Richiesto da {username}",
+      "genericError": "Si è verificato un errore durante il recupero delle informazioni."
+    },
+    "userinfo": {
+      "serverOnly": "Questo comando può essere usato solo nei server.",
+      "invalidUser": "Si prega di menzionare un utente o di fornire un ID utente valido.",
+      "userNotFound": "Impossibile trovare quell'utente.",
+      "title": "Informazioni Utente",
+      "fieldUsername": "Nome utente",
+      "fieldId": "ID",
+      "fieldBot": "Bot",
+      "fieldAccountCreated": "Account Creato",
+      "fieldJoinedServer": "Joined Server",
+      "fieldRoles": "Roles ({totalRoles})",
+      "fieldTimeout": "Timeout",
+      "fieldNickname": "Nickname",
+      "requestedBy": "Requested by {username}",
+      "yes": "Yes",
+      "no": "No",
+      "unknown": "Unknown",
+      "timeoutUntil": "Until {timeoutEnd}",
+      "rolesOverflowSuffix": "...",
+      "genericError": "An error occurred while fetching user information."
+    },
+    "reload": {
+      "ownerOnly": "This command is restricted to the bot owner.",
+      "usage": "Usage: `{prefix}reload <command>`",
+      "commandHandlerMissing": "Command handler not available.",
+      "commandNotFound": "Command `{commandName}` not found.",
+      "success": "Successfully reloaded command `{commandName}`.",
+      "error": "Error reloading command: `{error}`"
+    },
+    "moderation": {
+      "warn": {
+        "serverOnly": "This command can only be used in a server.",
+        "usage": "Usage: `{prefix}warn <user> <reason>`",
+        "missingReason": "Please provide a reason for the warning.",
+        "invalidUser": "Please provide a valid user mention or ID.",
+        "success": "Successfully warned **{username}** (<@{userId}>).\n**Reason:** {reason}\n**Total Warnings:** {warningCount}",
+        "autoMuteApplied": "⚠️ Auto-mute applied to <@{targetUserId}> after reaching **{warningCount}** warnings (threshold: **{threshold}**).",
+        "autoMuteReason": "Auto-mute threshold reached ({warningCount}/{threshold})",
+        "dmTitle": "Warning in {guildName}",
+        "dmDescription": "You have received a warning in **{guildName}**.",
+        "dmFieldReason": "Reason",
+        "dmFieldTotalWarnings": "Total Warnings",
+        "errors": {
+          "generic": "An error occurred while trying to warn that user."
+        }
+      },
+      "clear": {
+        "serverOnly": "This command can only be used in a server.",
+        "usage": "Usage: `{prefix}clear <amount>` (1-100)",
+        "invalidNumber": "Please provide a valid number.",
+        "amountRange": "Amount must be between 1 and 100.",
+        "noMessages": "No messages found to delete.",
+        "successDeleted": "Successfully deleted **{userCount}** message(s).",
+        "errors": {
+          "cannotDeleteOlderThan14Days": "Cannot delete messages older than 14 days.",
+          "generic": "An error occurred while trying to delete messages."
+        }
+      },
+      "ban": {
+        "serverOnly": "This command can only be used in a server.",
+        "usage": "Usage: `{prefix}ban <user> [reason]`",
+        "invalidUser": "Please provide a valid user mention or ID.",
+        "noReasonProvided": "No reason provided",
+        "cannotBanRoleHierarchy": "I cannot ban this user because their highest role is equal to or above mine. Ask a server admin to move my role higher in the role list.",
+        "success": "Successfully banned **{username}** (<@{userId}>).\n**Reason:** {reason}",
+        "errors": {
+          "generic": "An error occurred while trying to ban that user."
+        }
+      },
+      "timeout": {
+        "serverOnly": "This command can only be used in a server.",
+        "usage": "Usage: `{prefix}timeout <user> <duration> [reason]`\nDuration format: 10s, 5m, 1h, 1d (max 28 days)",
+        "missingDuration": "Please specify a duration. Format: 10s, 5m, 1h, 1d (max 28 days)",
+        "invalidUser": "Please provide a valid user mention or ID.",
+        "invalidDurationFormat": "Invalid duration format. Use: 10s, 5m, 1h, 1d (max 28 days)",
+        "durationTooLong": "Timeout duration cannot exceed 28 days.",
+        "userNotInServer": "That user is not in this server.",
+        "noReasonProvided": "No reason provided",
+        "cannotTimeoutRoleHierarchy": "I cannot timeout this user because their highest role is equal to or above mine. Ask a server admin to move my role higher in the role list.",
+        "alreadyTimedOutRemaining": "That user is already timed out. Remaining: {remaining}",
+        "successTimedOut": "Successfully timed out **{username}** (<@{userId}>) for **{duration}**.\n**Reason:** {reason}",
+        "errors": {
+          "generic": "An error occurred while trying to timeout that member."
+        }
+      },
+      "kick": {
+        "serverOnly": "This command can only be used in a server.",
+        "usage": "Usage: `{prefix}kick <user> [reason]`",
+        "invalidUser": "Please provide a valid user mention or ID.",
+        "noReasonProvided": "No reason provided",
+        "userNotInServer": "That user is not in this server.",
+        "cannotKickRoleHierarchy": "I cannot kick this user because their highest role is equal to or above mine. Ask a server admin to move my role higher in the role list.",
+        "success": "Successfully kicked **{username}** (<@{userId}>).\n**Reason:** {reason}",
+        "errors": {
+          "generic": "An error occurred while trying to kick that member."
+        }
+      },
+      "mute": {
+        "serverOnly": "This command can only be used in a server.",
+        "usage": "Usage: `{prefix}mute <user> [reason]`",
+        "invalidUser": "Please provide a valid user mention or ID.",
+        "noReasonProvided": "No reason provided",
+        "userNotInServer": "That user is not in this server.",
+        "cannotMuteRoleHierarchy": "I cannot mute this user because their highest role is equal to or above mine. Ask a server admin to move my role higher in the role list.",
+        "alreadyMuted": "That user is already muted.",
+        "muteRoleOnlyCannotApply": "Mute method is set to **mute role only**, but I cannot apply the mute role (missing role, missing permission, or role hierarchy issue).",
+        "muteRoleNotConfigured": "Mute role method is enabled, but no mute role is configured.",
+        "successMutedRole": "Successfully muted **{username}** (<@{userId}>).\n**Reason:** {reason}",
+        "successMutedDuration": "Successfully muted **{username}** (<@{userId}>) for **{duration}**.\n**Reason:** {reason}",
+        "errors": {
+          "generic": "An error occurred while trying to mute that member."
+        }
+      },
+      "unmute": {
+        "serverOnly": "This command can only be used in a server.",
+        "usage": "Usage: `{prefix}unmute <user>`",
+        "invalidUser": "Please provide a valid user mention or ID.",
+        "userNotInServer": "That user is not in this server.",
+        "notCurrentlyMuted": "That user is not currently muted.",
+        "success": "Successfully unmuted **{username}** (<@{userId}>).",
+        "errors": {
+          "generic": "An error occurred while trying to unmute that member."
+        }
+      },
+      "unban": {
+        "serverOnly": "This command can only be used in a server.",
+        "usage": "Usage: `{prefix}unban <userId> [reason]`",
+        "invalidUser": "Please provide a valid user ID.",
+        "noReasonProvided": "No reason provided",
+        "notBanned": "That user is not banned from this server.",
+        "success": "Successfully unbanned **{username}** (<@{userId}>).\n**Reason:** {reason}",
+        "errors": {
+          "generic": "An error occurred while trying to unban that user."
+        }
+      },
+      "warnings": {
+        "serverOnly": "This command can only be used in a server.",
+        "invalidUser": "Please provide a valid user mention or ID.",
+        "title": "Warnings for {username}",
+        "noWarnings": "This user has no warnings.",
+        "showing": "Showing {shownCount} of {totalWarnings} warning(s)",
+        "fieldRecentWarnings": "Recent Warnings",
+        "none": "None",
+        "moderatorLabel": "Moderator",
+        "dateLabel": "Date",
+        "unknown": "Unknown",
+        "unknownDate": "Unknown date",
+        "footerTotalWarnings": "Total Warnings: {totalWarnings}",
+        "errors": {
+          "generic": "An error occurred while fetching warnings."
+        }
+      },
+      "clearwarns": {
+        "serverOnly": "This command can only be used in a server.",
+        "usage": "Usage: `{prefix}clearwarns <user>`",
+        "invalidUser": "Please provide a valid user mention or ID.",
+        "noWarningsToClear": "That user has no warnings to clear.",
+        "success": "Successfully cleared **{currentCount}** warning(s) for **{username}** (<@{userId}>).",
+        "errors": {
+          "generic": "An error occurred while clearing warnings."
+        }
+      },
+      "slowmode": {
+        "permissionRequired": "You need the **Manage Channels** permission (or an allowed role) to use this command.",
+        "disabledInChannel": "Slowmode is currently **disabled** in this channel.",
+        "currentSlowmode": "Current slowmode is **{duration}**.",
+        "disabled": "Slowmode has been **disabled**.",
+        "failedDisable": "Failed to disable slowmode.",
+        "invalidDurationFormat": "Invalid duration format. Use: 10s, 5m, 1h (max 6 hours) or \"off\" to disable.",
+        "tooShort": "Slowmode must be at least 1 second.",
+        "tooLong": "Slowmode cannot exceed 6 hours.",
+        "setSuccess": "Set slowmode to **{duration}**.",
+        "failedSet": "Failed to set slowmode."
+      },
+      "massban": {
+        "serverOnly": "This command can only be used in a server.",
+        "usage": "**Usage:** `{prefix}massban <startMessageId> <endMessageId> [reason]`\nBans all unique authors of messages between the two boundary messages (inclusive) in the current channel.\n**Tip:** Right-click a message → Copy ID to get message IDs.",
+        "noReasonProvided": "Mass ban",
+        "invalidMessageIds": "Please provide valid message IDs (17-22 digit numbers).",
+        "couldNotDetermineChannel": "Could not determine the current channel.",
+        "couldNotAccessChannel": "Could not access this channel.",
+        "couldNotFindStartMessage": "Could not find start message with ID `{startId}` in this channel.",
+        "couldNotFindEndMessage": "Could not find end message with ID `{endId}` in this channel.",
+        "statusFetching": "⏳ Fetching messages between the two boundaries...",
+        "noBannableUsersFound": "No bannable users found between those messages (bots and yourself are excluded).",
+        "confirmTitle": "⚠️ Mass Ban Confirmation",
+        "confirmDescription": "Found **{authorCount}** unique user(s) across **{messageCount}** messages.\n\n**Reason:** {reason}\n\nReact with ✅ to confirm or ❌ to cancel.\n*This will expire in 30 seconds.*",
+        "confirmationReactionsFailed": "Could not add confirmation reactions. Make sure I have **Add Reactions** permission.",
+        "cancelled": "Mass ban cancelled.",
+        "statusBanning": "⏳ Banning {authorCount} user(s)...",
+        "resultTitle": "Mass Ban Complete",
+        "resultDescription": "**Banned:** {banned}/{total}\n**Failed:** {failed}\n**Reason:** {reason}{failuresBlock}",
+        "failuresBlock": "\n\n**Failures:**\n{failuresPreview}{moreSuffix}",
+        "failuresMoreSuffix": "\n...and {moreCount} more",
+        "failures": {
+          "networkError": "Network error",
+          "missingPermissions": "Missing permissions",
+          "unknownError": "Unknown error"
+        }
+      }
+    },
+    "admin": {
+      "clearprefix": {
+        "serverOnly": "This command can only be used in a server.",
+        "resetDone": "Server prefix has been reset to the default: `{defaultPrefix}`.",
+        "errors": {
+          "generic": "An error occurred while clearing the prefix."
+        }
+      },
+      "setprefix": {
+        "serverOnly": "This command can only be used in a server.",
+        "noCustomPrefix": "No custom prefix is set. The default prefix is being used.",
+        "currentPrefixes": "Current prefix(es): {prefixes}",
+        "prefixEmpty": "The prefix cannot be empty or only whitespace.",
+        "prefixNoSpaces": "The prefix cannot contain spaces.",
+        "prefixTooLong": "The prefix cannot be longer than {max} characters.",
+        "success": "Server prefix has been set to `{newPrefix}`.",
+        "errors": {
+          "generic": "An error occurred while setting the prefix."
+        }
+      },
+      "toggleAutomod": {
+        "serverOnly": "This command can only be used in a server.",
+        "enabled": "Automod system has been **enabled**. Level: `minimal` (anti-spam on, anti-link off). Use `!toggle-antilink` / `!toggle-antispam` to adjust.",
+        "disabled": "Automod system has been **disabled**.",
+        "errors": {
+          "generic": "An error occurred while toggling automod."
+        }
+      },
+      "toggleAntispam": {
+        "serverOnly": "This command can only be used in a server.",
+        "base": "Anti-spam filter has been **{status}**.",
+        "suffixLevelMinimal": " Automod level set to `minimal` to activate it.",
+        "suffixAutomodAlsoOff": " (Automod is also off — use `{prefix}toggle-automod` to enable it.)",
+        "errors": {
+          "generic": "An error occurred while toggling anti-spam."
+        }
+      },
+      "toggleAntilink": {
+        "serverOnly": "This command can only be used in a server.",
+        "base": "Anti-link filter has been **{status}**.",
+        "suffixLevelMinimal": " Automod level set to `minimal` to activate it.",
+        "errors": {
+          "generic": "An error occurred while toggling anti-link."
+        }
+      },
+      "toggleAntireactionspam": {
+        "serverOnly": "This command can only be used in a server.",
+        "base": "Anti-reaction spam has been **{status}**.",
+        "suffixLevelMinimal": " Automod level set to `minimal` to activate it.",
+        "suffixAutomodAlsoOff": " (Automod is also off — use `{prefix}toggle-automod` to enable it.)",
+        "errors": {
+          "generic": "An error occurred while toggling anti-reaction spam."
+        }
+      },
+      "toggleGhostping": {
+        "serverOnly": "This command can only be used in a server.",
+        "base": "Anti-ghost ping filter has been **{status}**.",
+        "noteLevelOff": "**Note:** Automod level is currently `off`. Use `{prefix}automod level minimal` (or higher) or run `{prefix}toggle-automod` for ghost ping detection to take effect.",
+        "errors": {
+          "generic": "An error occurred while toggling anti-ghost ping."
+        }
+      },
+      "setlog": {
+        "serverOnly": "This command can only be used in a server.",
+        "noLogChannel": "No log channel is set. Use `{prefix}setlog #channel` to set one.",
+        "currentLogChannel": "Current log channel: <#{channelId}>",
+        "cleared": "Mod log channel cleared.",
+        "invalidChannel": "Please provide a valid channel mention or ID.",
+        "channelDoesNotExist": "That channel does not exist in this server.",
+        "setDone": "Mod log channel has been set to <#{channelId}>.",
+        "errors": {
+          "generic": "An error occurred while setting the log channel."
+        }
+      },
+      "setserverlog": {
+        "serverOnly": "This command can only be used in a server.",
+        "defaultLabel": "Default",
+        "notSet": "Not set",
+        "noServerLogChannelSet": "No server log channel is set. Use `{prefix}setserverlog #channel` to set one.\n\nYou can also split logs by category: `{prefix}setserverlog voice #voice-logs`",
+        "allEventsDefault": "\n*All events go to the default channel. Use `{prefix}setserverlog <category> #channel` to split them.*",
+        "cleared": "Server log channel cleared.",
+        "invalidChannel": "Please provide a valid channel mention or ID.",
+        "channelDoesNotExist": "That channel does not exist in this server.",
+        "defaultChannel": "default channel",
+        "logsUsageHint": "Use `{prefix}setserverlog {category} #channel` to set, or `{prefix}setserverlog {category} clear` to reset.",
+        "logsWillGoToDefaultChannel": "**{categoryLabel}** logs will now go to the default channel.",
+        "logsWillGoToChannel": "**{categoryLabel}** logs will now go to <#{channelId}>.",
+        "invalidArgument": "Invalid argument. Usage:\n`{prefix}setserverlog #channel` - set the default log channel\n`{prefix}setserverlog <category> #channel` - split by category\nCategories: {categories}",
+        "setDone": "Server log channel has been set to <#{channelId}>.",
+        "errors": {
+          "generic": "An error occurred while setting the server log channel."
+        }
+      },
+      "roleclear": {
+        "serverOnly": "This command can only be used in a server.",
+        "usage": "Usage: `{prefix}roleclear <@role>`",
+        "invalidRole": "Please provide a valid role mention or role ID.",
+        "roleDoesNotExist": "That role does not exist in this server.",
+        "removing": "Removing **{roleName}** from all members who have it... this may take a moment.",
+        "failedFetchMembers": "Failed to fetch server members.",
+        "noMembersHaveRole": "No members currently have **{roleName}**.",
+        "donePrefix": "Done! Removed **{roleName}** from **{removed}** member(s).",
+        "doneFailedSuffix": " {failed} failed (missing permissions or unknown error)."
+      },
+      "status": {
+        "serverOnly": "This command can only be used in a server.",
+        "title": "Server Settings for {guildName}",
+        "automodSystemField": "Automod System",
+        "antiLinkField": "Anti-Link",
+        "antiSpamField": "Anti-Spam",
+        "antiReactionSpamField": "Anti-Reaction Spam",
+        "antiGhostPingField": "Anti-Ghost Ping",
+        "enabled": "Enabled ({value})",
+        "disabled": "Disabled",
+        "enabledSimple": "Enabled",
+        "disabledSimple": "Disabled",
+        "logChannelField": "Log Channel",
+        "muteRoleField": "Mute Role",
+        "customPrefixField": "Custom Prefix",
+        "logNotSet": "Not set",
+        "muteNotSet": "Not set",
+        "customPrefixDefaultValue": "Default (`{defaultPrefix}`)",
+        "footer": "Use !toggle-automod, !toggle-antilink, !toggle-antispam, !toggle-ghostping to change settings",
+        "errors": {
+          "generic": "An error occurred while fetching server settings."
+        }
+      },
+      "autorole": {
+        "serverOnly": "This command can only be used in a server.",
+        "usage": "**Usage:**\n`{prefix}autorole set <@role>` - set the role given to every new member\n`{prefix}autorole disable` - remove the auto-role\n`{prefix}autorole status` - show the current auto-role",
+        "roleRequiredUsage": "Please provide a role. Usage: `{prefix}autorole set <@role>`",
+        "invalidRole": "Please provide a valid role mention or role ID.",
+        "roleDoesNotExist": "That role does not exist in this server.",
+        "cannotManageRoleFallback": "You cannot manage that role.",
+        "hierarchyWarning": "\n\nMy role is currently below **{roleName}** - new members won't receive this role until you move my role above it in **Server Settings > Roles**.",
+        "setDone": "Auto-role set to **{roleName}**. New members will automatically receive this role when they join.",
+        "disabledNotEnabled": "Auto-role is not currently enabled.",
+        "disabledDone": "Auto-role has been disabled. New members will no longer receive a role automatically.",
+        "statusDisabled": "Auto-role is currently **disabled**. Use `{prefix}autorole set <@role>` to enable it.",
+        "statusEnabled": "Auto-role is currently set to **{roleName}** (<@&{roleId}>).",
+        "errors": {
+          "generic": "An error occurred while updating the auto-role setting."
+        }
+      },
+      "roleall": {
+        "serverOnly": "This command can only be used in a server.",
+        "usage": "Usage: `{prefix}roleall <@role>`",
+        "invalidRole": "Please provide a valid role mention or role ID.",
+        "roleDoesNotExist": "That role does not exist in this server.",
+        "cannotManageRoleFallback": "You cannot manage that role.",
+        "assigning": "Assigning **{roleName}** to all members... this may take a moment.",
+        "failedFetchMembers": "Failed to fetch server members.",
+        "noMembersFound": "No members found.",
+        "resultPrefix": "Done! Assigned **{roleName}** to **{assigned}** member(s).",
+        "skippedSuffix": " {skipped} already had it.",
+        "failedSuffix": " {failed} failed (missing permissions or unknown error)."
+      },
+      "setstaff": {
+        "serverOnly": "This command can only be used in a server.",
+        "status": "**Staff Report Configuration**\nOutput channel: {ch}\nReport inbox channel: {inbox}\nStaff role ping: {role}\n\n**Tips:**\n- In the inbox channel, set `Read Message History` to off for `@everyone` so members cannot read past messages\n- Members can still type in it - the bot deletes messages instantly and forwards them to staff",
+        "channelUsage": "Usage: `{prefix}setstaff channel <#channel>` or `{prefix}setstaff channel clear`",
+        "channelCleared": "Staff output channel has been cleared.",
+        "channelInvalid": "Please mention a valid channel or provide a channel ID.",
+        "channelSetDone": "Staff output channel set to <#{channelId}>. Reports from `{prefix}report` and the inbox channel will be forwarded there.",
+        "roleUsage": "Usage: `{prefix}setstaff role <@role>` or `{prefix}setstaff role clear`",
+        "roleCleared": "Staff role ping has been cleared. Reports will still be posted but no role will be pinged.",
+        "roleInvalid": "Please mention a valid role or provide a role ID.",
+        "roleSetDone": "Staff role set to <@&{roleId}>. They will be pinged on every new report.",
+        "reportChannelUsage": "Usage: `{prefix}setstaff reportchannel <#channel>` or `{prefix}setstaff reportchannel clear`",
+        "reportChannelCleared": "Report inbox channel has been cleared. The bot will no longer monitor that channel.",
+        "reportChannelInvalid": "Please mention a valid channel or provide a channel ID.",
+        "reportChannelSetDone": "Report inbox channel set to <#{channelId}>.\nAny message sent there will be silently deleted and forwarded to the staff output channel.\n\n**Recommended channel permissions for <#{channelId}>:**\n- `@everyone`: Send Messages = on, Read Message History = **off**, View Channel = on\n- Staff role: all permissions as normal\nThis way members can submit a report but cannot read what others have sent.",
+        "unknownSubcommand": "Unknown subcommand. Use `{prefix}setstaff status`, `{prefix}setstaff channel`, `{prefix}setstaff role`, or `{prefix}setstaff reportchannel`.",
+        "errors": {
+          "generic": "An error occurred while updating staff settings."
+        }
+      },
+      "blacklist": {
+        "serverOnly": "This command can only be used in a server.",
+        "usage": "Usage: `{prefix}blacklist add <#channel> | remove <#channel> | list | clear`\nBlacklisted channels prevent the bot from responding to non-staff members.",
+        "specifyChannelToAdd": "Please specify a channel to add. Usage: `{prefix}blacklist add <#channel>`",
+        "invalidChannel": "Invalid channel. Please use a channel mention or channel ID.",
+        "channelDoesNotExist": "That channel doesn't exist in this server.",
+        "alreadyBlacklisted": "<#{channelId}> is already blacklisted.",
+        "addedToBlacklist": "Added <#{channelId}> to the blacklist. Non-staff members cannot use bot commands there.",
+        "specifyChannelToRemove": "Please specify a channel to remove. Usage: `{prefix}blacklist remove <#channel>`",
+        "notInBlacklist": "<#{channelId}> is not in the blacklist.",
+        "removedFromBlacklist": "Removed <#{channelId}> from the blacklist.",
+        "noChannelsBlacklisted": "No channels are currently blacklisted.",
+        "blacklistedChannels": "**Blacklisted Channels:**\n{channelList}",
+        "noChannelsToClear": "There are no blacklisted channels to clear.",
+        "clearedAll": "Cleared all channels from the blacklist.",
+        "errors": {
+          "generic": "An error occurred while managing the blacklist."
+        }
+      },
+      "ticket": {
+        "serverOnly": "This command can only be used in a server.",
+        "openNotice": "Tickets are now created by reacting to the ticket panel. Ask an admin to run `{prefix}ticket setup channel create` if no panel is set up yet.",
+        "missingManageServerPermission": "You need **Manage Server** permission to configure tickets.",
+        "processingError": "An error occurred while processing the ticket command.",
+        "access": {
+          "couldNotVerifyPermissionsRightNow": "Could not verify your permissions right now. Please try again.",
+          "supportRoleOrManageServer": "You need a **support role** or **Manage Server** permission to manage tickets."
+        },
+        "help": {
+          "body": "**Ticket System**\n`{prefix}ticket claim` - claim this ticket (shows you're handling it)\n`{prefix}ticket close [reason]` - close the current ticket\n`{prefix}ticket add <@user>` - add a user to the ticket\n`{prefix}ticket remove <@user>` - remove a user from the ticket\n`{prefix}ticket panel [#channel]` - post the ticket reaction panel\n`{prefix}ticket setup` - configure the ticket system (admin)\n\n*To create a ticket, react to the ticket panel message in the designated channel.*"
+        },
+        "setup": {
+          "category": {
+            "usage": "Usage: `{prefix}ticket setup category <categoryId>`\nProvide the ID of an existing category channel, or `create` to make one.",
+            "created": "Ticket category created: **Tickets** (<#{categoryId}>)",
+            "failedToCreate": "Failed to create category: {error}",
+            "invalidCategoryId": "Please provide a valid category channel ID.",
+            "setDone": "Ticket category set to <#{categoryId}>."
+          },
+          "channel": {
+            "setupFirst": "Set up a ticket category first: `{prefix}ticket setup category <id|create>`",
+            "created": "Ticket channel created: <#{channelId}> - users can now react to create tickets!",
+            "failedToCreate": "Failed to create ticket channel: {error}",
+            "invalidChannelId": "Please mention a valid channel or provide a channel ID.",
+            "couldNotFind": "Could not find that channel.",
+            "botPermissionUpdateFailed": "I couldn't update my permissions in <#{channelId}>. Make sure I have **Manage Channels** or manually grant me **Send Messages** and **Add Reactions** in that channel.",
+            "panelPosted": "Ticket panel posted in <#{channelId}> - users can now react to create tickets!",
+            "failedToPostPanel": "Failed to post ticket panel: {error}"
+          },
+          "role": {
+            "noSupportRoles": "No support roles configured.\n\n`{prefix}ticket setup role add <@role>` - add a support role\n`{prefix}ticket setup role remove <@role>` - remove a support role\n`{prefix}ticket setup role clear` - remove all support roles",
+            "list": "**Support Roles ({count})**: {roleList}",
+            "clearedAll": "All ticket support roles cleared.",
+            "addUsage": "Usage: `{prefix}ticket setup role add <@role>`",
+            "removeUsage": "Usage: `{prefix}ticket setup role remove <@role>`",
+            "invalidRoleId": "Please mention a valid role or provide a role ID.",
+            "alreadySupportRole": "<@&{roleId}> is already a support role.",
+            "maxSupportRoles": "Maximum of 10 support roles allowed.",
+            "added": "<@&{roleId}> added as a ticket support role. ({total} total)",
+            "notSupportRole": "<@&{roleId}> is not a support role.",
+            "removed": "<@&{roleId}> removed from ticket support roles. ({remaining} remaining)",
+            "generalListUsage": "Usage:\n`{prefix}ticket setup role add <@role>` - add a support role\n`{prefix}ticket setup role remove <@role>` - remove a support role\n`{prefix}ticket setup role clear` - remove all\n`{prefix}ticket setup role` - list current roles"
+          },
+          "log": {
+            "usage": "Usage: `{prefix}ticket setup log <#channel>`",
+            "cleared": "Ticket log channel cleared.",
+            "invalidChannelId": "Please mention a valid channel or provide a channel ID.",
+            "setDone": "Ticket log channel set to <#{channelId}>."
+          },
+          "max": {
+            "usage": "Usage: `{prefix}ticket setup max <1-10>` - max open tickets per user.",
+            "setDone": "Max open tickets per user set to **{maxOpen}**."
+          },
+          "message": {
+            "usage": "Usage: `{prefix}ticket setup message <text>` or `{prefix}ticket setup message clear`\nVariables: `{user}` `{server}` `{ticket}`",
+            "cleared": "Custom ticket open message cleared.",
+            "tooLong": "Message too long (max 1000 characters).",
+            "setDone": "Ticket open message set."
+          }
+        },
+        "claim": {
+          "ticketNotOpen": "This command can only be used inside an open ticket channel.",
+          "alreadyClaimed": "This ticket is already claimed by <@{claimedBy}>."
+        },
+        "close": {
+          "ticketNotOpen": "This channel is not an open ticket. Use this command inside a ticket channel.",
+          "noReasonProvided": "No reason provided"
+        },
+        "add": {
+          "ticketNotOpen": "This command can only be used inside an open ticket channel.",
+          "usage": "Usage: `{prefix}ticket add <@user>`",
+          "channelNotFound": "Could not find this channel.",
+          "added": "<@{userId}> has been added to this ticket.",
+          "failedToAddUser": "Failed to add user: {error}"
+        },
+        "remove": {
+          "ticketNotOpen": "This command can only be used inside an open ticket channel.",
+          "usage": "Usage: `{prefix}ticket remove <@user>`",
+          "openedByCannotRemove": "You cannot remove the person who opened the ticket.",
+          "channelNotFound": "Could not find this channel.",
+          "removed": "<@{userId}> has been removed from this ticket.",
+          "failedToRemoveUser": "Failed to remove user: {error}"
+        },
+        "panel": {
+          "ticketNotSetup": "Ticket system is not set up. Run `{prefix}ticket setup category <id|create>` first.",
+          "channelNotFound": "Could not find the target channel.",
+          "posted": "Ticket panel posted in <#{channelId}> - users can react to create tickets!",
+          "failedToSend": "Failed to send panel: {error}"
+        },
+        "user": {
+          "panelEmbed": {
+            "title": "Support Tickets",
+            "description": "Need help? React with {emoji} below to create a ticket!\n\nA private channel will be created for you and a staff member will assist you as soon as possible.\n\n*You can only create one ticket every 10 minutes.*",
+            "footer": "React below to open a ticket"
+          },
+          "ticketEmbed": {
+            "title": "Ticket #{ticketNumber}",
+            "subjectField": "Subject"
+          },
+          "defaultOpenMessage": "Welcome <@{userId}>! A staff member will be with you shortly.\n\nUse `{prefix}ticket close` to close this ticket when your issue is resolved.",
+          "createdNotice": "Your ticket has been created! Head over to <#{channelId}> (ticket #{ticketNumber}).",
+          "reasons": {
+            "maxOpenTickets": "You already have **{openTickets}** open ticket(s). Maximum is **{maxOpen}**. Please close an existing ticket first.",
+            "waitCooldown": "Please wait **{remaining}** before creating another ticket.",
+            "failedToCreateChannel": "Failed to create ticket channel: {error}"
+          },
+          "claimEmbed": {
+            "title": "Ticket #{ticketNumber} - Claimed",
+            "description": "<@{userId}> has claimed this ticket and will be handling it."
+          },
+          "closeEmbed": {
+            "title": "Ticket #{ticketNumber} - Closed",
+            "description": "Closed by <@{userId}>",
+            "reasonField": "Reason",
+            "claimedByField": "Claimed By"
+          },
+          "logEmbed": {
+            "titleClosed": "Ticket #{ticketNumber} Closed",
+            "openedByField": "Opened By",
+            "closedByField": "Closed By",
+            "claimedByField": "Claimed By",
+            "reasonField": "Reason",
+            "subjectField": "Subject",
+            "messagesField": "Messages"
+          },
+          "dmEmbed": {
+            "titleClosed": "Ticket #{ticketNumber} - Closed",
+            "description": "Your ticket in **{guildName}** was closed by <@{userId}>.",
+            "reasonField": "Reason"
+          }
+        },
+        "setupEmbed": {
+          "title": "Ticket System Configuration",
+          "notSet": "Not set",
+          "customMessageValues": {
+            "set": "Set",
+            "default": "Default"
+          },
+          "fields": {
+            "category": "Category",
+            "ticketChannel": "Ticket Channel",
+            "supportRole": "Support Role",
+            "logChannel": "Log Channel",
+            "maxOpen": "Max Open",
+            "customMessage": "Custom Message",
+            "setupCommands": "Setup Commands"
+          },
+          "setupCommands": "`{prefix}ticket setup category <id|create>` - set ticket category\n`{prefix}ticket setup channel [#channel|create]` - set/create the ticket reaction channel\n`{prefix}ticket setup role add/remove <@role>` - manage support roles\n`{prefix}ticket setup log <#channel>` - set transcript log channel\n`{prefix}ticket setup max <1-10>` - max open tickets per user\n`{prefix}ticket setup message <text>` - custom open message ({user} {server} {ticket})"
+        }
+      },
+      "automod": {
+        "serverOnly": "This command can only be used in a server.",
+        "errorGeneric": "There was an error executing this command.",
+        "yes": "Yes",
+        "no": "No",
+        "levelDescriptions": {
+          "off": "All automod modules disabled",
+          "minimal": "Anti-spam on, anti-link off, relaxed mention/line limits",
+          "medium": "Anti-spam + anti-link + anti-reaction spam on, moderate limits",
+          "high": "Anti-spam + anti-link + anti-reaction spam on, strict limits"
+        },
+        "status": {
+          "none": "None",
+          "title": "Automod Settings - {guildName}",
+          "fieldLevel": "Level",
+          "fieldAntiSpam": "Anti-Spam",
+          "fieldAntiLink": "Anti-Link",
+          "fieldAntiReactionSpam": "Anti-Reaction Spam",
+          "fieldGhostPing": "Ghost Ping",
+          "fieldSpamThresholds": "Spam Thresholds",
+          "fieldAllowedDomains": "Allowed Domains (extra)",
+          "fieldExemptRoles": "Exempt Roles",
+          "fieldExemptChannels": "Exempt Channels",
+          "levelValue": "`{level}` - {description}",
+          "spamThresholdsValue": "**Max messages:** {maxMessages} per **{timeWindow}s** window\n**Timeout after:** {violationThreshold} violations -> {timeoutDuration} min timeout",
+          "footer": "Use !automod <subcommand> to change settings"
+        },
+        "level": {
+          "validLevels": "Valid levels: `{levels}`",
+          "setDone": "Automod level set to `{level}`. {description}."
+        },
+        "spam": {
+          "messagesRange": "`messages` must be between 2 and 20.",
+          "windowRange": "`window` must be between 1 and 60 seconds.",
+          "timeoutRange": "`timeout` must be between 1 and 60 minutes.",
+          "violationsRange": "`violations` must be between 1 and 10.",
+          "usage": "Usage: `!automod spam <messages|window|timeout|violations> <value>`\n- `messages` - max messages per window (2-20, default 5)\n- `window` - tracking window in seconds (1-60, default 5)\n- `timeout` - timeout length in minutes (1-60, default 10)\n- `violations` - violations before timeout (1-10, default 3)",
+          "updated": "Spam settings updated.\nMax **{maxMessages}** messages per **{timeWindow}s** -> timeout after **{violationThreshold}** violations (**{timeoutDuration} min**)."
+        },
+        "link": {
+          "usage": "Usage:\n`!automod link allow <domain>` - exempt a domain from the link filter\n`!automod link deny <domain>` - remove a domain exemption\n\nExample: `!automod link allow youtube.com`",
+          "alreadyAllowed": "`{domain}` is already in the allowed list.",
+          "added": "`{domain}` added to the link allowlist. Links from this domain will no longer be deleted.",
+          "notAllowed": "`{domain}` is not in the allowed list.",
+          "removed": "`{domain}` removed from the link allowlist."
+        },
+        "reactionspam": {
+          "usage": "Usage: `!automod reactionspam <on|off>`",
+          "base": "Anti-reaction spam has been **{status}**.",
+          "activatedMinimal": " Automod level set to `minimal` to activate it."
+        },
+        "ghostping": {
+          "usage": "Usage: `!automod ghostping <on|off>`",
+          "base": "Ghost ping detection has been **{status}**.",
+          "noteLevelOff": "\n**Note:** Automod level is `off` - run `!automod level minimal` for this to take effect."
+        },
+        "exempt": {
+          "usage": "Usage:\n`!automod exempt role add <@role>` - exempt a role from all automod checks\n`!automod exempt role remove <@role>` - remove role exemption\n`!automod exempt channel add <#channel>` - disable automod in a channel\n`!automod exempt channel remove <#channel>` - re-enable automod in a channel",
+          "invalidRole": "Please provide a valid role mention or role ID.",
+          "roleAlreadyExempt": "That role is already exempt.",
+          "roleNowExempt": "Members with <@&{roleId}> are now exempt from automod.",
+          "roleNotExempt": "That role is not in the exempt list.",
+          "roleNoLongerExempt": "<@&{roleId}> is no longer exempt from automod.",
+          "invalidChannel": "Please provide a valid channel mention or channel ID.",
+          "channelAlreadyExempt": "That channel is already exempt.",
+          "channelNowDisabled": "Automod is now disabled in <#{channelId}>.",
+          "channelNotExempt": "That channel is not in the exempt list.",
+          "channelReEnabled": "Automod has been re-enabled in <#{channelId}>."
+        },
+        "help": {
+          "title": "Automod - Subcommands",
+          "fieldStatusName": "!automod status",
+          "fieldStatusValue": "Show all current automod settings",
+          "fieldLevelName": "!automod level <off|minimal|medium|high>",
+          "fieldLevelValue": "`off` - disable all\n`minimal` - anti-spam only\n`medium` - anti-spam + anti-link\n`high` - anti-spam + anti-link, strict limits",
+          "fieldSpamName": "!automod spam <messages|window|timeout|violations> <value>",
+          "fieldSpamValue": "Fine-tune spam detection:\n`messages` 2-20 (default 5) - `window` 1-60 s (default 5)\n`violations` 1-10 (default 3) - `timeout` 1-60 min (default 10)",
+          "fieldLinkName": "!automod link <allow|deny> <domain>",
+          "fieldLinkValue": "Manage domains exempt from the link filter\nExample: `!automod link allow youtube.com`",
+          "fieldReactionSpamName": "!automod reactionspam <on|off>",
+          "fieldReactionSpamValue": "Enable or disable anti-reaction spam detection",
+          "fieldGhostPingName": "!automod ghostping <on|off>",
+          "fieldGhostPingValue": "Enable or disable ghost-ping detection",
+          "fieldExemptRoleName": "!automod exempt role <add|remove> <@role>",
+          "fieldExemptRoleValue": "Exempt a role from all automod checks",
+          "fieldExemptChannelName": "!automod exempt channel <add|remove> <#channel>",
+          "fieldExemptChannelValue": "Disable automod in a specific channel",
+          "footer": "Requires Manage Server permission"
+        }
+      },
+      "starboard": {
+        "serverOnly": "This command can only be used in a server.",
+        "adminRequired": "You need **Manage Server** permission to configure the starboard.",
+        "errors": {
+          "generic": "An error occurred while executing the starboard command."
+        },
+        "help": {
+          "title": "starboard",
+          "description": "Starboard highlights popular messages.",
+          "fieldUsage": "Usage",
+          "fieldAliases": "Aliases",
+          "fieldCooldown": "Cooldown",
+          "fieldPublic": "Public",
+          "fieldAdmin": "Admin"
+        },
+        "setup": {
+          "usage": "Usage: `{prefix}starboard setup #channel`",
+          "invalidChannel": "Please provide a valid channel mention or ID.",
+          "channelDoesNotExist": "That channel does not exist in this server.",
+          "title": "⭐ Starboard Channel Set",
+          "description": "Starboard channel has been set to <#{channelId}> and the starboard is now **enabled**.",
+          "fieldThreshold": "Threshold",
+          "fieldEmoji": "Emoji",
+          "thresholdReactions": "{threshold} reactions"
+        },
+        "threshold": {
+          "usage": "Usage: `{prefix}starboard threshold <1-100>`\nCurrent: **{current}**",
+          "setDone": "⭐ Starboard threshold set to **{threshold}** reaction(s)."
+        },
+        "emoji": {
+          "usage": "Usage: `{prefix}starboard emoji <emoji>`\nCurrent: **{currentEmoji}**",
+          "setDone": "⭐ Starboard emoji set to {emoji}"
+        },
+        "toggle": {
+          "setDone": "⭐ Starboard is now **{status}**."
+        },
+        "selfstar": {
+          "setDone": "⭐ Self-starring is now **{status}**."
+        },
+        "ignorechannel": {
+          "usage": "Usage: `{prefix}starboard ignorechannel #channel`",
+          "invalidChannel": "Please provide a valid channel mention or ID.",
+          "nowIgnored": "⭐ <#{channelId}> is now **ignored** by the starboard.",
+          "noLongerIgnored": "⭐ <#{channelId}> is no longer ignored by the starboard."
+        },
+        "ignorerole": {
+          "usage": "Usage: `{prefix}starboard ignorerole @role`",
+          "invalidRole": "Please provide a valid role mention or ID.",
+          "nowExcluded": "⭐ <@&{roleId}> is now **excluded** from starring.",
+          "canStarAgain": "⭐ <@&{roleId}> can now star messages again."
+        },
+        "settings": {
+          "title": "⭐ Starboard Configuration",
+          "status": "Status",
+          "enabled": "✅ Enabled",
+          "disabled": "❌ Disabled",
+          "channel": "Channel",
+          "notSet": "Not set",
+          "threshold": "Threshold",
+          "thresholdReactions": "{threshold} reactions",
+          "emoji": "Emoji",
+          "selfStar": "Self-Star",
+          "allowed": "Allowed",
+          "notAllowed": "Not allowed",
+          "ignoreBots": "Ignore Bots",
+          "yes": "Yes",
+          "no": "No",
+          "ignoredChannels": "Ignored Channels",
+          "ignoredRoles": "Ignored Roles",
+          "none": "None"
+        },
+        "leaderboard": {
+          "none": "No starred messages yet!",
+          "title": "⭐ Starboard Leaderboard",
+          "footer": "Top {count} starred messages"
+        },
+        "topusers": {
+          "none": "No starred messages yet!",
+          "title": "⭐ Top Starred Users",
+          "footer": "Top {count} users by total stars received"
+        },
+        "stats": {
+          "title": "⭐ Starboard Statistics",
+          "trackedMessages": "Tracked Messages",
+          "totalStars": "Total Stars",
+          "postedToStarboard": "Posted to Starboard"
+        },
+        "force": {
+          "usage": "Usage: `{prefix}starboard force <messageLink|messageId> [channelId]`",
+          "noStarboardChannel": "No starboard channel is set. Use `{prefix}starboard setup #channel` first.",
+          "invalidMessageLinkOrId": "Please provide a valid message link or message ID.",
+          "couldNotDetermineChannel": "Could not determine the channel. Provide a message link or include the channel.",
+          "couldNotFetchMessage": "Could not fetch that message.",
+          "forceAdded": "⭐ Message has been force-added to the starboard!",
+          "failed": "Failed to force-add message: {error}",
+          "unknownError": "Unknown error"
+        },
+        "remove": {
+          "usage": "Usage: `{prefix}starboard remove <messageId>`",
+          "invalidMessageId": "Please provide a valid message ID.",
+          "notInStarboard": "That message is not in the starboard.",
+          "done": "⭐ Message has been removed from the starboard."
+        },
+        "unknownSubcommand": "Unknown subcommand. Use `{prefix}starboard help` for a list of commands."
+      },
+      "reactionrole": {
+        "serverOnly": "This command can only be used in a server.",
+        "errors": {
+          "postFailed": "Failed to post the panel. Check that I have permission to send messages there.",
+          "saveFailed": "Failed to save the reaction role. Please try again.",
+          "editFailed": "Failed to edit the panel. Make sure the message belongs to me.",
+          "updateFailed": "Failed to update the reaction role. Please try again.",
+          "clearFailed": "Failed to clear reaction roles. Please try again.",
+          "listFailed": "Failed to retrieve reaction roles. Please try again.",
+          "dmUpdateFailed": "Failed to update DM setting. Please try again.",
+          "switchSaveFailed": "Failed to save the reaction role switch. Please try again."
+        },
+        "help": {
+          "title": "Reaction Role Commands",
+          "fieldPostName": "{prefix}rr post <#channel> [text]",
+          "fieldPostValue": "Bot posts a reaction role panel in the channel",
+          "fieldAddName": "{prefix}rr add <#channel> <messageId> <emoji> <@role>",
+          "fieldAddValue": "Map an emoji to a role on a message\nPaste the emoji directly or use a shortcode - find emojis at [getemoji.com](https://getemoji.com)",
+          "fieldAddMultiName": "{prefix}rr addmulti <#channel> <messageId> <emoji> <@role1> <@role2> ...",
+          "fieldAddMultiValue": "Map an emoji to **multiple roles** at once (up to 10)",
+          "fieldRemoveName": "{prefix}rr remove <#channel> <messageId> <emoji>",
+          "fieldRemoveValue": "Remove an emoji-role mapping",
+          "fieldEditName": "{prefix}rr edit <#channel> <messageId> [new text]",
+          "fieldEditValue": "Edit the text of an existing reaction role panel",
+          "fieldClearName": "{prefix}rr clear <messageId>",
+          "fieldClearValue": "Remove all reaction roles from a message and reset it to 0/20",
+          "fieldListName": "{prefix}rr list",
+          "fieldListValue": "List all configured reaction role panels",
+          "fieldDmName": "{prefix}rr dm <on|off>",
+          "fieldDmValue": "Toggle DM notifications when roles are assigned/removed",
+          "fieldSwitchName": "{prefix}rr switch <#channel> <messageId> <emoji> <@removeRole> <@addRole>",
+          "fieldSwitchValue": "Map an emoji to switch roles: removes one role and adds another",
+          "footer": "Tip: Copy emoji characters directly from getemoji.com - shortcodes like :white_check_mark: also work"
+        },
+        "common": {
+          "channelNotFound": "Channel not found.",
+          "channelNotFoundDetailed": "Channel not found. Mention it, use its ID, or type its name.",
+          "invalidEmoji": "Invalid emoji. Use the emoji directly (paste it), a shortcode (`:white_check_mark:`), or a custom server emoji (`<:name:id>`).",
+          "messageNotFoundDetailed": "Message not found in that channel. Double-check the message ID and channel.",
+          "maxPairs": "This panel already has the maximum of 20 emoji-role pairs.",
+          "alreadyMapped": "{emojiArg} is already mapped on that message.",
+          "reactPermissionError": "I couldn't add the {emojiArg} reaction to that message. Check that the emoji is valid and I have **Add Reactions** permission in <#{channelId}>."
+        },
+        "post": {
+          "usage": "Usage: `{prefix}rr post <#channel> [message text]`",
+          "success": "Panel posted in <#{channelId}>.\nMessage ID: `{messageId}`\n\nTo add roles to this panel, use:\n`{prefix}rr add #{channelName} {messageId} <emoji> <@role>`\n\n**Example:** `{prefix}rr add #{channelName} {messageId} ⭐ @Member`"
+        },
+        "add": {
+          "usage": "Usage: `{prefix}rr add <#channel> <messageId> <emoji> <@role>`",
+          "invalidRole": "Invalid role. Mention a role, provide its ID, or type the role name.",
+          "roleNotFound": "Role not found. Make sure the role exists and the bot can see it.",
+          "cannotManageRoleFallback": "You cannot manage that role.",
+          "done": "Done! {emojiArg} is now mapped to <@&{roleId}>.{hierarchyWarning}"
+        },
+        "edit": {
+          "usage": "Usage: `{prefix}rr edit <#channel> <messageId> [new text]`\nLeave text empty to be prompted for it.",
+          "panelNotFound": "No reaction role panel found for that message. Use `{prefix}rr list` to see configured panels.",
+          "missingTextPrompt": "Please provide the new text for the panel.\nUsage: `{prefix}rr edit #{channelName} {messageId} Your new panel text here`\n\nTip: You can use markdown formatting like **bold**, *italic*, __underline__, and ~~strikethrough~~.",
+          "updated": "Panel updated in <#{channelId}>."
+        },
+        "remove": {
+          "usage": "Usage: `{prefix}rr remove <#channel> <messageId> <emoji>`",
+          "noneConfigured": "No reaction roles configured for that message.",
+          "mappingNotFound": "No mapping found for {emojiArg} on that message.",
+          "done": "Removed the {emojiArg} mapping."
+        },
+        "clear": {
+          "usage": "Usage: `{prefix}rr clear <messageId>`",
+          "noneFound": "No reaction roles found for that message ID. Use `{prefix}rr list` to see configured panels.",
+          "done": "Cleared {count} reaction role(s) from that message. You can now re-add up to 20."
+        },
+        "list": {
+          "noneConfigured": "No reaction role panels configured in this server.",
+          "title": "Reaction Role Panels",
+          "panelName": "Panel {index} - <#{channelId}> | `{messageId}`",
+          "noMappingsYet": "_No emoji mappings yet_",
+          "dmOn": "On",
+          "dmOff": "Off",
+          "footer": "DM Notifications: {dmStatus} - use \"{prefix}rr dm on/off\" to toggle"
+        },
+        "dm": {
+          "usage": "Usage: `{prefix}rr dm <on|off>`",
+          "done": "DM notifications for reaction roles are now **{toggle}**."
+        },
+        "switch": {
+          "usage": "Usage: `{prefix}rr switch <#channel> <messageId> <emoji> <@removeRole> <@addRole>`\nWhen a user reacts, the bot will **remove** the first role and **add** the second.",
+          "invalidRemoveRole": "Invalid remove role. Mention a role, provide its ID, or type the role name.",
+          "invalidAddRole": "Invalid add role. Mention a role, provide its ID, or type the role name.",
+          "messageNotFound": "Message not found in that channel.",
+          "addRoleNotFound": "Add-role not found. Make sure the role exists and the bot can see it.",
+          "removeRoleNotFound": "Remove-role not found. Make sure the role exists and the bot can see it.",
+          "cannotManageAddRoleFallback": "You cannot manage the add-role.",
+          "cannotManageRemoveRoleFallback": "You cannot manage the remove-role.",
+          "alreadyMappedRemoveFirst": "{emojiArg} is already mapped on that message. Remove it first with `{prefix}rr remove`.",
+          "done": "Switch mapped: {emojiArg} -> remove **{removeRoleName}**, add **{addRoleName}** on that message."
+        },
+        "addmulti": {
+          "usage": "Usage: `{prefix}rr addmulti <#channel> <messageId> <emoji> <@role1> <@role2> ...`\nAssign **multiple roles** with one reaction (minimum 2 roles, max 10).",
+          "maxRoles": "Maximum of 10 roles per emoji.",
+          "invalidRole": "Invalid role: `{roleArg}`. Mention a role, provide its ID, or type the role name.",
+          "duplicateRole": "Duplicate role: <@&{roleId}>.",
+          "roleNotFound": "Role not found: `{roleId}`. Make sure the role exists and the bot can see it.",
+          "cannotManageRoleFallback": "You cannot manage the role **{roleName}**.",
+          "alreadyMappedRemoveFirst": "{emojiArg} is already mapped on that message. Remove it first with `{prefix}rr remove`.",
+          "done": "Done! {emojiArg} is now mapped to **{roleCount} roles**: {roleList}."
+        }
+      },
+      "slowmodeperms": {
+        "serverOnly": "This command can only be used in a server.",
+        "usage": "**Slowmode Permissions**\nAllow specific roles to use `{prefix}slowmode` without needing Manage Channels permission.\n\n`{prefix}slowmodeperms add <@role>` - allow a role to use slowmode\n`{prefix}slowmodeperms remove <@role>` - remove a role from the allowlist\n`{prefix}slowmodeperms list` - show allowed roles\n`{prefix}slowmodeperms clear` - clear all (only Manage Channels users can use slowmode)",
+        "roleRequiredUsageAdd": "Please specify a role. Usage: `{prefix}slowmodeperms add <@role>`",
+        "roleRequiredUsageRemove": "Please specify a role. Usage: `{prefix}slowmodeperms remove <@role>`",
+        "invalidRole": "Invalid role. Please use a role mention or role ID.",
+        "roleDoesNotExist": "That role doesn't exist in this server.",
+        "alreadyAllowed": "**{roleName}** is already in the slowmode allowlist.",
+        "added": "Added **{roleName}** to the slowmode allowlist. Members with this role can use `{prefix}slowmode` without Manage Channels permission.",
+        "notInAllowlist": "That role is not in the slowmode allowlist.",
+        "removed": "Removed <@&{roleId}> from the slowmode allowlist.",
+        "noteAllowlistEmpty": " The allowlist is now empty - only users with Manage Channels can use slowmode.",
+        "noAllowOverrides": "No slowmode role overrides are set. Only users with Manage Channels permission can use `{prefix}slowmode`.",
+        "list": "**Slowmode Allowed Roles:**\n{roleList}\n\nMembers with one of these roles can use `{prefix}slowmode` without Manage Channels permission.",
+        "noOverridesToClear": "No slowmode role overrides to clear.",
+        "clearedAll": "Cleared all slowmode role overrides. Only users with Manage Channels permission can use `{prefix}slowmode`.",
+        "errors": {
+          "generic": "An error occurred while managing slowmode permissions."
+        }
+      },
+      "commandperms": {
+        "serverOnly": "This command can only be used in a server.",
+        "usage": "**Command Permissions**\nRestrict bot command usage to specific roles. When set, only members with an allowed role (or staff/admins) can use non-admin commands.\n\n`{prefix}commandperms add <@role>` - allow a role to use commands\n`{prefix}commandperms remove <@role>` - remove a role from the allowlist\n`{prefix}commandperms list` - show allowed roles\n`{prefix}commandperms clear` - clear all (everyone can use commands)",
+        "roleRequiredUsageAdd": "Please specify a role. Usage: `{prefix}commandperms add <@role>`",
+        "roleRequiredUsageRemove": "Please specify a role. Usage: `{prefix}commandperms remove <@role>`",
+        "invalidRole": "Invalid role. Please use a role mention or role ID.",
+        "roleDoesNotExist": "That role doesn't exist in this server.",
+        "alreadyAllowed": "**{roleName}** is already in the command allowlist.",
+        "added": "Added **{roleName}** to the command allowlist. Members with this role can use bot commands.",
+        "notInAllowlist": "That role is not in the command allowlist.",
+        "removed": "Removed <@&{roleId}> from the command allowlist.",
+        "noteAllowlistEmpty": " The allowlist is now empty - everyone can use commands again.",
+        "noRestrictions": "No command role restrictions are set. Everyone can use bot commands.",
+        "list": "**Allowed Command Roles:**\n{roleList}\n\nOnly members with one of these roles (plus staff/admins) can use non-admin commands.",
+        "noRestrictionsToClear": "No command role restrictions to clear.",
+        "clearedAll": "Cleared all command role restrictions. Everyone can use bot commands again.",
+        "errors": {
+          "generic": "An error occurred while managing command permissions."
+        }
+      },
+      "keywords": {
+        "serverOnly": "This command can only be used in a server.",
+        "statusEnabled": "**Enabled**",
+        "statusDisabled": "**Disabled**",
+        "actionLine": "Action: `{action}`",
+        "showListEmpty": "**Keyword System** - {statusLine} | {actionLine}\n\nNo keywords configured. Use `{prefix}keywords add <word>` to add one.",
+        "showList": "**Keyword System** - {statusLine} | {actionLine}\n\n{list}\n\n{usedCount}/{max} keywords used.",
+        "setEnabledEnabled": "Keyword warning system **enabled**.",
+        "setEnabledDisabled": "Keyword warning system **disabled**.",
+        "addUsage": "Usage:\n`{prefix}keywords add <word>` - plain match\n`{prefix}keywords add regex <pattern>` - regex match",
+        "regexPatternRequired": "Please provide a regex pattern after `regex`.",
+        "invalidRegexPattern": "Invalid regex pattern: `{error}`",
+        "regexRejected": "Regex rejected: {reason} Simplify it or use a plain keyword instead.",
+        "maxKeywordsReached": "Maximum of {max} keywords reached. Remove one first.",
+        "duplicatePattern": "That pattern is already in the list.",
+        "tagKeyword": "keyword",
+        "tagRegexPattern": "regex pattern",
+        "added": "Added {tag}: `{pattern}`\n\nDon't forget to `{prefix}keywords enable` if the system is off.",
+        "removeInvalidNumber": "Please give a valid number (1–{max}). Use `{prefix}keywords list` to see numbers.",
+        "removed": "Removed keyword #{num}: `{pattern}`",
+        "validActions": "Valid actions: `warn`, `delete`, `delete+warn`",
+        "actionWarn": "Issue a warning but leave the message.",
+        "actionDelete": "Silently delete the message, no warning.",
+        "actionDeleteWarn": "Delete the message and issue a warning.",
+        "actionSetDone": "Action set to `{action}` - {description}",
+        "testMissingText": "Provide some text to test: `{prefix}keywords test <your text here>`",
+        "noKeywordsConfigured": "No keywords configured yet.",
+        "noKeywordsMatched": "No keywords matched: `{preview}`",
+        "testMatches": "**Matched {hitsCount} keyword(s):**\n{hits}",
+        "unknownSubcommand": "Unknown subcommand. Use `{prefix}keywords` to see all options."
+      }
+    },
+    "botinfo": {
+      "title": "Bot Information",
+      "unknown": "Unknown",
+      "requestedBy": "Requested by {username}",
+      "labelName": "Name",
+      "labelId": "ID",
+      "labelVersion": "Version",
+      "labelUptime": "Uptime",
+      "labelMemory": "Memory",
+      "labelServers": "Servers",
+      "labelNode": "Node.js",
+      "labelLibrary": "Library",
+      "libraryName": "Erin.JS",
+      "uptimeFormat": "{days}d {hours}h {minutes}m {seconds}s",
+      "memoryFormat": "{usedMemory}MB / {totalMemory}MB",
+      "errorFetchFailed": "An error occurred while fetching bot information."
+    },
+    "help": {
+      "handlerMissing": "Command handler not available.",
+      "errors": {
+        "commandNotFound": "No command called `{commandName}` found. Use `{prefix}help` to see all commands.",
+        "generic": "An error occurred while generating help information."
+      },
+      "menuTitle": "Fluxy — Help Menu",
+      "menuDescription": "Prefix: **`{prefix}`**\nUse `{prefix}help <command>` for detailed info on any command.\n[Full Documentation](https://docs.fluxy.gay) • [Web Dashboard](https://fluxy.gay)",
+      "menuFooter": "{prefix}help <command> for details • Dashboard: fluxy.gay",
+      "commandListHeader": "**Fluxy — Command List** • Prefix: `{prefix}`"
+    }
+  }
+}
