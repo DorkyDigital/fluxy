@@ -5,23 +5,51 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
-  build-and-test:
+  format-check:
+    name: Format Check
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [22]
+    timeout-minutes: 10
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Use Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: '22'
           cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check formatting
+        run: npm run format:check
+
+  bot-ci:
+    name: Bot Build, Lint, and Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -35,15 +63,63 @@ jobs:
       - name: Validate locales
         run: npm run i18n:check
 
-      - name: Security audit
-        run: npm audit --audit-level=high
-        continue-on-error: true
-
-      - name: Dashboard security audit
-        run: cd dashboard && npm audit --audit-level=high
-        continue-on-error: true
-
       - name: Run tests
         run: npm test
         env:
           NODE_ENV: test
+
+  dashboard-build:
+    name: Dashboard Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: dashboard
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: dashboard/package-lock.json
+
+      - name: Install dashboard dependencies
+        run: npm ci
+
+      - name: Build dashboard
+        run: npm run build
+
+  dependency-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            dashboard/package-lock.json
+
+      - name: Install bot dependencies
+        run: npm ci
+
+      - name: Audit bot production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Install dashboard dependencies
+        working-directory: dashboard
+        run: npm ci
+
+      - name: Audit dashboard production dependencies
+        working-directory: dashboard
+        run: npm audit --omit=dev --audit-level=high

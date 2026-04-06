@@ -1,7 +1,32 @@
 version: 2
 updates:
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: npm
+    directory: /
     schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      typescript-eslint:
+        patterns:
+          - '@typescript-eslint/*'
+      sentry:
+        patterns:
+          - '@sentry/*'
+  - package-ecosystem: npm
+    directory: /dashboard
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      react:
+        patterns:
+          - react
+          - react-dom
+          - react-router-dom
+          - '@types/react'
+          - '@types/react-dom'
+      radix:
+        patterns:
+          - '@radix-ui/*'
