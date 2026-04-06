@@ -1129,7 +1129,7 @@
       "labelServers": "Servers",
       "labelNode": "Node.js",
       "labelLibrary": "Library",
-      "libraryName": "Fluxer.js",
+      "libraryName": "Erin.JS",
       "uptimeFormat": "{days}d {hours}h {minutes}m {seconds}s",
       "memoryFormat": "{usedMemory}MB / {totalMemory}MB",
       "errorFetchFailed": "An error occurred while fetching bot information."
@@ -1147,4 +1147,3 @@
     }
   }
 }
-
