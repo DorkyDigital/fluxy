@@ -2,10 +2,15 @@ import type { Request, Response, NextFunction } from 'express';
 import type { Client } from '@erinjs/core';
 import crypto from 'crypto';
 import config from '../../config';
+import { t } from '../../i18n';
 
 const tokenCache = new Map<string, { userId: string; expiresAt: number }>();
 const TOKEN_CACHE_TTL = 10 * 60 * 1000;
 const MAX_CACHE_SIZE = 1000;
+
+function authT(key: string): string {
+  return t('en', `auditCatalog.api.middleware.auth.${key}`);
+}
 
 setInterval(() => {
   const now = Date.now();
@@ -79,7 +84,7 @@ export function createAuthMiddleware(_client: Client) {
     }
 
     if (!token) {
-      res.status(401).json({ error: 'Missing or invalid authorization' });
+      res.status(401).json({ error: authT('missingOrInvalidAuthorization') });
       return;
     }
 
@@ -92,7 +97,7 @@ export function createAuthMiddleware(_client: Client) {
 
     const userId = await validateFluxerToken(token);
     if (!userId) {
-      res.status(401).json({ error: 'Invalid or expired token' });
+      res.status(401).json({ error: authT('invalidOrExpiredToken') });
       return;
     }
 
@@ -104,7 +109,7 @@ export function createAuthMiddleware(_client: Client) {
 
   function requireOwner(req: AuthRequest, res: Response, next: NextFunction): void {
     if (!req.isOwner) {
-      res.status(403).json({ error: 'This endpoint is restricted to the bot owner' });
+      res.status(403).json({ error: authT('ownerOnly') });
       return;
     }
     next();
@@ -114,13 +119,13 @@ export function createAuthMiddleware(_client: Client) {
     return async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
       const guildId = req.params[paramName];
       if (!guildId) {
-        res.status(400).json({ error: 'Missing guild ID' });
+        res.status(400).json({ error: authT('missingGuildId') });
         return;
       }
 
       const token = req.fluxerToken;
       if (!token) {
-        res.status(403).json({ error: 'Guild access requires Fluxer OAuth authentication' });
+        res.status(403).json({ error: authT('guildAccessRequiresOauth') });
         return;
       }
 
@@ -130,7 +135,7 @@ export function createAuthMiddleware(_client: Client) {
         });
 
         if (!userGuildsRes.ok) {
-          res.status(502).json({ error: 'Failed to verify guild access' });
+          res.status(502).json({ error: authT('verifyGuildAccessFailed') });
           return;
         }
 
@@ -138,7 +143,7 @@ export function createAuthMiddleware(_client: Client) {
         const guild = userGuilds.find(g => g.id === guildId);
 
         if (!guild) {
-          res.status(403).json({ error: 'You are not a member of this guild' });
+          res.status(403).json({ error: authT('notGuildMember') });
           return;
         }
 
@@ -148,13 +153,13 @@ export function createAuthMiddleware(_client: Client) {
         const hasManageGuild = (perms & 0x20n) === 0x20n;
 
         if (!isOwner && !hasAdmin && !hasManageGuild) {
-          res.status(403).json({ error: 'You need Administrator or Manage Server permission to manage this guild' });
+          res.status(403).json({ error: authT('manageGuildPermissionRequired') });
           return;
         }
 
         next();
       } catch {
-        res.status(502).json({ error: 'Failed to verify guild access' });
+        res.status(502).json({ error: authT('verifyGuildAccessFailed') });
       }
     };
   }

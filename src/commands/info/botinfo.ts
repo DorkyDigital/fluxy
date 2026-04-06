@@ -67,25 +67,21 @@ const command: Command = {
       const totalMemory = Math.round(memoryUsage.heapTotal / 1024 / 1024);
 
       const guildCount = await fetchAccurateGuildCount(client);
+      const botUser = (client as any).user;
 
       const embed = new EmbedBuilder()
-        .setTitle(t(lang, 'commands.botinfo.title'))
+        .setTitle(botUser?.username || t(lang, 'commands.botinfo.title'))
         .setColor(0x3498db)
-        .setThumbnail((client as any).user?.avatarURL?.() || null)
-        .setDescription(
-          [
-            `\`${t(lang, 'commands.botinfo.labelName').padEnd(8)}\` ${(client as any).user?.username || t(lang, 'commands.botinfo.unknown')}`,
-            `\`${t(lang, 'commands.botinfo.labelId').padEnd(8)}\` ${(client as any).user?.id || t(lang, 'commands.botinfo.unknown')}`,
-            `\`${t(lang, 'commands.botinfo.labelVersion').padEnd(8)}\` ${packageJson.version || '1.0.0'}`,
-            `\`${t(lang, 'commands.botinfo.labelUptime').padEnd(8)}\` ${uptimeString}`,
-            `\`${t(lang, 'commands.botinfo.labelMemory').padEnd(8)}\` ${t(lang, 'commands.botinfo.memoryFormat', { usedMemory, totalMemory })}`,
-            `\`${t(lang, 'commands.botinfo.labelServers').padEnd(8)}\` ${guildCount}`,
-            `\`${t(lang, 'commands.botinfo.labelNode').padEnd(8)}\` ${process.version}`,
-            `\`${t(lang, 'commands.botinfo.labelLibrary').padEnd(8)}\` ${t(lang, 'commands.botinfo.libraryName')}`,
-          ].join('\n')
-        )
-        .setTimestamp(new Date())
-        .setFooter({ text: t(lang, 'commands.botinfo.requestedBy', { username: (message as any).author.username }) });
+        .setThumbnail(botUser?.avatarURL?.() || null)
+        .addFields(
+          { name: t(lang, 'commands.botinfo.labelId'), value: botUser?.id || t(lang, 'commands.botinfo.unknown'), inline: true },
+          { name: t(lang, 'commands.botinfo.labelVersion'), value: packageJson.version || '1.0.0', inline: true },
+          { name: t(lang, 'commands.botinfo.labelUptime'), value: uptimeString, inline: true },
+          { name: t(lang, 'commands.botinfo.labelMemory'), value: t(lang, 'commands.botinfo.memoryFormat', { usedMemory, totalMemory }), inline: true },
+          { name: t(lang, 'commands.botinfo.labelServers'), value: String(guildCount), inline: true },
+          { name: t(lang, 'commands.botinfo.labelNode'), value: process.version, inline: true },
+          { name: t(lang, 'commands.botinfo.labelLibrary'), value: t(lang, 'commands.botinfo.libraryName'), inline: true },
+        );
 
       await message.reply({ embeds: [embed] });
 

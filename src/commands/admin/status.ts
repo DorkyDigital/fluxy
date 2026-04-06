@@ -29,7 +29,6 @@ const command: Command = {
       const embed = new EmbedBuilder()
         .setTitle(t(lang, 'commands.admin.status.title', { guildName: guild.name }))
         .setColor(0x3498db)
-        .setTimestamp(new Date());
 
       const am = settings.automod || {};
       const automodStatus = am.level && am.level !== 'off'
@@ -43,7 +42,7 @@ const command: Command = {
       embed.addFields(
         { 
           name: t(lang, 'commands.admin.status.automodSystemField'),
-          value: `Status: ${automodStatus}`,
+          value: t(lang, 'auditCatalog.commands.admin.status.l45_addFields_value', { automodStatus }),
           inline: false 
         },
         { 

@@ -3,6 +3,7 @@ import type { Command } from '../../types';
 import isNetworkError from '../../utils/isNetworkError';
 import { registerReactionPaginator } from '../../utils/reactionPaginator';
 import settingsCache from '../../utils/settingsCache';
+import { formatCompactPageIndicator, joinCompactFooterParts } from '../../utils/embedPresentation';
 import { t, normalizeLocale } from '../../i18n';
 
 const command: Command = {
@@ -85,17 +86,16 @@ const command: Command = {
           .map((m: any) => m.user ? `<@${m.id}> (${m.user.username})` : `<@${m.id}>`)
           .join('\n');
 
-        const footerParts = [t(lang, 'commands.inrole.footerTotal', { memberCount: withRole.length })];
-        if (totalPages > 1) {
-          footerParts.push(`${t(lang, 'commands.inrole.footerPageHint', { page: pageIndex + 1, totalPages, prefix })} • ⬅️/➡️`);
-        }
-
         return new EmbedBuilder()
           .setTitle(t(lang, 'commands.inrole.embedTitle', { roleName: role.name }))
           .setColor(role.color || 0x5865F2)
           .setDescription(list)
-          .setFooter({ text: footerParts.join(' \u00b7 ') })
-          .setTimestamp(new Date());
+          .setFooter({
+            text: joinCompactFooterParts([
+              t(lang, 'commands.inrole.footerTotal', { memberCount: withRole.length }),
+              formatCompactPageIndicator(pageIndex + 1, totalPages),
+            ]),
+          });
       });
 
       const sentMessage: any = await message.reply({ embeds: [pageEmbeds[page - 1]] });

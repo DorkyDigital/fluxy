@@ -6,6 +6,7 @@ import LockdownState from '../../models/LockdownState';
 import GuildSettings from '../../models/GuildSettings';
 import { logModAction } from '../../utils/logger';
 import isNetworkError from '../../utils/isNetworkError';
+import { t, normalizeLocale } from '../../i18n';
 
 const TEXT_CHANNEL_TYPES = [0];
 
@@ -16,6 +17,7 @@ const PROGRESS_INTERVAL = 10;
 
 
 async function handleConfig(message: any, args: string[], guild: any, settings: any, prefix = '!') {
+  const lang = normalizeLocale(settings?.language);
   const action = args[0]?.toLowerCase();
 
   if (!action) {
@@ -31,13 +33,13 @@ async function handleConfig(message: any, args: string[], guild: any, settings: 
     }
     const hasAdmin = member?.permissions?.has(PermissionFlags.Administrator);
     if (!hasAdmin) {
-      return message.reply('Only **Administrators** or the server owner can change lockdown configuration.');
+      return message.reply(t(lang, 'auditCatalog.commands.admin.lockdown.l34_reply'));
     }
   }
 
   const mention = args[1];
   if (!mention) {
-    return message.reply(`Please mention a role or user. Example: \`${prefix}lockdown config ${action} @Role\``);
+    return message.reply(t(lang, 'auditCatalog.commands.admin.lockdown.l40_reply', { prefix, action }));
   }
 
   const roleMatch = mention.match(/^<@&(\d+)>$/) || (action === 'addrole' || action === 'removerole' ? mention.match(/^(\d{17,20})$/) : null);
@@ -45,64 +47,64 @@ async function handleConfig(message: any, args: string[], guild: any, settings: 
 
   switch (action) {
     case 'addrole': {
-      if (!roleMatch) return message.reply(`Please mention a valid role. Example: \`${prefix}lockdown config addrole @Member\``);
+      if (!roleMatch) return message.reply(t(lang, 'auditCatalog.commands.admin.lockdown.l48_reply', { prefix }));
       const roleId = roleMatch[1];
-      if (roleId === guild.id) return message.reply('The @everyone role is always included in lockdown by default.');
-      if (settings.lockdownRoles.includes(roleId)) return message.reply('That role is already in the lockdown target list.');
+      if (roleId === guild.id) return message.reply(t(lang, 'auditCatalog.commands.admin.lockdown.l50_reply'));
+      if (settings.lockdownRoles.includes(roleId)) return message.reply(t(lang, 'auditCatalog.commands.admin.lockdown.l51_reply'));
       settings.lockdownRoles.push(roleId);
       settings.markModified('lockdownRoles');
       await settings.save();
-      return message.reply(`Added <@&${roleId}> to lockdown target roles. This role will now be locked down alongside @everyone.`);
+      return message.reply(t(lang, 'auditCatalog.commands.admin.lockdown.l55_reply', { roleId }));
     }
     case 'removerole': {
-      if (!roleMatch) return message.reply(`Please mention a valid role. Example: \`${prefix}lockdown config removerole @Member\``);
+      if (!roleMatch) return message.reply(t(lang, 'auditCatalog.commands.admin.lockdown.l58_reply', { prefix }));
       const roleId = roleMatch[1];
       const idx = settings.lockdownRoles.indexOf(roleId);
-      if (idx === -1) return message.reply('That role is not in the lockdown target list.');
+      if (idx === -1) return message.reply(t(lang, 'auditCatalog.commands.admin.lockdown.l61_reply'));
       settings.lockdownRoles.splice(idx, 1);
       settings.markModified('lockdownRoles');
       await settings.save();
-      return message.reply(`Removed <@&${roleId}> from lockdown target roles.`);
+      return message.reply(t(lang, 'auditCatalog.commands.admin.lockdown.l65_reply', { roleId }));
     }
     case 'allow': {
       if (roleMatch) {
         const roleId = roleMatch[1];
-        if (settings.lockdownAllowedRoles.includes(roleId)) return message.reply('That role already has lockdown permission.');
+        if (settings.lockdownAllowedRoles.includes(roleId)) return message.reply(t(lang, 'auditCatalog.commands.admin.lockdown.l70_reply'));
         settings.lockdownAllowedRoles.push(roleId);
         settings.markModified('lockdownAllowedRoles');
         await settings.save();
-        return message.reply(`<@&${roleId}> can now use the \`${prefix}lockdown\` command.`);
+        return message.reply(t(lang, 'auditCatalog.commands.admin.lockdown.l74_reply', { roleId, prefix }));
       }
       if (userMatch) {
         const userId = userMatch[1];
-        if (settings.lockdownAllowedUsers.includes(userId)) return message.reply('That user already has lockdown permission.');
+        if (settings.lockdownAllowedUsers.includes(userId)) return message.reply(t(lang, 'auditCatalog.commands.admin.lockdown.l78_reply'));
         settings.lockdownAllowedUsers.push(userId);
         settings.markModified('lockdownAllowedUsers');
         await settings.save();
-        return message.reply(`<@${userId}> can now use the \`${prefix}lockdown\` command.`);
+        return message.reply(t(lang, 'auditCatalog.commands.admin.lockdown.l82_reply', { userId, prefix }));
       }
-      return message.reply(`Please mention a role or user. Example: \`${prefix}lockdown config allow @Moderator\``);
+      return message.reply(t(lang, 'auditCatalog.commands.admin.lockdown.l84_reply', { prefix }));
     }
     case 'deny': {
       if (roleMatch) {
         const roleId = roleMatch[1];
         const idx = settings.lockdownAllowedRoles.indexOf(roleId);
-        if (idx === -1) return message.reply('That role does not have lockdown permission.');
+        if (idx === -1) return message.reply(t(lang, 'auditCatalog.commands.admin.lockdown.l90_reply'));
         settings.lockdownAllowedRoles.splice(idx, 1);
         settings.markModified('lockdownAllowedRoles');
         await settings.save();
-        return message.reply(`<@&${roleId}> can no longer use the \`${prefix}lockdown\` command.`);
+        return message.reply(t(lang, 'auditCatalog.commands.admin.lockdown.l94_reply', { roleId, prefix }));
       }
       if (userMatch) {
         const userId = userMatch[1];
         const idx = settings.lockdownAllowedUsers.indexOf(userId);
-        if (idx === -1) return message.reply('That user does not have lockdown permission.');
+        if (idx === -1) return message.reply(t(lang, 'auditCatalog.commands.admin.lockdown.l99_reply'));
         settings.lockdownAllowedUsers.splice(idx, 1);
         settings.markModified('lockdownAllowedUsers');
         await settings.save();
-        return message.reply(`<@${userId}> can no longer use the \`${prefix}lockdown\` command.`);
+        return message.reply(t(lang, 'auditCatalog.commands.admin.lockdown.l103_reply', { userId, prefix }));
       }
-      return message.reply(`Please mention a role or user. Example: \`${prefix}lockdown config deny @Moderator\``);
+      return message.reply(t(lang, 'auditCatalog.commands.admin.lockdown.l105_reply', { prefix }));
     }
     default:
       return message.reply(
@@ -117,6 +119,7 @@ async function handleConfig(message: any, args: string[], guild: any, settings: 
 }
 
 async function showConfig(message: any, guild: any, settings: any, prefix = '!') {
+  const lang = normalizeLocale(settings?.language);
   const targetRoles = settings.lockdownRoles.length
     ? settings.lockdownRoles.map((id: string) => `<@&${id}>`).join(', ')
     : 'None (only @everyone)';
@@ -130,12 +133,16 @@ async function showConfig(message: any, guild: any, settings: any, prefix = '!')
     : 'None';
 
   const embed = new EmbedBuilder()
-    .setTitle('Lockdown Configuration')
+    .setTitle(t(lang, 'auditCatalog.commands.admin.lockdown.l133_setTitle'))
     .setColor(0x3498db)
     .addFields(
-      { name: 'Roles Locked During Lockdown', value: `@everyone + ${targetRoles}`, inline: false },
-      { name: 'Allowed Roles', value: allowedRoles, inline: true },
-      { name: 'Allowed Users', value: allowedUsers, inline: true },
+      {
+        name: t(lang, 'auditCatalog.commands.admin.lockdown.l136_addFields_name'),
+        value: t(lang, 'auditCatalog.commands.admin.lockdown.l136_addFields_value', { targetRoles }),
+        inline: false
+      },
+      { name: t(lang, 'auditCatalog.commands.admin.lockdown.l137_addFields_name'), value: allowedRoles, inline: true },
+      { name: t(lang, 'auditCatalog.commands.admin.lockdown.l138_addFields_name'), value: allowedUsers, inline: true },
     )
     .setDescription(
       '**Commands:**\n' +
@@ -144,7 +151,6 @@ async function showConfig(message: any, guild: any, settings: any, prefix = '!')
       `\`${prefix}lockdown config allow @Role/@User\` - grant access\n` +
       `\`${prefix}lockdown config deny @Role/@User\` - revoke access`
     )
-    .setTimestamp(new Date());
 
   return message.reply({ embeds: [embed] });
 }
@@ -159,6 +165,7 @@ function getLockdownRoleIds(guild: any, settings: any): string[] {
 }
 
 async function lockServer(message: any, guild: any, state: any, settings: any, client: any, prefix = '!') {
+  const lang = normalizeLocale(settings?.language);
   const roleIds = getLockdownRoleIds(guild, settings);
 
   let channels: any[];
@@ -196,7 +203,12 @@ async function lockServer(message: any, guild: any, state: any, settings: any, c
 
   const roleCount = roleIds.length;
   const roleLabel = roleCount === 1 ? '@everyone' : `@everyone + ${roleCount - 1} role(s)`;
-  const statusMsg = await message.reply(`Locking down **${textChannels.length}** text channel(s) for ${roleLabel}... This may take a moment.`);
+  const statusMsg = await message.reply(
+    t(lang, 'auditCatalog.commands.admin.lockdown.l198_reply', {
+      'textChannels.length': textChannels.length,
+      roleLabel
+    })
+  );
 
   const snapshots: any[] = [];
   let locked = 0;
@@ -254,7 +266,9 @@ async function lockServer(message: any, guild: any, state: any, settings: any, c
 
       if (overwriteCount % PROGRESS_INTERVAL === 0) {
         try {
-          await statusMsg.edit(`Locking... ${overwriteCount} overwrites applied (${locked} locked, ${failed} failed)`);
+          await statusMsg.edit(
+            t(lang, 'auditCatalog.commands.admin.lockdown.l256_edit', { overwriteCount, locked, failed })
+          );
         } catch {}
       }
     }
@@ -284,7 +298,7 @@ async function lockServer(message: any, guild: any, state: any, settings: any, c
   await state.save();
 
   const embed = new EmbedBuilder()
-    .setTitle('Server Lockdown Activated')
+    .setTitle(t(lang, 'auditCatalog.commands.admin.lockdown.l286_setTitle'))
     .setColor(0xe74c3c)
     .setDescription(
       `All text channels have been locked. Members can no longer send messages or add reactions.` +
@@ -292,13 +306,12 @@ async function lockServer(message: any, guild: any, state: any, settings: any, c
       `\n\nUse \`${prefix}lockdown\` again to unlock the server.`
     )
     .addFields(
-      { name: 'Overwrites Applied', value: `${locked}`, inline: true },
-      { name: 'Failed', value: `${failed}`, inline: true },
-      { name: 'Locked By', value: `<@${message.author.id}>`, inline: true },
-      { name: 'Invites', value: invitesDisabled ? 'Disabled' : (state.invitesWereDisabled ? 'Already disabled' : 'Could not disable'), inline: true },
-      { name: 'Roles Locked', value: roleIds.map((id: string) => id === guild.id ? '@everyone' : `<@&${id}>`).join(', '), inline: false },
+      { name: t(lang, 'auditCatalog.commands.admin.lockdown.l294_addFields_name'), value: `${locked}`, inline: true },
+      { name: t(lang, 'auditCatalog.commands.admin.lockdown.l295_addFields_name'), value: `${failed}`, inline: true },
+      { name: t(lang, 'auditCatalog.commands.admin.lockdown.l296_addFields_name'), value: `<@${message.author.id}>`, inline: true },
+      { name: t(lang, 'auditCatalog.commands.admin.lockdown.l297_addFields_name'), value: invitesDisabled ? 'Disabled' : (state.invitesWereDisabled ? 'Already disabled' : 'Could not disable'), inline: true },
+      { name: t(lang, 'auditCatalog.commands.admin.lockdown.l298_addFields_name'), value: roleIds.map((id: string) => id === guild.id ? '@everyone' : `<@&${id}>`).join(', '), inline: false },
     )
-    .setTimestamp(new Date());
 
   try {
     await statusMsg.edit({ content: null, embeds: [embed] });
@@ -310,6 +323,7 @@ async function lockServer(message: any, guild: any, state: any, settings: any, c
 }
 
 async function unlockServer(message: any, guild: any, state: any, settings: any, client: any) {
+  const lang = normalizeLocale(settings?.language);
   let channels: any[];
   try {
     channels = await guild.fetchChannels();
@@ -326,7 +340,9 @@ async function unlockServer(message: any, guild: any, state: any, settings: any,
     channels = [...guild.channels.values()];
   }
 
-  const statusMsg = await message.reply(`Unlocking **${state.channelSnapshots.length}** overwrite(s)... This may take a moment.`);
+  const statusMsg = await message.reply(
+    t(lang, 'auditCatalog.commands.admin.lockdown.l327_reply', { 'state.channelSnapshots.length': state.channelSnapshots.length })
+  );
 
   let unlocked = 0;
   let failed = 0;
@@ -402,7 +418,7 @@ async function unlockServer(message: any, guild: any, state: any, settings: any,
   await state.save();
 
   const embed = new EmbedBuilder()
-    .setTitle('Server Lockdown Lifted')
+    .setTitle(t(lang, 'auditCatalog.commands.admin.lockdown.l403_setTitle'))
     .setColor(0x2ecc71)
     .setDescription(
       `All text channels have been unlocked. Normal permissions have been restored.` +
@@ -410,11 +426,10 @@ async function unlockServer(message: any, guild: any, state: any, settings: any,
       `\n\nThe server is now operating normally.`
     )
     .addFields(
-      { name: 'Overwrites Restored', value: `${unlocked}`, inline: true },
-      { name: 'Failed', value: `${failed}`, inline: true },
-      { name: 'Unlocked By', value: `<@${message.author.id}>`, inline: true },
+      { name: t(lang, 'auditCatalog.commands.admin.lockdown.l411_addFields_name'), value: `${unlocked}`, inline: true },
+      { name: t(lang, 'auditCatalog.commands.admin.lockdown.l412_addFields_name'), value: `${failed}`, inline: true },
+      { name: t(lang, 'auditCatalog.commands.admin.lockdown.l413_addFields_name'), value: `<@${message.author.id}>`, inline: true },
     )
-    .setTimestamp(new Date());
 
   try {
     await statusMsg.edit({ content: null, embeds: [embed] });
@@ -428,12 +443,12 @@ async function unlockServer(message: any, guild: any, state: any, settings: any,
 async function handleRemoteLock(message: any, targetGuildId: string, client: any) {
   try {
     if (!/^\d{17,20}$/.test(targetGuildId)) {
-      return message.reply('Invalid server ID. Please provide a valid numeric server ID.');
+      return message.reply(t('en', 'auditCatalog.commands.admin.lockdown.l428_reply'));
     }
 
     const state = await LockdownState.getOrCreate(targetGuildId);
     if (state.active) {
-      return message.reply(`Server \`${targetGuildId}\` is already in lockdown.`);
+      return message.reply(t('en', 'auditCatalog.commands.admin.lockdown.l433_reply', { targetGuildId }));
     }
 
     let guild = client.guilds.get(targetGuildId);
@@ -441,23 +456,23 @@ async function handleRemoteLock(message: any, targetGuildId: string, client: any
       try {
         guild = await client.guilds.fetch(targetGuildId);
       } catch {
-        return message.reply(`Could not find server \`${targetGuildId}\`. Make sure the bot is still in that server.`);
+        return message.reply(t('en', 'auditCatalog.commands.admin.lockdown.l441_reply', { targetGuildId }));
       }
     }
 
     const settings = await GuildSettings.getOrCreate(targetGuildId);
 
-    await message.reply(`Locking down **${guild.name}** (\`${guild.id}\`)...`);
+    await message.reply(t('en', 'auditCatalog.commands.admin.lockdown.l447_reply', { 'guild.name': guild.name, 'guild.id': guild.id }));
 
     await lockServer(message, guild, state, settings, client);
 
   } catch (error: any) {
     if (isNetworkError(error)) {
       console.warn(`Fluxer API unreachable during DM !lockdown start (ECONNRESET)`);
-      message.reply('The Fluxer API is having connectivity issues. Please try again shortly.').catch(() => {});
+      message.reply(t('en', 'auditCatalog.commands.admin.lockdown.l454_reply')).catch(() => {});
     } else {
       console.error(`Error in DM !lockdown start: ${error.message || error}`);
-      message.reply(`An error occurred: \`${error.message || error}\``).catch(() => {});
+      message.reply(t('en', 'auditCatalog.commands.admin.lockdown.l457_reply', { 'error.message || error': error.message || error })).catch(() => {});
     }
   }
 }
@@ -465,12 +480,12 @@ async function handleRemoteLock(message: any, targetGuildId: string, client: any
 async function handleRemoteUnlock(message: any, targetGuildId: string, client: any) {
   try {
     if (!/^\d{17,20}$/.test(targetGuildId)) {
-      return message.reply('Invalid server ID. Please provide a valid numeric server ID.');
+      return message.reply(t('en', 'auditCatalog.commands.admin.lockdown.l465_reply'));
     }
 
     const state = await LockdownState.getOrCreate(targetGuildId);
     if (!state.active) {
-      return message.reply(`Server \`${targetGuildId}\` does not have an active lockdown.`);
+      return message.reply(t('en', 'auditCatalog.commands.admin.lockdown.l470_reply', { targetGuildId }));
     }
 
     let guild = client.guilds.get(targetGuildId);
@@ -478,23 +493,23 @@ async function handleRemoteUnlock(message: any, targetGuildId: string, client: a
       try {
         guild = await client.guilds.fetch(targetGuildId);
       } catch {
-        return message.reply(`Could not find server \`${targetGuildId}\`. Make sure the bot is still in that server.`);
+        return message.reply(t('en', 'auditCatalog.commands.admin.lockdown.l478_reply', { targetGuildId }));
       }
     }
 
     const settings = await GuildSettings.getOrCreate(targetGuildId);
 
-    await message.reply(`Unlocking **${guild.name}** (\`${guild.id}\`)...`);
+    await message.reply(t('en', 'auditCatalog.commands.admin.lockdown.l484_reply', { 'guild.name': guild.name, 'guild.id': guild.id }));
 
     await unlockServer(message, guild, state, settings, client);
 
   } catch (error: any) {
     if (isNetworkError(error)) {
       console.warn(`Fluxer API unreachable during DM !lockdown end (ECONNRESET)`);
-      message.reply('The Fluxer API is having connectivity issues. Please try again shortly.').catch(() => {});
+      message.reply(t('en', 'auditCatalog.commands.admin.lockdown.l491_reply')).catch(() => {});
     } else {
       console.error(`Error in DM !lockdown end: ${error.message || error}`);
-      message.reply(`An error occurred: \`${error.message || error}\``).catch(() => {});
+      message.reply(t('en', 'auditCatalog.commands.admin.lockdown.l494_reply', { 'error.message || error': error.message || error })).catch(() => {});
     }
   }
 }
@@ -512,7 +527,7 @@ const command: Command = {
 
     if (!(message as any).guild && !(message as any).guildId) {
       if (!isOwner) {
-        return void await message.reply('This command can only be used in a server.');
+        return void await message.reply(t('en', 'commands.admin.keywords.serverOnly'));
       }
 
       const sub = args[0]?.toLowerCase();
@@ -538,10 +553,11 @@ const command: Command = {
       guild = await client.guilds.fetch((message as any).guildId);
     }
     if (!guild) {
-      return void await message.reply('This command can only be used in a server.');
+      return void await message.reply(t('en', 'commands.admin.keywords.serverOnly'));
     }
 
     const settings: any = await GuildSettings.getOrCreate(guild.id);
+    const lang = normalizeLocale(settings?.language);
 
     if (!isOwner) {
       let member = guild.members?.get(message.author.id);
@@ -549,7 +565,7 @@ const command: Command = {
         try { member = await guild.fetchMember(message.author.id); } catch {}
       }
       if (!member) {
-        return void await message.reply('Could not fetch your member data.');
+        return void await message.reply(t(lang, 'auditCatalog.commands.admin.lockdown.l549_reply'));
       }
       const hasAdmin = member.permissions?.has(PermissionFlags.Administrator);
       const isGuildOwner = guild.ownerId && String(guild.ownerId) === String(message.author.id);
@@ -560,7 +576,7 @@ const command: Command = {
       const isAllowedRole = (settings?.lockdownAllowedRoles ?? []).some((r: string) => memberRoles.includes(r));
 
       if (!hasAdmin && !isGuildOwner && !isAllowedUser && !isAllowedRole) {
-        return void await message.reply('You need **Administrator** permission or an authorized lockdown role to use this command.');
+        return void await message.reply(t(lang, 'auditCatalog.commands.admin.lockdown.l560_reply'));
       }
     }
 
@@ -581,10 +597,10 @@ const command: Command = {
       const guildName = guild?.name || 'Unknown Server';
       if (isNetworkError(error)) {
         console.warn(`[${guildName}] Fluxer API unreachable during !lockdown (ECONNRESET)`);
-        message.reply('The Fluxer API is having connectivity issues. Please try again shortly.').catch(() => {});
+        message.reply(t(lang, 'auditCatalog.commands.admin.lockdown.l581_reply')).catch(() => {});
       } else {
         console.error(`[${guildName}] Error in !lockdown: ${error.message || error}`);
-        message.reply('An error occurred while executing the lockdown command.').catch(() => {});
+        message.reply(t(lang, 'auditCatalog.commands.admin.lockdown.l584_reply')).catch(() => {});
       }
     }
   }

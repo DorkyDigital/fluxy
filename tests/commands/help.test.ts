@@ -142,7 +142,14 @@ describe('help command pagination', () => {
 
   test('shows command detail for help <command>', async () => {
     const commandHandler = makeCommandHandler({
-      general: [buildCommand('help', 'general')],
+      general: [{
+        ...buildCommand('help', 'general'),
+        description: [
+          'Show every command. Extra details that should not stay in the embed.',
+          '',
+          'Long-form help text.',
+        ],
+      }],
     });
 
     const client: any = { commandHandler };
@@ -154,6 +161,9 @@ describe('help command pagination', () => {
     const payload = message.reply.mock.calls[0][0];
     expect(payload.embeds).toHaveLength(1);
     expect(payload.embeds[0].data.title).toBe('help');
+    expect(payload.embeds[0].data.description).toBe('Show every command.');
+    expect(payload.embeds[0].data.footer).toBeUndefined();
+    expect(payload.embeds[0].data.fields.some((field: any) => field.name === 'Category')).toBe(false);
     expect(registerPaginatorMock).not.toHaveBeenCalled();
   });
 
@@ -172,6 +182,7 @@ describe('help command pagination', () => {
     expect(message.reply).toHaveBeenCalledTimes(1);
     const payload = message.reply.mock.calls[0][0];
     expect(payload.embeds[0].data.title).toContain('Moderation');
+    expect(payload.embeds[0].data.footer.text).toBe('!help <command> for details • 1/3 ◄►');
 
     expect(registerPaginatorMock).toHaveBeenCalledTimes(1);
     const opts = registerPaginatorMock.mock.calls[0][1];

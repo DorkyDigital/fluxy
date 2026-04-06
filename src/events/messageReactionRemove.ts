@@ -8,6 +8,7 @@ import { Routes } from '@erinjs/types';
 import { EmbedBuilder } from '@erinjs/core';
 import { getActiveStarboards, getStarEmoji, getStarColor } from '../utils/starboardBoards';
 import { isReactionOnBotMessage } from '../utils/reactionLogFilter';
+import { t } from '../i18n';
 
 const event: BotEvent = {
   name: 'messageReactionRemove',
@@ -99,7 +100,7 @@ const event: BotEvent = {
 
                     const starEmbed = new EmbedBuilder()
                       .setAuthor({
-                        name: origMsg.author?.username ?? 'Unknown User',
+                        name: origMsg.author?.username ?? t('en', 'commands.userinfo.unknown'),
                         iconURL: origMsg.author?.avatar
                           ? `https://fluxerusercontent.com/avatars/${origMsg.author.id}/${origMsg.author.avatar}.png`
                           : undefined,
@@ -110,10 +111,18 @@ const event: BotEvent = {
                     if (content) starEmbed.setDescription(content);
 
                     starEmbed.addFields(
-                      { name: 'Source', value: `[Jump to message](https://fluxer.app/channels/${guild.id}/${reaction.channelId}/${reaction.messageId})`, inline: true },
-                      { name: 'Channel', value: `<#${reaction.channelId}>`, inline: true },
+                      {
+                        name: t('en', 'auditCatalog.events.messageReactionRemove.l113_addFields_name'),
+                        value: t('en', 'auditCatalog.events.messageReactionRemove.l113_addFields_value', {
+                          guildId: guild.id,
+                          channelId: reaction.channelId,
+                          messageId: reaction.messageId,
+                        }),
+                        inline: true
+                      },
+                      { name: t('en', 'commands.report.fieldChannel'), value: `<#${reaction.channelId}>`, inline: true },
                     );
-                    starEmbed.setFooter({ text: `ID: ${reaction.messageId}` });
+                    starEmbed.setFooter({ text: t('en', 'auditCatalog.events.messageReactionRemove.l116_setFooter', { 'reaction.messageId': reaction.messageId }) });
 
                     if (origMsg.attachments?.length > 0) {
                       const img = origMsg.attachments.find((a: any) => a.content_type?.startsWith('image/'));

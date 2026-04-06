@@ -2,6 +2,11 @@ import { Router } from 'express';
 import type { Client } from '@erinjs/core';
 import Stat from '../../models/Stat';
 import ModerationLog from '../../models/ModerationLog';
+import { t } from '../../i18n';
+
+function statsT(key: string, vars?: Record<string, string | number>): string {
+  return t('en', `auditCatalog.api.routes.stats.${key}`, vars);
+}
 
 export function createStatsRouter(client: Client): Router {
   const router = Router();
@@ -18,7 +23,7 @@ export function createStatsRouter(client: Client): Router {
         totalModActions: modActionCount,
       });
     } catch {
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({ error: statsT('internalServerError') });
     }
   });
 
@@ -40,7 +45,7 @@ export function createStatsRouter(client: Client): Router {
 
       res.json(daily.map(d => ({ date: d._id, count: d.count })));
     } catch {
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({ error: statsT('internalServerError') });
     }
   });
 
@@ -57,7 +62,7 @@ export function createStatsRouter(client: Client): Router {
 
       res.json(top.map(t => ({ command: t._id, count: t.count })));
     } catch {
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({ error: statsT('internalServerError') });
     }
   });
 
@@ -76,12 +81,12 @@ export function createStatsRouter(client: Client): Router {
         const guild = client.guilds.get(t._id);
         return {
           guildId: t._id,
-          name: guild?.name ?? `Unknown (${t._id})`,
+          name: guild?.name ?? statsT('unknownGuild', { guildId: t._id }),
           count: t.count,
         };
       }));
     } catch {
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({ error: statsT('internalServerError') });
     }
   });
 

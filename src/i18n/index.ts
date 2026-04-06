@@ -57,9 +57,13 @@ function getByPath(obj: unknown, key: string): unknown {
 
 function interpolate(template: string, vars?: Vars): string {
   if (!vars) return template;
-  return template.replace(/\{([a-zA-Z0-9_]+)\}/g, (_, k: string) => {
-    const v = vars[k];
-    return v === null || v === undefined ? `{${k}}` : String(v);
+  return template.replace(/\$\{([^}]+)\}|\{([a-zA-Z0-9_]+)\}/g, (_, templateKey: string | undefined, braceKey: string | undefined) => {
+    const key = templateKey ?? braceKey;
+    const v = key ? vars[key] : undefined;
+    if (v === null || v === undefined) {
+      return templateKey ? `\${${key}}` : `{${key}}`;
+    }
+    return String(v);
   });
 }
 

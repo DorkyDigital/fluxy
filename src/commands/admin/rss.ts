@@ -10,6 +10,7 @@ import isNetworkError from '../../utils/isNetworkError';
 import settingsCache from '../../utils/settingsCache';
 import { fetchFeed } from '../../utils/rssFeed';
 import { clampPollIntervalMinutes } from '../../utils/rssDefaults';
+import { t, normalizeLocale } from '../../i18n';
 
 const OWNER_ONLY_SUBCOMMANDS = new Set(['debug', 'forcepoll', 'force', 'pollnow']);
 
@@ -148,13 +149,20 @@ const command: Command = {
     if (!guild && (message as any).guildId) {
       guild = await client.guilds.fetch((message as any).guildId);
     }
-    if (!guild) return void await message.reply('This command can only be used in a server.');
+    if (!guild) return void await message.reply(t('en', 'commands.admin.keywords.serverOnly'));
+
+    let initialSettings: any = null;
+    let lang = 'en';
+    try {
+      initialSettings = await GuildSettings.getOrCreate(guild.id);
+      lang = normalizeLocale(initialSettings?.language);
+    } catch {}
 
     const sub = args[0]?.toLowerCase();
     const owner = isBotOwner(message);
 
     if (sub && OWNER_ONLY_SUBCOMMANDS.has(sub) && !owner) {
-      return void await message.reply('This RSS subcommand is restricted to the bot owner.');
+      return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l157_reply'));
     }
 
     if (!sub || sub === 'help') {
@@ -175,7 +183,7 @@ const command: Command = {
       }
 
       const embed = new EmbedBuilder()
-        .setTitle('RSS Setup & RSSHub Guide')
+        .setTitle(t(lang, 'auditCatalog.commands.admin.rss.l178_setTitle'))
         .setDescription(
           [
             'Manage RSS/Atom feeds and RSSHub routes for your server.',
@@ -184,12 +192,12 @@ const command: Command = {
         )
         .addFields(
           {
-            name: 'Commands',
+            name: t(lang, 'auditCatalog.commands.admin.rss.l187_addFields_name'),
             value: commandLines.join('\n'),
             inline: false,
           },
           {
-            name: 'Source Format',
+            name: t(lang, 'auditCatalog.commands.admin.rss.l192_addFields_name'),
             value: [
               'RSS/Atom: use full URL (https://...)',
               'RSSHub: use route path only (must start with /)',
@@ -198,7 +206,7 @@ const command: Command = {
             inline: false,
           },
           {
-            name: 'Examples',
+            name: t(lang, 'auditCatalog.commands.admin.rss.l201_addFields_name'),
             value: [
               `\`${prefix}rss test https://hnrss.org/frontpage\``,
               `\`${prefix}rss test /twitter/user/dogbonewish\``,
@@ -209,7 +217,7 @@ const command: Command = {
             inline: false,
           },
           {
-            name: 'Troubleshooting',
+            name: t(lang, 'auditCatalog.commands.admin.rss.l212_addFields_name'),
             value: [
               'No immediate posts after add is normal: first poll seeds existing items.',
               'Use rss test first, then rss add, then rss status to monitor errors.',
@@ -218,33 +226,33 @@ const command: Command = {
           },
         )
         .setColor(0x3498db)
-        .setTimestamp(new Date());
 
       return void await message.reply({ embeds: [embed] });
     }
 
     try {
-      const settings: any = await GuildSettings.getOrCreate(guild.id);
+      const settings: any = initialSettings ?? await GuildSettings.getOrCreate(guild.id);
+      lang = normalizeLocale(settings?.language);
       const rss = ensureRssSettings(settings);
 
       if (sub === 'add') {
         const channelId = parseChannelId(args[1]);
         if (!channelId) {
-          return void await message.reply(`Usage: ${prefix}rss add <#channel> <url|/rsshub/route> [@role]`);
+          return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l232_reply', { prefix }));
         }
 
         const sourceInput = args[2];
         if (!sourceInput) {
-          return void await message.reply(`Usage: ${prefix}rss add <#channel> <url|/rsshub/route> [@role]`);
+          return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l237_reply', { prefix }));
         }
 
         if (rss.feeds.length >= config.rss.maxFeedsPerGuild) {
-          return void await message.reply(`You can only configure up to ${config.rss.maxFeedsPerGuild} feeds per server.`);
+          return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l241_reply', { 'config.rss.maxFeedsPerGuild': config.rss.maxFeedsPerGuild }));
         }
 
         const parsedSource = parseSource(sourceInput);
         if (!parsedSource) {
-          return void await message.reply('Invalid source. Use an http(s) URL or an RSSHub route starting with /.');
+          return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l246_reply'));
         }
 
         const mentionRoleId = parseRoleId(args[3]);
@@ -264,7 +272,7 @@ const command: Command = {
         );
 
         if (probe.items.length === 0) {
-          return void await message.reply('Feed is reachable, but no items were found.');
+          return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l266_reply'));
         }
 
         const feed: IRssFeed = {
@@ -302,14 +310,18 @@ const command: Command = {
 
       if (sub === 'list') {
         if (rss.feeds.length === 0) {
-          return void await message.reply(`No RSS feeds configured. Use ${prefix}rss add to create one.`);
+          return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l304_reply', { prefix }));
         }
 
         const embed = new EmbedBuilder()
-          .setTitle('Configured RSS Feeds')
-          .setDescription(`Polling: every ${rss.pollIntervalMinutes} minute(s) • RSS ${rss.enabled ? 'enabled' : 'disabled'}`)
+          .setTitle(t(lang, 'auditCatalog.commands.admin.rss.l308_setTitle'))
+          .setDescription(
+            t(lang, 'auditCatalog.commands.admin.rss.l309_setDescription', {
+              'rss.pollIntervalMinutes': rss.pollIntervalMinutes,
+              "rss.enabled ? 'enabled' : 'disabled'": rss.enabled ? 'enabled' : 'disabled'
+            })
+          )
           .setColor(0x3498db)
-          .setTimestamp(new Date());
 
         for (let i = 0; i < rss.feeds.length; i++) {
           const feed = rss.feeds[i];
@@ -325,40 +337,40 @@ const command: Command = {
 
       if (sub === 'remove') {
         const ref = args[1];
-        if (!ref) return void await message.reply(`Usage: ${prefix}rss remove <index|feedId>`);
+        if (!ref) return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l326_reply', { prefix }));
 
         const found = findFeedByRef(rss.feeds, ref);
-        if (!found) return void await message.reply('Feed not found. Use rss list to check indexes and IDs.');
+        if (!found) return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l329_reply'));
 
         const [removed] = rss.feeds.splice(found.index, 1);
         await saveSettings(settings, guild.id);
 
         await RssFeedState.deleteOne({ guildId: guild.id, feedId: removed.id }).catch(() => {});
 
-        return void await message.reply(`Removed feed \`${removed.id}\`.`);
+        return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l336_reply', { 'removed.id': removed.id }));
       }
 
       if (sub === 'pause' || sub === 'resume') {
         const ref = args[1];
-        if (!ref) return void await message.reply(`Usage: ${prefix}rss ${sub} <index|feedId>`);
+        if (!ref) return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l341_reply', { prefix, sub }));
 
         const found = findFeedByRef(rss.feeds, ref);
-        if (!found) return void await message.reply('Feed not found. Use rss list to check indexes and IDs.');
+        if (!found) return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l344_reply'));
 
         found.feed.enabled = sub === 'resume';
         await saveSettings(settings, guild.id);
-        return void await message.reply(`${sub === 'resume' ? 'Resumed' : 'Paused'} feed \`${found.feed.id}\`.`);
+        return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l348_reply', { sub, 'found.feed.id': found.feed.id }));
       }
 
       if (sub === 'interval') {
         const raw = args[1];
         if (!raw) {
-          return void await message.reply(`Current poll interval is ${rss.pollIntervalMinutes} minute(s).\nUsage: ${prefix}rss interval <minutes>`);
+          return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l354_reply', { 'rss.pollIntervalMinutes': rss.pollIntervalMinutes, prefix }));
         }
 
         const parsed = parseInt(raw, 10);
         if (!Number.isFinite(parsed)) {
-          return void await message.reply('Interval must be a number.');
+          return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l359_reply'));
         }
 
         const clamped = clampPollIntervalMinutes(parsed);
@@ -366,13 +378,13 @@ const command: Command = {
         rss.enabled = true;
         await saveSettings(settings, guild.id);
 
-        return void await message.reply(`RSS poll interval set to ${clamped} minute(s).`);
+        return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l367_reply', { clamped }));
       }
 
       if (sub === 'test') {
         const refOrSource = args[1];
         if (!refOrSource) {
-          return void await message.reply(`Usage: ${prefix}rss test <index|feedId|url|/rsshub/route>`);
+          return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l373_reply', { prefix }));
         }
 
         let source: { sourceType: 'rss' | 'rsshub'; url: string | null; route: string | null } | null = null;
@@ -389,7 +401,7 @@ const command: Command = {
         }
 
         if (!source) {
-          return void await message.reply('Could not resolve feed source from your input.');
+          return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l390_reply'));
         }
 
         const parsed = await fetchFeed(
@@ -413,24 +425,23 @@ const command: Command = {
           .setColor(0x2ecc71)
           .addFields(
             {
-              name: 'Resolved URL',
+              name: t(lang, 'auditCatalog.commands.admin.rss.l414_addFields_name'),
               value: parsed.feedUrl,
               inline: false,
             },
             {
-              name: 'Total items parsed',
+              name: t(lang, 'auditCatalog.commands.admin.rss.l419_addFields_name'),
               value: String(parsed.items.length),
               inline: true,
             },
           )
-          .setTimestamp(new Date());
 
         return void await message.reply({ embeds: [embed] });
       }
 
       if (sub === 'status') {
         if (rss.feeds.length === 0) {
-          return void await message.reply(`No RSS feeds configured. Use ${prefix}rss add to create one.`);
+          return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l430_reply', { prefix }));
         }
 
         const states = await RssFeedState.find({
@@ -440,10 +451,9 @@ const command: Command = {
         const stateByFeedId = new Map(states.map((state) => [state.feedId, state]));
 
         const embed = new EmbedBuilder()
-          .setTitle('RSS Feed Status')
-          .setDescription(`Poll interval: ${rss.pollIntervalMinutes} minute(s)`)
+          .setTitle(t(lang, 'auditCatalog.commands.admin.rss.l440_setTitle'))
+          .setDescription(t(lang, 'auditCatalog.commands.admin.rss.l441_setDescription', { 'rss.pollIntervalMinutes': rss.pollIntervalMinutes }))
           .setColor(0x3498db)
-          .setTimestamp(new Date());
 
         for (const feed of rss.feeds) {
           const state = stateByFeedId.get(feed.id);
@@ -467,7 +477,7 @@ const command: Command = {
 
       if (sub === 'debug') {
         if (rss.feeds.length === 0) {
-          return void await message.reply(`No RSS feeds configured. Use ${prefix}rss add to create one.`);
+          return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l466_reply', { prefix }));
         }
 
         const ref = args[1];
@@ -475,7 +485,7 @@ const command: Command = {
 
         if (ref) {
           const found = findFeedByRef(rss.feeds, ref);
-          if (!found) return void await message.reply('Feed not found. Use rss list to check indexes and IDs.');
+          if (!found) return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l474_reply'));
           feeds = [found.feed];
         }
 
@@ -491,7 +501,7 @@ const command: Command = {
         const visibleFeeds = feeds.slice(0, 10);
 
         const embed = new EmbedBuilder()
-          .setTitle('RSS Debug (Owner Only)')
+          .setTitle(t(lang, 'auditCatalog.commands.admin.rss.l490_setTitle'))
           .setDescription(
             [
               `Poller runtime: ${runtime.started ? 'started' : 'stopped'} • ${runtime.running ? 'busy' : 'idle'} • client=${runtime.hasClient ? 'attached' : 'none'}`,
@@ -499,7 +509,6 @@ const command: Command = {
             ].join('\n'),
           )
           .setColor(0xe67e22)
-          .setTimestamp(new Date());
 
         for (const feed of visibleFeeds) {
           const state = stateByFeedId.get(feed.id) as any;
@@ -529,8 +538,8 @@ const command: Command = {
 
         if (feeds.length > visibleFeeds.length) {
           embed.addFields({
-            name: 'Note',
-            value: `Showing ${visibleFeeds.length}/${feeds.length} feeds to stay within Discord embed limits.`,
+            name: t(lang, 'auditCatalog.commands.admin.rss.l527_addFields_name'),
+            value: t(lang, 'auditCatalog.commands.admin.rss.l528_addFields_value', { 'visibleFeeds.length': visibleFeeds.length, 'feeds.length': feeds.length }),
             inline: false,
           });
         }
@@ -544,26 +553,26 @@ const command: Command = {
 
         if (ref) {
           const found = findFeedByRef(rss.feeds, ref);
-          if (!found) return void await message.reply('Feed not found. Use rss list to check indexes and IDs.');
+          if (!found) return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l542_reply'));
           targetFeedId = found.feed.id;
         }
 
         const result = await rssPollerService.forcePollGuild(client, guild.id, targetFeedId);
 
         if (result.reason === 'busy') {
-          return void await message.reply('RSS poller is currently running. Wait a few seconds and try again.');
+          return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l549_reply'));
         }
         if (result.reason === 'rss_disabled') {
-          return void await message.reply('RSS is disabled for this guild, so force-poll is unavailable.');
+          return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l552_reply'));
         }
         if (result.reason === 'no_feeds') {
-          return void await message.reply(`No RSS feeds configured. Use ${prefix}rss add to create one.`);
+          return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l555_reply', { prefix }));
         }
         if (result.reason === 'feed_not_found') {
-          return void await message.reply('Feed not found in this guild.');
+          return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l558_reply'));
         }
         if (result.reason === 'no_eligible_feeds') {
-          return void await message.reply('No eligible feeds to poll (feeds may be paused or missing channel IDs).');
+          return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l561_reply'));
         }
 
         const lines = [
@@ -593,7 +602,7 @@ const command: Command = {
         return void await message.reply(lines.join('\n'));
       }
 
-      return void await message.reply(`Unknown subcommand. Use ${prefix}rss help.`);
+      return void await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l591_reply', { prefix }));
     } catch (error: any) {
       const guildName = guild?.name || 'Unknown Server';
       if (isNetworkError(error)) {
@@ -601,7 +610,7 @@ const command: Command = {
         return;
       }
       console.error(`[${guildName}] Error in !rss: ${error.message || error}`);
-      await message.reply(`RSS command failed: ${error.message || 'unknown error'}`).catch(() => {});
+      await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l599_reply', { 'error.message || \'unknown error\'': error.message || 'unknown error' })).catch(() => {});
     }
   },
 };

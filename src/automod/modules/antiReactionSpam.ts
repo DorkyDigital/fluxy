@@ -3,6 +3,7 @@ import { PermissionFlags } from '@erinjs/core';
 import * as moderationQueue from '../../utils/moderationQueue';
 import * as embedQueue from '../../utils/embedQueue';
 import { Routes } from '@erinjs/types';
+import { t, normalizeLocale } from '../../i18n';
 
 const reactionTracker = new Map<string, { timestamps: number[] }>();
 const violationTracker = new Map<string, { violations: number[] }>();
@@ -15,6 +16,10 @@ const defaultConfig = {
   violationThreshold: 3,
   violationWindow: 1800000
 };
+
+function antiReactionSpamT(locale: unknown, key: string, vars?: Record<string, string | number>): string {
+  return t(normalizeLocale(locale), `auditCatalog.automod.modules.antiReactionSpam.${key}`, vars);
+}
 
 
 function checkReactionSpam(guildId: string, userId: string, maxReactions: number, windowMs: number) {
@@ -89,7 +94,7 @@ function formatDuration(ms: number): string {
 }
 
 
-async function applyTimeout(guild: any, userId: string, duration: number): Promise<boolean> {
+async function applyTimeout(guild: any, userId: string, duration: number, locale: unknown): Promise<boolean> {
   try {
     let member = guild.members?.get(userId);
     if (!member) member = await guild.fetchMember(userId);
@@ -97,14 +102,15 @@ async function applyTimeout(guild: any, userId: string, duration: number): Promi
     if (member.permissions?.has?.(PermissionFlags.Administrator)) return false;
 
     const until = new Date(Date.now() + duration).toISOString();
+    const reason = antiReactionSpamT(locale, 'timeoutReason');
     await member.edit({
       communication_disabled_until: until,
-      timeout_reason: 'Automod: Reaction spam'
+      timeout_reason: reason
     });
     return true;
   } catch (error: any) {
     if (isNetworkError(error)) {
-      moderationQueue.enqueue(guild.id, userId, 'timeout', { durationMs: duration, reason: 'Automod: Reaction spam' });
+      moderationQueue.enqueue(guild.id, userId, 'timeout', { durationMs: duration, reason: antiReactionSpamT(locale, 'timeoutReason') });
       return true;
     }
     if (error.statusCode === 404 || error.code === 'MEMBER_NOT_FOUND') return false;
@@ -149,7 +155,7 @@ const antiReactionSpam = {
 
       let timedOut = false;
       if (violation.shouldTimeout) {
-        timedOut = await applyTimeout(guild, userId, config.timeoutDuration);
+        timedOut = await applyTimeout(guild, userId, config.timeoutDuration, settings?.language);
         if (timedOut) clearViolations(guildId, userId);
       }
 
@@ -161,11 +167,21 @@ const antiReactionSpam = {
         if (channel) {
           let content: string;
           if (timedOut) {
-            content = `<@${userId}> has been timed out for **${formatDuration(config.timeoutDuration)}** due to reaction spam.`;
+            content = antiReactionSpamT(settings?.language, 'noticeTimedOut', {
+              userId,
+              duration: formatDuration(config.timeoutDuration),
+            });
           } else if (violation.count >= config.violationThreshold - 1) {
-            content = `Stop spamming reactions, <@${userId}>! **Final warning** - next violation is a **${formatDuration(config.timeoutDuration)}** timeout.`;
+            content = antiReactionSpamT(settings?.language, 'noticeFinalWarning', {
+              userId,
+              duration: formatDuration(config.timeoutDuration),
+            });
           } else {
-            content = `Stop spamming reactions, <@${userId}>! (**${violation.count}/${config.violationThreshold}** violations)`;
+            content = antiReactionSpamT(settings?.language, 'noticeViolation', {
+              userId,
+              count: violation.count,
+              threshold: config.violationThreshold,
+            });
           }
 
           const sent = await channel.send({ content }).catch(() => null);
@@ -178,7 +194,12 @@ const antiReactionSpam = {
 
       const logChannelId = settings.moderation?.logChannelId || settings.logChannelId;
       if (logChannelId) {
-        this.logAction(guild, userId, reaction, client, logChannelId, { violation, config, timedOut }).catch(() => {});
+        this.logAction(guild, userId, reaction, client, logChannelId, {
+          violation,
+          config,
+          timedOut,
+          language: settings?.language,
+        }).catch(() => {});
       }
 
     } finally {
@@ -197,20 +218,24 @@ const antiReactionSpam = {
       if (!logChannel) return;
 
       const fields: any[] = [
-        { name: 'User', value: `<@${userId}> (${userId})`, inline: true },
-        { name: 'Channel', value: `<#${reaction.channelId}>`, inline: true },
-        { name: 'Violations', value: `${info.violation.count}/${info.config.violationThreshold}`, inline: true }
+        { name: antiReactionSpamT(info.language, 'fieldUser'), value: `<@${userId}> (${userId})`, inline: true },
+        { name: antiReactionSpamT(info.language, 'fieldChannel'), value: `<#${reaction.channelId}>`, inline: true },
+        { name: antiReactionSpamT(info.language, 'fieldViolations'), value: `${info.violation.count}/${info.config.violationThreshold}`, inline: true }
       ];
 
       if (info.timedOut) {
-        fields.push({ name: 'Action', value: `Timed out for ${formatDuration(info.config.timeoutDuration)}`, inline: true });
+        fields.push({
+          name: antiReactionSpamT(info.language, 'fieldAction'),
+          value: antiReactionSpamT(info.language, 'actionTimedOutFor', { duration: formatDuration(info.config.timeoutDuration) }),
+          inline: true
+        });
       }
 
       const embed = {
-        title: info.timedOut ? 'Reaction Spam - Auto-Timeout' : 'Reaction Spam Detected',
+        title: info.timedOut ? antiReactionSpamT(info.language, 'logTitleTimedOut') : antiReactionSpamT(info.language, 'logTitleDetected'),
         description: info.timedOut
-          ? 'A user has been timed out for reaction spam.'
-          : 'A user was warned for spamming reactions.',
+          ? antiReactionSpamT(info.language, 'logDescriptionTimedOut')
+          : antiReactionSpamT(info.language, 'logDescriptionDetected'),
         fields,
         color: info.timedOut ? 0xf1c40f : 0xe74c3c,
         timestamp: new Date().toISOString()

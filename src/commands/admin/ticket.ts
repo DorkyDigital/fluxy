@@ -151,7 +151,6 @@ export async function createTicketForUser(guild: any, userId: string, settings: 
     .setTitle(t(lang, 'commands.admin.ticket.user.ticketEmbed.title', { ticketNumber }))
     .setDescription(openMsg)
     .setColor(0x5865F2)
-    .setTimestamp(new Date());
 
   if (subject) {
     embed.addFields({ name: t(lang, 'commands.admin.ticket.user.ticketEmbed.subjectField'), value: subject, inline: false });
@@ -454,7 +453,6 @@ const subcommands: Record<string, (message: any, args: string[], guild: any, set
           inline: false
         },
       )
-      .setTimestamp(new Date());
 
     return message.reply({ embeds: [embed] });
   },
@@ -480,7 +478,6 @@ const subcommands: Record<string, (message: any, args: string[], guild: any, set
       .setTitle(t(lang, 'commands.admin.ticket.user.claimEmbed.title', { ticketNumber: (ticket as any).ticketNumber }))
       .setDescription(t(lang, 'commands.admin.ticket.user.claimEmbed.description', { userId: message.author.id }))
       .setColor(0x2ecc71)
-      .setTimestamp(new Date());
 
     return message.reply({ embeds: [embed] });
   },
@@ -513,7 +510,7 @@ const subcommands: Record<string, (message: any, args: string[], guild: any, set
       });
     }
 
-    embed.setTimestamp(new Date());
+
 
     (ticket as any).status = 'closed';
     (ticket as any).closedBy = message.author.id;
@@ -556,7 +553,6 @@ const subcommands: Record<string, (message: any, args: string[], guild: any, set
           }
 
           logEmbed.addFields({ name: t(lang, 'commands.admin.ticket.user.logEmbed.messagesField'), value: String(transcriptMessages.length), inline: true })
-            .setTimestamp(new Date());
 
           const sendOpts: any = { embeds: [logEmbed] };
 
@@ -617,7 +613,6 @@ const subcommands: Record<string, (message: any, args: string[], guild: any, set
           .setDescription(t(lang, 'commands.admin.ticket.user.dmEmbed.description', { guildName: guild.name, userId: message.author.id }))
           .setColor(0xED4245)
           .addFields({ name: t(lang, 'commands.admin.ticket.user.dmEmbed.reasonField'), value: reason, inline: false })
-          .setTimestamp(new Date());
         const userSendOpts: any = { embeds: [userEmbed] };
         if (transcriptMessages.length > 0) {
           try {

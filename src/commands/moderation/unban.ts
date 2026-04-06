@@ -3,7 +3,7 @@ import parseUserId from '../../utils/parseUserId';
 import { logModAction } from '../../utils/logger';
 import ModerationLog from '../../models/ModerationLog';
 import isNetworkError from '../../utils/isNetworkError';
-import { isPermDenied, PERM_MESSAGES } from '../../utils/permError';
+import { isPermDenied, permMessage } from '../../utils/permError';
 import settingsCache from '../../utils/settingsCache';
 import { t, normalizeLocale } from '../../i18n';
 
@@ -44,7 +44,7 @@ const command: Command = {
       try {
         targetUser = await client.users.fetch(userId);
       } catch {
-        targetUser = { id: userId, username: 'Unknown User' };
+        targetUser = { id: userId, username: t(lang, 'commands.userinfo.unknown') };
       }
 
       await guild.unban(userId);
@@ -71,7 +71,7 @@ const command: Command = {
       } else if (error.code === 10026) {
         message.reply(t(lang, 'commands.moderation.unban.notBanned')).catch(() => {});
       } else if (isPermDenied(error)) {
-        message.reply(PERM_MESSAGES.unban).catch(() => {});
+        message.reply(permMessage(lang, 'unban')).catch(() => {});
       } else {
         console.error(`[${guildName}] Error in !unban: ${error.message || error}`);
         message.reply(t(lang, 'commands.moderation.unban.errors.generic')).catch(() => {});

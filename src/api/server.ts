@@ -21,8 +21,13 @@ import { createDataRouter } from './routes/data';
 import { createPublicRouter } from './routes/public';
 import { setupHealthWebSocket, teardownHealthWebSocket } from './ws/healthWs';
 import { setupSettingsWebSocket, teardownSettingsWebSocket } from './ws/settingsWs';
+import { t } from '../i18n';
 
 let httpServer: HttpServer | null = null;
+
+function serverT(key: string): string {
+  return t('en', `auditCatalog.api.server.${key}`);
+}
 
 export async function startApiServer(client: Client, commandHandler: CommandHandler): Promise<void> {
   const app = express();
@@ -133,7 +138,7 @@ export async function startApiServer(client: Client, commandHandler: CommandHand
     const indexPath = path.join(dashboardPath, 'index.html');
     res.sendFile(indexPath, (err) => {
       if (err) {
-        res.status(404).json({ error: 'Dashboard not built. Run `npm run build` in /dashboard.' });
+        res.status(404).json({ error: serverT('dashboardNotBuilt') });
       }
     });
   });

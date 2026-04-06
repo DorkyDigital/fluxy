@@ -2,6 +2,7 @@ import type { Command } from '../../types';
 import GuildSettings from '../../models/GuildSettings';
 import settingsCache from '../../utils/settingsCache';
 import { canManageRole } from '../../utils/permissions';
+import { t, normalizeLocale } from '../../i18n';
 
 const MAX_HONEYPOTS  = 10;
 const VALID_ACTIONS  = ['ban', 'kick', 'timeout', 'role'];
@@ -57,6 +58,7 @@ function formatEntry(h: any): string {
 
 async function showList(message: any, guild: any, prefix = '!') {
   const settings = await getSettings(guild.id);
+  const lang = normalizeLocale(settings?.language);
   const honeypots = settings.honeypotChannels || [];
   const alertRole = settings.honeypotAlertRoleId;
 
@@ -76,20 +78,26 @@ async function showList(message: any, guild: any, prefix = '!') {
     : `\n\nNo alert role set. Use \`${prefix}honeypot alertrole <@role>\` to configure one.`;
 
   return message.reply(
-    `**Honeypot Channels** (${honeypots.length}/${MAX_HONEYPOTS})\n\n${lines}${footer}`
+    t(lang, 'auditCatalog.commands.admin.honeypot.l79_reply', {
+      'honeypots.length': honeypots.length,
+      MAX_HONEYPOTS,
+      lines,
+      footer
+    })
   );
 }
 
 async function showInfo(message: any, guild: any, client: any, args: string[], prefix = '!') {
   const [channelArg] = args;
-  if (!channelArg) return message.reply(`Usage: \`${prefix}honeypot info <#channel>\``);
+  const settings = await getSettings(guild.id);
+  const lang = normalizeLocale(settings?.language);
+  if (!channelArg) return message.reply(t(lang, 'auditCatalog.commands.admin.honeypot.l85_reply', { prefix }));
 
   const channel = await resolveChannel(channelArg, guild, client);
-  if (!channel) return message.reply('Channel not found.');
+  if (!channel) return message.reply(t(lang, 'commands.admin.reactionrole.common.channelNotFound'));
 
-  const settings = await getSettings(guild.id);
   const entry = (settings.honeypotChannels || []).find((h: any) => h.channelId === channel.id);
-  if (!entry) return message.reply(`<#${channel.id}> is not configured as a honeypot.`);
+  if (!entry) return message.reply(t(lang, 'auditCatalog.commands.admin.honeypot.l92_reply', { 'channel.id': channel.id }));
 
   const lines = [
     `**Honeypot Info - <#${channel.id}>**`,
@@ -113,6 +121,8 @@ async function showInfo(message: any, guild: any, client: any, args: string[], p
 }
 
 async function upsertHoneypot(message: any, guild: any, client: any, args: string[], requireExisting: boolean, prefix = '!') {
+  const settings = await getSettings(guild.id);
+  const lang = normalizeLocale(settings?.language);
   const [channelArg, actionArg, paramArg] = args;
   const subName = requireExisting ? 'action' : 'add';
 
@@ -128,20 +138,20 @@ async function upsertHoneypot(message: any, guild: any, client: any, args: strin
 
   const action = actionArg.toLowerCase();
   if (!VALID_ACTIONS.includes(action)) {
-    return message.reply(`Invalid action. Choose from: \`ban\`, \`kick\`, \`timeout\`, \`role\`.`);
+    return message.reply(t(lang, 'auditCatalog.commands.admin.honeypot.l131_reply'));
   }
 
   let resolvedParam: any = null;
   if (action === 'timeout') {
     const hours = parseInt(paramArg, 10);
     if (isNaN(hours) || hours < 1 || hours > 672) {
-      return message.reply(`Timeout requires a duration: \`${prefix}honeypot add <#channel> timeout <hours>\` (1–672 hours).`);
+      return message.reply(t(lang, 'auditCatalog.commands.admin.honeypot.l138_reply', { prefix }));
     }
     resolvedParam = hours;
   } else if (action === 'role') {
     const roleId = parseRoleId(paramArg || '');
     if (!roleId) {
-      return message.reply(`Role action requires a role: \`${prefix}honeypot add <#channel> role <@role>\`.`);
+      return message.reply(t(lang, 'auditCatalog.commands.admin.honeypot.l144_reply', { prefix }));
     }
     let targetRole = guild.roles?.get(roleId);
     if (!targetRole) {
@@ -161,25 +171,24 @@ async function upsertHoneypot(message: any, guild: any, client: any, args: strin
   } else if (action === 'ban' && paramArg) {
     const days = parseInt(paramArg, 10);
     if (isNaN(days) || days < 0 || days > 7) {
-      return message.reply('Delete days must be 0–7.');
+      return message.reply(t(lang, 'auditCatalog.commands.admin.honeypot.l164_reply'));
     }
     resolvedParam = days;
   }
 
   const channel = await resolveChannel(channelArg, guild, client);
-  if (!channel) return message.reply('Channel not found.');
+  if (!channel) return message.reply(t(lang, 'commands.admin.reactionrole.common.channelNotFound'));
 
-  const settings = await getSettings(guild.id);
   if (!settings.honeypotChannels) settings.honeypotChannels = [];
 
   const existing = settings.honeypotChannels.find((h: any) => h.channelId === channel.id);
 
   if (requireExisting && !existing) {
-    return message.reply(`<#${channel.id}> is not configured as a honeypot. Use \`${prefix}honeypot add\` first.`);
+    return message.reply(t(lang, 'auditCatalog.commands.admin.honeypot.l178_reply', { 'channel.id': channel.id, prefix }));
   }
 
   if (!requireExisting && !existing && settings.honeypotChannels.length >= MAX_HONEYPOTS) {
-    return message.reply(`Maximum of ${MAX_HONEYPOTS} honeypot channels reached. Remove one first.`);
+    return message.reply(t(lang, 'auditCatalog.commands.admin.honeypot.l182_reply', { MAX_HONEYPOTS }));
   }
 
   if (existing) {
@@ -195,50 +204,56 @@ async function upsertHoneypot(message: any, guild: any, client: any, args: strin
   settingsCache.invalidate(guild.id);
 
   return message.reply(
-    `<#${channel.id}> honeypot ${existing ? 'updated' : 'created'} - ${formatEntry(
-      settings.honeypotChannels.find((h: any) => h.channelId === channel.id)
-    )}.`
+    t(lang, 'auditCatalog.commands.admin.honeypot.l198_reply', {
+      'channel.id': channel.id,
+      "existing ? 'updated' : 'created'": existing ? 'updated' : 'created',
+      "formatEntry(\n      settings.honeypotChannels.find((h: any) => h.channelId === channel.id)\n    )": formatEntry(
+        settings.honeypotChannels.find((h: any) => h.channelId === channel.id)
+      )
+    })
   );
 }
 
 async function removeHoneypot(message: any, guild: any, client: any, args: string[], prefix = '!') {
+  const settings = await getSettings(guild.id);
+  const lang = normalizeLocale(settings?.language);
   const [channelArg] = args;
-  if (!channelArg) return message.reply(`Usage: \`${prefix}honeypot remove <#channel>\``);
+  if (!channelArg) return message.reply(t(lang, 'auditCatalog.commands.admin.honeypot.l206_reply', { prefix }));
 
   const channel = await resolveChannel(channelArg, guild, client);
-  if (!channel) return message.reply('Channel not found.');
+  if (!channel) return message.reply(t(lang, 'commands.admin.reactionrole.common.channelNotFound'));
 
-  const settings = await getSettings(guild.id);
   const before = (settings.honeypotChannels || []).length;
   settings.honeypotChannels = (settings.honeypotChannels || []).filter(
     (h: any) => h.channelId !== channel.id
   );
 
   if (settings.honeypotChannels.length === before) {
-    return message.reply(`<#${channel.id}> is not configured as a honeypot.`);
+    return message.reply(t(lang, 'auditCatalog.commands.admin.honeypot.l218_reply', { 'channel.id': channel.id }));
   }
 
   settings.markModified('honeypotChannels');
   await settings.save();
   settingsCache.invalidate(guild.id);
 
-  return message.reply(`Removed honeypot from <#${channel.id}>.`);
+  return message.reply(t(lang, 'auditCatalog.commands.admin.honeypot.l225_reply', { 'channel.id': channel.id }));
 }
 
 async function toggleHoneypot(message: any, guild: any, client: any, args: string[], enabled: boolean, prefix = '!') {
+  const settings = await getSettings(guild.id);
+  const lang = normalizeLocale(settings?.language);
   const [channelArg] = args;
   if (!channelArg) {
-    return message.reply(`Usage: \`${prefix}honeypot ${enabled ? 'enable' : 'disable'} <#channel>\``);
+    return message.reply(t(lang, 'auditCatalog.commands.admin.honeypot.l231_reply', { prefix, enabled }));
   }
 
   const channel = await resolveChannel(channelArg, guild, client);
-  if (!channel) return message.reply('Channel not found.');
+  if (!channel) return message.reply(t(lang, 'commands.admin.reactionrole.common.channelNotFound'));
 
-  const settings = await getSettings(guild.id);
   const entry = (settings.honeypotChannels || []).find((h: any) => h.channelId === channel.id);
 
   if (!entry) {
-    return message.reply(`<#${channel.id}> is not configured as a honeypot. Use \`${prefix}honeypot add\` first.`);
+    return message.reply(t(lang, 'auditCatalog.commands.admin.honeypot.l241_reply', { 'channel.id': channel.id, prefix }));
   }
 
   entry.enabled = enabled;
@@ -253,34 +268,34 @@ async function toggleHoneypot(message: any, guild: any, client: any, args: strin
 }
 
 async function setAlertRole(message: any, guild: any, args: string[], prefix = '!') {
+  const settings = await getSettings(guild.id);
+  const lang = normalizeLocale(settings?.language);
   const [roleArg] = args;
   if (!roleArg) {
-    return message.reply(`Usage: \`${prefix}honeypot alertrole <@role>\` or \`${prefix}honeypot alertrole clear\``);
+    return message.reply(t(lang, 'auditCatalog.commands.admin.honeypot.l258_reply', { prefix }));
   }
-
-  const settings = await getSettings(guild.id);
 
   if (roleArg.toLowerCase() === 'clear') {
     settings.honeypotAlertRoleId = null;
     await settings.save();
     settingsCache.invalidate(guild.id);
-    return message.reply('Honeypot alert role cleared.');
+    return message.reply(t(lang, 'auditCatalog.commands.admin.honeypot.l267_reply'));
   }
 
   const roleId = parseRoleId(roleArg);
-  if (!roleId) return message.reply('Please mention a role or provide a role ID.');
+  if (!roleId) return message.reply(t(lang, 'auditCatalog.commands.admin.honeypot.l271_reply'));
 
   let role = guild.roles?.get(roleId);
   if (!role) {
     try { role = await guild.fetchRole(roleId); } catch {}
   }
-  if (!role) return message.reply('That role does not exist in this server.');
+  if (!role) return message.reply(t(lang, 'commands.inrole.roleNotFound'));
 
   settings.honeypotAlertRoleId = roleId;
   await settings.save();
   settingsCache.invalidate(guild.id);
 
-  return message.reply(`Honeypot alert role set to <@&${roleId}>. This role will be pinged in the mod log whenever a honeypot fires.`);
+  return message.reply(t(lang, 'auditCatalog.commands.admin.honeypot.l283_reply', { roleId }));
 }
 
 const command: Command = {
@@ -308,7 +323,7 @@ const command: Command = {
 
   async execute(message, args, client, prefix = '!') {
     const guild = (message as any).guild;
-    if (!guild) return void await message.reply('This command can only be used in a server.');
+    if (!guild) return void await message.reply(t('en', 'commands.admin.keywords.serverOnly'));
 
     const sub = args[0]?.toLowerCase();
 
@@ -321,7 +336,7 @@ const command: Command = {
     if (sub === 'info')            return showInfo(message, guild, client, args.slice(1), prefix);
     if (sub === 'alertrole')       return setAlertRole(message, guild, args.slice(1), prefix);
 
-    return void await message.reply(`Unknown subcommand. Use \`${prefix}honeypot\` to see all options.`);
+    return void await message.reply(t('en', 'auditCatalog.commands.admin.honeypot.l324_reply', { prefix }));
   }
 };
 

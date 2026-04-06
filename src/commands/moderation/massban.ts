@@ -233,7 +233,7 @@ const command: Command = {
         let targetUser: any = targetMember?.user;
         if (!targetUser) {
           try { targetUser = await client.users.fetch(userId); } catch {
-            targetUser = { id: userId, username: 'Unknown User' };
+            targetUser = { id: userId, username: t(lang, 'commands.userinfo.unknown') };
           }
         }
 

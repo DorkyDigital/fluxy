@@ -2,6 +2,11 @@ import { Router, type RequestHandler } from 'express';
 import type { AuthRequest } from '../middleware/auth';
 import ModerationLog from '../../models/ModerationLog';
 import Warning from '../../models/Warning';
+import { t } from '../../i18n';
+
+function moderationT(key: string): string {
+  return t('en', `auditCatalog.api.routes.moderation.${key}`);
+}
 
 export function createModerationRouter(requireGuildAccess: RequestHandler): Router {
   const router = Router();
@@ -26,7 +31,7 @@ export function createModerationRouter(requireGuildAccess: RequestHandler): Rout
 
       res.json({ logs, total });
     } catch {
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({ error: moderationT('internalServerError') });
     }
   });
 
@@ -34,19 +39,19 @@ export function createModerationRouter(requireGuildAccess: RequestHandler): Rout
     try {
       const caseNum = parseInt(req.params.caseNumber as string);
       if (isNaN(caseNum)) {
-        res.status(400).json({ error: 'Invalid case number' });
+        res.status(400).json({ error: moderationT('invalidCaseNumber') });
         return;
       }
 
       const log = await ModerationLog.getCase(req.params.guildId as string, caseNum);
       if (!log) {
-        res.status(404).json({ error: 'Case not found' });
+        res.status(404).json({ error: moderationT('caseNotFound') });
         return;
       }
 
       res.json(log);
     } catch {
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({ error: moderationT('internalServerError') });
     }
   });
 
@@ -56,7 +61,7 @@ export function createModerationRouter(requireGuildAccess: RequestHandler): Rout
       const stats = await ModerationLog.getGuildStats(req.params.guildId as string, days);
       res.json(stats);
     } catch {
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({ error: moderationT('internalServerError') });
     }
   });
 
@@ -70,7 +75,7 @@ export function createModerationRouter(requireGuildAccess: RequestHandler): Rout
         activeCount: record.getActiveCount(),
       });
     } catch {
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({ error: moderationT('internalServerError') });
     }
   });
 
@@ -80,7 +85,7 @@ export function createModerationRouter(requireGuildAccess: RequestHandler): Rout
       const history = await ModerationLog.getUserHistory(req.params.guildId as string, req.params.userId as string, limit);
       res.json(history);
     } catch {
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({ error: moderationT('internalServerError') });
     }
   });
 

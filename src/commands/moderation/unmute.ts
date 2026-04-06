@@ -4,7 +4,7 @@ import { logModAction } from '../../utils/logger';
 import settingsCache from '../../utils/settingsCache';
 import ModerationLog from '../../models/ModerationLog';
 import isNetworkError from '../../utils/isNetworkError';
-import { isPermDenied, PERM_MESSAGES } from '../../utils/permError';
+import { isPermDenied, permMessage } from '../../utils/permError';
 import { t, normalizeLocale } from '../../i18n';
 
 const command: Command = {
@@ -94,7 +94,7 @@ const command: Command = {
       if (isNetworkError(error)) {
         console.warn(`[${guildName}] Fluxer API unreachable during !unmute (ECONNRESET)`);
       } else if (isPermDenied(error)) {
-        message.reply(PERM_MESSAGES.unmute).catch(() => {});
+        message.reply(permMessage(lang, 'unmute')).catch(() => {});
       } else {
         console.error(`[${guildName}] Error in !unmute: ${error.message || error}`);
         message.reply(t(lang, 'commands.moderation.unmute.errors.generic')).catch(() => {});

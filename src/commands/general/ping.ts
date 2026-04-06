@@ -28,11 +28,9 @@ const command: Command = {
         .setTitle(t(lang, 'commands.ping.title'))
         .setColor(0x5865F2)
         .addFields(
-          { name: t(lang, 'commands.ping.restApi'), value: `\`${restLatency}ms\``, inline: true },
-          { name: t(lang, 'commands.ping.roundTrip'), value: `\`${msgLatency}ms\``, inline: true }
-        )
-        .setFooter({ text: t(lang, 'commands.ping.footer') })
-        .setTimestamp(new Date());
+          { name: t(lang, 'commands.ping.restApi'), value: t(lang, 'auditCatalog.commands.general.ping.l31_addFields_value', { restLatency }), inline: true },
+          { name: t(lang, 'commands.ping.roundTrip'), value: t(lang, 'auditCatalog.commands.general.ping.l32_addFields_value', { msgLatency }), inline: true }
+        );
 
       await msg.edit({ content: '', embeds: [embed] });
 

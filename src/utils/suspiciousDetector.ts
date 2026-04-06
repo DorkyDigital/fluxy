@@ -1,5 +1,6 @@
 import { EmbedBuilder } from '@erinjs/core';
 import config from '../config';
+import { t } from '../i18n';
 
 const BATCH_SIZE = 3;
 const BATCH_WINDOW_MS = 60_000;
@@ -150,14 +151,14 @@ async function sendSuspectAlert(client: any, guild: any, suspects: SuspectEntry[
   const idList = suspects.map(s => s.userId).join(',');
 
   const ownerEmbed = new EmbedBuilder()
-    .setTitle(`Suspect Join${suspects.length > 1 ? 's' : ''} - ${guild.name}`)
+    .setTitle(t('en', 'auditCatalog.utils.suspiciousDetector.l153_setTitle', { "suspects.length > 1 ? 's' : ''": suspects.length > 1 ? 's' : '', 'guild.name': guild.name }))
     .setDescription(
       `**${suspects.length}** suspicious account${suspects.length > 1 ? 's' : ''} joined **${guild.name}** (\`${guild.id}\`)\n\n` +
       lines.join('\n\n'),
     )
     .addFields({
-      name: 'Quick Globalban',
-      value: `\`\`\`\n!globalban add ${idList.length > 900 ? idList.slice(0, 900) + '...' : idList} Raid bot account\n\`\`\``,
+      name: t('en', 'auditCatalog.utils.suspiciousDetector.l159_addFields_name'),
+      value: t('en', 'auditCatalog.utils.suspiciousDetector.l160_addFields_value', { "idList.length > 900 ? idList.slice(0, 900) + '...' : idList": idList.length > 900 ? idList.slice(0, 900) + '...' : idList }),
       inline: false,
     })
     .setColor(0xffa500)
@@ -174,14 +175,14 @@ async function sendSuspectAlert(client: any, guild: any, suspects: SuspectEntry[
   if (guildOwnerId && guildOwnerId !== config.ownerId) {
     try {
       const guildOwnerEmbed = new EmbedBuilder()
-        .setTitle(`Suspicious Join Alert - ${guild.name}`)
+        .setTitle(t('en', 'auditCatalog.utils.suspiciousDetector.l177_setTitle', { 'guild.name': guild.name }))
         .setDescription(
           `**${suspects.length}** suspicious account${suspects.length > 1 ? 's' : ''} joined your server.\n` +
           `These accounts match patterns commonly seen in bot raids (generated names, new accounts, no avatars).\n\n` +
           suspects.map(s => `**${s.username}** (\`${s.userId}\`) - age ${s.accountAgeDays !== null ? (s.accountAgeDays < 1 ? '< 1 day' : `${Math.floor(s.accountAgeDays)}d`) : '?'}`).join('\n'),
         )
         .setColor(0xffa500)
-        .setFooter({ text: 'Review these users and consider banning if suspicious' })
+        .setFooter({ text: t('en', 'auditCatalog.utils.suspiciousDetector.l184_setFooter') })
         .setTimestamp(new Date());
 
       const dm = await client.users.createDM?.(guildOwnerId);

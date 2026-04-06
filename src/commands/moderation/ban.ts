@@ -4,7 +4,7 @@ import { canModerate } from '../../utils/permissions';
 import { logModAction } from '../../utils/logger';
 import ModerationLog from '../../models/ModerationLog';
 import isNetworkError from '../../utils/isNetworkError';
-import { isPermDenied, PERM_MESSAGES } from '../../utils/permError';
+import { isPermDenied, permMessage } from '../../utils/permError';
 import settingsCache from '../../utils/settingsCache';
 import { t, normalizeLocale } from '../../i18n';
 
@@ -87,7 +87,7 @@ const command: Command = {
         try {
           targetUser = await client.users.fetch(userId);
         } catch {
-          targetUser = { id: userId, username: 'Unknown User' };
+          targetUser = { id: userId, username: t(lang, 'commands.userinfo.unknown') };
         }
       }
 
@@ -115,7 +115,7 @@ const command: Command = {
       if (isNetworkError(error)) {
         console.warn(`[${guildName}] Fluxer API unreachable during !ban (ECONNRESET)`);
       } else if (isPermDenied(error)) {
-        message.reply(PERM_MESSAGES.ban).catch(() => {});
+        message.reply(permMessage(lang, 'ban')).catch(() => {});
       } else {
         console.error(`[${guildName}] Error in !ban: ${error.message || error}`);
         message.reply(t(lang, 'commands.moderation.ban.errors.generic')).catch(() => {});

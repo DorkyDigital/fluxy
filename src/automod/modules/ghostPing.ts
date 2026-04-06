@@ -1,5 +1,6 @@
 import isNetworkError from '../../utils/isNetworkError';
 import * as embedQueue from '../../utils/embedQueue';
+import { t, normalizeLocale } from '../../i18n';
 
 const recentMessages = new Map<string, any>();
 
@@ -7,6 +8,10 @@ const mentionRegex = /<@!?(\d{17,19})>/g;
 const roleMentionRegex = /<@&(\d{17,19})>/g;
 const everyoneRegex = /@everyone/gi;
 const hereRegex = /@here/gi;
+
+function ghostPingT(locale: unknown, key: string, vars?: Record<string, string | number>): string {
+  return t(normalizeLocale(locale), `auditCatalog.automod.modules.ghostPing.${key}`, vars);
+}
 
 function extractUserMentions(content: string): string[] {
   const mentions: string[] = [];
@@ -131,9 +136,10 @@ const ghostPing = {
       const allMentions = [userMentionList, roleMentionList].filter(Boolean).join(', ');
       
       const alertMsg = await message.channel.send({
-        content: ` **Ghost ping detected!**\n` +
-          `**Sender:** <@${cachedData.authorId}>\n` +
-          `**Mentioned:** ${allMentions}`
+        content: ghostPingT(settings?.language, 'alertMessage', {
+          authorId: cachedData.authorId,
+          mentions: allMentions,
+        })
       }).catch(() => null);
       
       if (alertMsg) {
@@ -161,13 +167,16 @@ const ghostPing = {
       if (!logChannel) return;
       
       const embed = {
-        title: ' Ghost Ping Detected',
-        description: 'A message containing mentions was deleted.',
+        title: ghostPingT(settings?.language, 'logTitle'),
+        description: ghostPingT(settings?.language, 'logDescription'),
         fields: [
-          { name: 'Sender', value: `<@${cachedData.authorId}>`, inline: true },
-          { name: 'Channel', value: `<#${cachedData.channelId}>`, inline: true },
-          { name: 'Mentioned', value: allMentions },
-          { name: 'Message Content', value: cachedData.content.substring(0, 1000) || '*No content*' }
+          { name: ghostPingT(settings?.language, 'fieldSender'), value: `<@${cachedData.authorId}>`, inline: true },
+          { name: ghostPingT(settings?.language, 'fieldChannel'), value: `<#${cachedData.channelId}>`, inline: true },
+          { name: ghostPingT(settings?.language, 'fieldMentioned'), value: allMentions },
+          {
+            name: ghostPingT(settings?.language, 'fieldMessageContent'),
+            value: cachedData.content.substring(0, 1000) || ghostPingT(settings?.language, 'noContent')
+          }
         ],
         color: 0x9b59b6, // Purple
         timestamp: new Date().toISOString()

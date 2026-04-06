@@ -55,9 +55,7 @@ const command: Command = {
           { name: t(lang, 'commands.roleinfo.fieldMentionable'), value: role.mentionable ? t(lang, 'commands.roleinfo.yes') : t(lang, 'commands.roleinfo.no'), inline: true },
           { name: t(lang, 'commands.roleinfo.fieldManaged'), value: role.managed ? t(lang, 'commands.roleinfo.managedYes') : t(lang, 'commands.roleinfo.no'), inline: true },
           { name: t(lang, 'commands.roleinfo.fieldCreated'), value: createdStr, inline: false },
-        )
-        .setTimestamp(new Date())
-        .setFooter({ text: t(lang, 'commands.roleinfo.requestedBy', { username: (message as any).author.username }) });
+        );
 
       return void await message.reply({ embeds: [embed] });
 

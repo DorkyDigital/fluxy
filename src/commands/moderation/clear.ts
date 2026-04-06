@@ -2,7 +2,7 @@ import { Routes } from '@erinjs/types';
 import type { Command } from '../../types';
 import { logModAction } from '../../utils/logger';
 import isNetworkError from '../../utils/isNetworkError';
-import { isPermDenied, PERM_MESSAGES } from '../../utils/permError';
+import { isPermDenied, permMessage } from '../../utils/permError';
 import settingsCache from '../../utils/settingsCache';
 import { t, normalizeLocale } from '../../i18n';
 
@@ -107,7 +107,7 @@ const command: Command = {
       } else if (error.code === 50034) {
         message.reply(t(lang, 'commands.moderation.clear.errors.cannotDeleteOlderThan14Days')).catch(() => {});
       } else if (isPermDenied(error)) {
-        message.reply(PERM_MESSAGES.clear).catch(() => {});
+        message.reply(permMessage(lang, 'clear')).catch(() => {});
       } else {
         console.error(`[${guildName}] Error in !clear: ${error.message || error}`);
         message.reply(t(lang, 'commands.moderation.clear.errors.generic')).catch(() => {});

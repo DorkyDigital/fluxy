@@ -2,6 +2,7 @@ import { Routes } from '@erinjs/types';
 import isNetworkError from '../../utils/isNetworkError';
 import * as messageDeleteQueue from '../../utils/messageDeleteQueue';
 import * as embedQueue from '../../utils/embedQueue';
+import { t, normalizeLocale } from '../../i18n';
 
 const linkRegex = /(https?:\/\/[^\s]+)/g;
 
@@ -13,6 +14,10 @@ const defaultAllowedDomains = [
   'fluxerstatic.com',
   'fluxerusercontent.com'
 ];
+
+function antiLinkT(locale: unknown, key: string, vars?: Record<string, string | number>): string {
+  return t(normalizeLocale(locale), `auditCatalog.automod.modules.antiLink.${key}`, vars);
+}
 
 const antiLink = {
   name: 'antiLink',
@@ -53,9 +58,11 @@ const antiLink = {
         }
       }
       
-      const warningMsg = await message.channel.send({
-        content: `No external links allowed here, <@${message.author.id}>!`
-      }).catch(() => null);
+	      const warningMsg = await message.channel.send({
+	        content: t(normalizeLocale(settings?.language), 'auditCatalog.automod.modules.antiLink.l57_send_content', {
+	          'message.author.id': message.author.id
+	        })
+	      }).catch(() => null);
       
       if (warningMsg) {
         setTimeout(() => warningMsg.delete().catch(() => {}), 5000);
@@ -71,7 +78,7 @@ const antiLink = {
     }
   },
   
-  async logAction(message: any, client: any, _settings: any, blockedLinks: string[], logChannelId: string): Promise<void> {
+  async logAction(message: any, client: any, settings: any, blockedLinks: string[], logChannelId: string): Promise<void> {
     try {
       const guild = message.guild || await client.guilds.fetch(message.guildId);
       if (!guild) return;
@@ -80,12 +87,12 @@ const antiLink = {
       if (!logChannel) return;
       
       const embed = {
-        title: ' Link Deleted',
-        description: 'A message containing external links was deleted.',
+        title: antiLinkT(settings?.language, 'logTitle'),
+        description: antiLinkT(settings?.language, 'logDescription'),
         fields: [
-          { name: 'User', value: `<@${message.author.id}>`, inline: true },
-          { name: 'Channel', value: `<#${message.channelId || message.channel.id}>`, inline: true },
-          { name: 'Links', value: blockedLinks.join('\n').substring(0, 1000) }
+          { name: antiLinkT(settings?.language, 'fieldUser'), value: `<@${message.author.id}>`, inline: true },
+          { name: antiLinkT(settings?.language, 'fieldChannel'), value: `<#${message.channelId || message.channel.id}>`, inline: true },
+          { name: antiLinkT(settings?.language, 'fieldLinks'), value: blockedLinks.join('\n').substring(0, 1000) }
         ],
         color: 0xf39c12, // Orange
         timestamp: new Date().toISOString()

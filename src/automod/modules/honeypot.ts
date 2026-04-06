@@ -5,8 +5,15 @@ import isNetworkError from '../../utils/isNetworkError';
 import * as moderationQueue from '../../utils/moderationQueue';
 import * as roleQueue from '../../utils/roleQueue';
 import * as messageDeleteQueue from '../../utils/messageDeleteQueue';
+import { t, normalizeLocale } from '../../i18n';
 
-const REASON = 'Honeypot triggered';
+function honeypotT(locale: unknown, key: string, vars?: Record<string, string | number>): string {
+  return t(normalizeLocale(locale), `auditCatalog.automod.modules.honeypot.${key}`, vars);
+}
+
+function honeypotReason(locale: unknown): string {
+  return honeypotT(locale, 'reason');
+}
 
 async function check(message: any, client: any, settings: any): Promise<boolean> {
   const honeypots = settings?.honeypotChannels;
@@ -48,7 +55,7 @@ async function check(message: any, client: any, settings: any): Promise<boolean>
   try {
     if (action === 'ban') {
       await guild.ban(author.id, {
-        reason: REASON,
+        reason: honeypotReason(settings?.language),
         delete_message_days: entry.banDeleteDays ?? 1
       });
 
@@ -59,7 +66,7 @@ async function check(message: any, client: any, settings: any): Promise<boolean>
       const durationMs = (entry.timeoutHours ?? 24) * 3600000;
       await member.edit({
         communication_disabled_until: new Date(Date.now() + durationMs).toISOString(),
-        timeout_reason: REASON
+        timeout_reason: honeypotReason(settings?.language)
       });
 
     } else if (action === 'role') {
@@ -73,14 +80,14 @@ async function check(message: any, client: any, settings: any): Promise<boolean>
     const embedAction = action === 'role' ? 'warn' : action;
     await logToChannel(guild, null, {
       action: embedAction,
-      title: `Honeypot Triggered - ${author.username || author.id}`,
-      description: `<@${author.id}> sent a message in a honeypot channel and was actioned.`,
+      title: honeypotT(settings?.language, 'logTitle', { username: author.username || author.id }),
+      description: honeypotT(settings?.language, 'logDescription', { userId: author.id }),
       fields: [
-        { name: 'User',    value: `<@${author.id}> (${author.id})`, inline: true },
-        { name: 'Channel', value: `<#${channelId}>`,                inline: true },
-        { name: 'Action',  value: formatAction(entry),              inline: true },
+        { name: honeypotT(settings?.language, 'fieldUser'), value: `<@${author.id}> (${author.id})`, inline: true },
+        { name: honeypotT(settings?.language, 'fieldChannel'), value: `<#${channelId}>`, inline: true },
+        { name: honeypotT(settings?.language, 'fieldAction'), value: formatAction(entry, settings?.language), inline: true },
       ],
-      footer: `User ID: ${author.id}`,
+      footer: honeypotT(settings?.language, 'footerUserId', { userId: author.id }),
       client,
     }).catch(() => {});
 
@@ -98,19 +105,19 @@ async function check(message: any, client: any, settings: any): Promise<boolean>
       targetId: author.id,
       userId:   'automod',
       action,
-      reason:   REASON,
+      reason:   honeypotReason(settings?.language),
       metadata: { honeypotChannelId: channelId } as any
     });
 
   } catch (err: any) {
     if (isNetworkError(err)) {
       if (action === 'ban') {
-        moderationQueue.enqueue(guild.id, author.id, 'ban', { reason: REASON, deleteDays: entry.banDeleteDays ?? 1 });
+        moderationQueue.enqueue(guild.id, author.id, 'ban', { reason: honeypotReason(settings?.language), deleteDays: entry.banDeleteDays ?? 1 });
       } else if (action === 'kick') {
-        moderationQueue.enqueue(guild.id, author.id, 'kick', { reason: REASON });
+        moderationQueue.enqueue(guild.id, author.id, 'kick', { reason: honeypotReason(settings?.language) });
       } else if (action === 'timeout') {
         const durationMs = (entry.timeoutHours ?? 24) * 3600000;
-        moderationQueue.enqueue(guild.id, author.id, 'timeout', { durationMs, reason: REASON });
+        moderationQueue.enqueue(guild.id, author.id, 'timeout', { durationMs, reason: honeypotReason(settings?.language) });
       } else if (action === 'role' && entry.roleId) {
         roleQueue.enqueue(guild.id, author.id, entry.roleId, 'add');
       }
@@ -122,12 +129,18 @@ async function check(message: any, client: any, settings: any): Promise<boolean>
   return true;
 }
 
-function formatAction(entry: any): string {
+function formatAction(entry: any, locale: unknown): string {
   switch (entry.action) {
-    case 'ban':     return `Ban (delete ${entry.banDeleteDays ?? 1}d of messages)`;
-    case 'kick':    return 'Kick';
-    case 'timeout': return `Timeout ${entry.timeoutHours ?? 24}h`;
-    case 'role':    return entry.roleId ? `Role <@&${entry.roleId}>` : 'Role (unconfigured)';
+    case 'ban':
+      return honeypotT(locale, 'actionBan', { days: entry.banDeleteDays ?? 1 });
+    case 'kick':
+      return honeypotT(locale, 'actionKick');
+    case 'timeout':
+      return honeypotT(locale, 'actionTimeout', { hours: entry.timeoutHours ?? 24 });
+    case 'role':
+      return entry.roleId
+        ? honeypotT(locale, 'actionRole', { roleId: entry.roleId })
+        : honeypotT(locale, 'actionRoleUnconfigured');
     default:        return entry.action;
   }
 }

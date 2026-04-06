@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 type Json = Record<string, any>;
+const OPTIONAL_ENGLISH_FALLBACK_PREFIXES = ['auditCatalog.'];
 
 function isObject(v: any): v is Record<string, any> {
   return v && typeof v === 'object' && !Array.isArray(v);
@@ -33,6 +34,10 @@ function loadJson(p: string): Json {
   return JSON.parse(raw);
 }
 
+function isOptionalEnglishFallbackKey(key: string): boolean {
+  return OPTIONAL_ENGLISH_FALLBACK_PREFIXES.some(prefix => key.startsWith(prefix));
+}
+
 function main() {
   const localesDir = path.join(process.cwd(), 'src', 'locales');
   const files = fs.readdirSync(localesDir).filter(f => f.endsWith('.json'));
@@ -53,7 +58,7 @@ function main() {
     const flat = flatten(loadJson(locPath));
 
     const keys = Object.keys(flat).sort();
-    const missing = enKeys.filter(k => !(k in flat));
+    const missing = enKeys.filter(k => !(k in flat) && !isOptionalEnglishFallbackKey(k));
     const extra = keys.filter(k => !(k in enFlat));
 
     if (missing.length) {
@@ -93,4 +98,3 @@ function main() {
 }
 
 main();
-

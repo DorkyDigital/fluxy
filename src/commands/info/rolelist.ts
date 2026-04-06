@@ -1,6 +1,9 @@
 import { EmbedBuilder } from '@erinjs/core';
 import type { Command } from '../../types';
 import isNetworkError from '../../utils/isNetworkError';
+import { joinCompactFooterParts } from '../../utils/embedPresentation';
+import settingsCache from '../../utils/settingsCache';
+import { t, normalizeLocale } from '../../i18n';
 
 const command: Command = {
   name: 'rolelist',
@@ -12,7 +15,9 @@ const command: Command = {
   async execute(message, _args, client) {
     let guild = (message as any).guild;
     if (!guild && (message as any).guildId) guild = await client.guilds.fetch((message as any).guildId);
-    if (!guild) return void await message.reply('This command can only be used in a server.');
+    const settings = guild ? await settingsCache.get(guild.id).catch(() => null) : null;
+    const lang = normalizeLocale(settings?.language);
+    if (!guild) return void await message.reply(t(lang, 'commands.admin.keywords.serverOnly'));
 
     try {
       let roles: any;
@@ -31,7 +36,7 @@ const command: Command = {
         .sort((a: any, b: any) => (b.position ?? 0) - (a.position ?? 0));
 
       if (sorted.length === 0) {
-        return void await message.reply('This server has no roles.');
+        return void await message.reply(t(lang, 'auditCatalog.commands.info.rolelist.l35_reply'));
       }
 
       const MAX_DISPLAY = 40;
@@ -46,11 +51,15 @@ const command: Command = {
       });
 
       const embed = new EmbedBuilder()
-        .setTitle(`Roles \u2014 ${guild.name}`)
+        .setTitle(t(lang, 'auditCatalog.commands.info.rolelist.l50_setTitle', { 'guild.name': guild.name }))
         .setColor(0x5865F2)
         .setDescription(lines.join('\n'))
-        .setFooter({ text: `${sorted.length} role(s) total${overflow > 0 ? ` \u00b7 ${overflow} not shown \u2014 use !roleinfo for details` : ''}` })
-        .setTimestamp(new Date());
+        .setFooter({
+          text: joinCompactFooterParts([
+            `${sorted.length} role(s)`,
+            overflow > 0 ? `${overflow} more` : null,
+          ]),
+        });
 
       return void await message.reply({ embeds: [embed] });
 
@@ -60,7 +69,7 @@ const command: Command = {
         console.warn(`[${guildName}] Fluxer API unreachable during !rolelist (ECONNRESET)`);
       } else {
         console.error(`[${guildName}] Error in !rolelist: ${error.message || error}`);
-        message.reply('An error occurred while fetching roles.').catch(() => {});
+        message.reply(t(lang, 'auditCatalog.commands.info.rolelist.l68_reply')).catch(() => {});
       }
     }
   }

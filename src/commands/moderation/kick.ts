@@ -4,7 +4,7 @@ import { canModerate } from '../../utils/permissions';
 import { logModAction } from '../../utils/logger';
 import ModerationLog from '../../models/ModerationLog';
 import isNetworkError from '../../utils/isNetworkError';
-import { isPermDenied, PERM_MESSAGES } from '../../utils/permError';
+import { isPermDenied, permMessage } from '../../utils/permError';
 import settingsCache from '../../utils/settingsCache';
 import { t, normalizeLocale } from '../../i18n';
 
@@ -106,7 +106,7 @@ const command: Command = {
       if (isNetworkError(error)) {
         console.warn(`[${guildName}] Fluxer API unreachable during !kick (ECONNRESET)`);
       } else if (isPermDenied(error)) {
-        message.reply(PERM_MESSAGES.kick).catch(() => {});
+        message.reply(permMessage(lang, 'kick')).catch(() => {});
       } else {
         console.error(`[${guildName}] Error in !kick: ${error.message || error}`);
         message.reply(t(lang, 'commands.moderation.kick.errors.generic')).catch(() => {});

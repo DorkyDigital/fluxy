@@ -12,6 +12,7 @@ import isNetworkError from '../utils/isNetworkError';
 import statsService from '../services/StatsService';
 import UserSettings from '../models/UserSettings';
 import parseUserId from '../utils/parseUserId';
+import { t, normalizeLocale } from '../i18n';
 
 const DEFAULT_PREFIXES = [config.prefix];
 const MAX_CUSTOM_COMMANDS_PER_GUILD = 5;
@@ -104,8 +105,15 @@ export default class CommandHandler {
 
     const guildId = (message as any).guildId || (message as any).guild?.id;
     const userId = (message as any).author?.id;
+    let locale = 'en';
 
-// im high as fuck right now by
+    if (guildId) {
+      try {
+        const localeSettings = await settingsCache.get(guildId);
+        locale = normalizeLocale((localeSettings as any)?.language);
+      } catch {}
+    }
+
     let usedPrefix: string | null = null;
 
     if (userId) {
@@ -142,6 +150,7 @@ export default class CommandHandler {
       if (guildId) {
         try {
           const settings = await settingsCache.get(guildId);
+          const lang = normalizeLocale((settings as any)?.language);
           const customCommands = Array.isArray(settings?.customCommands)
             ? settings.customCommands.slice(0, MAX_CUSTOM_COMMANDS_PER_GUILD)
             : [];
@@ -217,7 +226,10 @@ export default class CommandHandler {
 
               if (!customCooldown.ready) {
                 await message.reply(
-                  `Please wait ${customCooldown.remaining} second(s) before using !${customCmd.name} again.`,
+                  t(lang, 'auditCatalog.handlers.CommandHandler.l220_reply', {
+                    'customCooldown.remaining': customCooldown.remaining,
+                    'customCmd.name': customCmd.name
+                  }),
                 ).catch(() => {});
                 return;
               }
@@ -236,7 +248,7 @@ export default class CommandHandler {
               }
 
               if (!guild) {
-                await message.reply('This custom action can only be used in a server.').catch(() => {});
+                await message.reply(t(lang, 'auditCatalog.handlers.CommandHandler.l239_reply')).catch(() => {});
                 return;
               }
 
@@ -245,7 +257,7 @@ export default class CommandHandler {
                 : null;
 
               if (!targetRoleId) {
-                await message.reply(`Custom command !${customCmd.name} is missing its target role.`).catch(() => {});
+                await message.reply(t(lang, 'auditCatalog.handlers.CommandHandler.l248_reply', { 'customCmd.name': customCmd.name })).catch(() => {});
                 return;
               }
 
@@ -254,13 +266,13 @@ export default class CommandHandler {
                 (invokingMember as any)?.permissions?.has((PermissionFlags as any).Administrator);
 
               if (!memberHasManageRoles) {
-                await message.reply('You need Manage Roles permission to use this custom action command.').catch(() => {});
+                await message.reply(t(lang, 'auditCatalog.handlers.CommandHandler.l257_reply')).catch(() => {});
                 return;
               }
 
               const targetUserId = parseUserId(args[0]);
               if (!targetUserId) {
-                await message.reply(`Usage: ${usedPrefix}${customCmd.name} @user`).catch(() => {});
+                await message.reply(t(lang, 'auditCatalog.handlers.CommandHandler.l263_reply', { usedPrefix, 'customCmd.name': customCmd.name })).catch(() => {});
                 return;
               }
 
@@ -270,7 +282,7 @@ export default class CommandHandler {
               }
 
               if (!targetMember) {
-                await message.reply('Could not find that user in this server.').catch(() => {});
+                await message.reply(t(lang, 'auditCatalog.handlers.CommandHandler.l273_reply')).catch(() => {});
                 return;
               }
 
@@ -280,7 +292,7 @@ export default class CommandHandler {
               }
 
               if (!targetRole) {
-                await message.reply(`The configured role for !${customCmd.name} no longer exists.`).catch(() => {});
+                await message.reply(t(lang, 'auditCatalog.handlers.CommandHandler.l283_reply', { 'customCmd.name': customCmd.name })).catch(() => {});
                 return;
               }
 
@@ -294,7 +306,7 @@ export default class CommandHandler {
                 (botMember as any)?.permissions?.has((PermissionFlags as any).Administrator);
 
               if (!botHasManageRoles) {
-                await message.reply('I need Manage Roles permission to run this custom action command.').catch(() => {});
+                await message.reply(t(lang, 'auditCatalog.handlers.CommandHandler.l297_reply')).catch(() => {});
                 return;
               }
 
@@ -310,7 +322,7 @@ export default class CommandHandler {
                   actionWord = 'added';
                 }
               } catch {
-                await message.reply('I could not update that role (likely due to role hierarchy).').catch(() => {});
+                await message.reply(t(lang, 'auditCatalog.handlers.CommandHandler.l313_reply')).catch(() => {});
                 return;
               }
 
@@ -393,14 +405,14 @@ export default class CommandHandler {
 
     const guild = (message as any).guild;
     if (!guild && command.category !== 'owner' && !command.allowDM) {
-      await message.reply('This command can only be used in a server.').catch(() => {});
+      await message.reply(t(locale, 'commands.admin.keywords.serverOnly')).catch(() => {});
       return;
     }
 
     if (command.permissions && command.permissions.length > 0 && guild) {
       const member = await this.getMember(message);
       if (!member) {
-        await message.reply('Could not fetch your member data.').catch(() => {});
+        await message.reply(t(locale, 'auditCatalog.handlers.CommandHandler.l403_reply')).catch(() => {});
         return;
       }
 
@@ -409,21 +421,25 @@ export default class CommandHandler {
       });
 
       if (!hasPermission) {
-        await message.reply(`You need the following permissions: ${command.permissions.join(', ')}`).catch(() => {});
+        await message.reply(
+          t(locale, 'auditCatalog.handlers.CommandHandler.l412_reply', {
+            "command.permissions.join(', ')": command.permissions.join(', ')
+          })
+        ).catch(() => {});
         return;
       }
     }
 
     if (command.ownerOnly && config.ownerId) {
       if ((message as any).author.id !== config.ownerId) {
-        await message.reply('This command is restricted to the bot owner.').catch(() => {});
+        await message.reply(t(locale, 'commands.reload.ownerOnly')).catch(() => {});
         return;
       }
     }
 
     const cooldownInfo = this.checkCooldown((message as any).author.id, commandName);
     if (!cooldownInfo.ready) {
-      await message.reply(`Please wait ${cooldownInfo.remaining} second(s) before using this command again.`).catch(() => {});
+      await message.reply(t(locale, 'auditCatalog.handlers.CommandHandler.l426_reply', { 'cooldownInfo.remaining': cooldownInfo.remaining })).catch(() => {});
       return;
     }
 
@@ -462,7 +478,7 @@ export default class CommandHandler {
           tags: { command: commandName, guild: guildName },
           extra: { args, guildId, userId: (message as any).author?.id },
         });
-        await message.reply('There was an error executing this command.').catch(() => {});
+        await message.reply(t(locale, 'commands.admin.automod.errorGeneric')).catch(() => {});
 
         if (config.ownerId) {
           try {

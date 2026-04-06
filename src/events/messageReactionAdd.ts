@@ -101,15 +101,21 @@ const event: BotEvent = {
 
             try {
               const newEmbed = new EmbedBuilder()
-                .setTitle('Global Ban - Decision Recorded')
+                .setTitle(t('en', 'auditCatalog.events.messageReactionAdd.l104_setTitle'))
                 .setDescription(
                   apply
-                    ? `**${decidedByName}** chose to apply this ban. The user has been banned.`
-                    : `**${decidedByName}** chose to skip this ban. The user will not be banned here.`
+                    ? t('en', 'auditCatalog.events.messageReactionAdd.l106_setDescriptionApplied', { decidedByName })
+                    : t('en', 'auditCatalog.events.messageReactionAdd.l107_setDescriptionSkipped', { decidedByName })
                 )
                 .addFields(
-                  { name: 'User', value: `<@${(prompt as any).bannedUserId}>`, inline: true },
-                  { name: 'Decision', value: apply ? `${EMOJI_APPLY} Applied` : `${EMOJI_DECLINE} Skipped`, inline: true },
+                  { name: t('en', 'auditCatalog.events.messageReactionAdd.l111_addFields_name'), value: `<@${(prompt as any).bannedUserId}>`, inline: true },
+                  {
+                    name: t('en', 'auditCatalog.events.messageReactionAdd.l112_addFields_name'),
+                    value: apply
+                      ? t('en', 'auditCatalog.events.messageReactionAdd.l112_addFields_valueApplied', { emoji: EMOJI_APPLY })
+                      : t('en', 'auditCatalog.events.messageReactionAdd.l112_addFields_valueSkipped', { emoji: EMOJI_DECLINE }),
+                    inline: true
+                  },
                 )
                 .setColor(apply ? 0xe74c3c : 0x95a5a6)
                 .setTimestamp(new Date());
@@ -387,7 +393,7 @@ const event: BotEvent = {
 
               const starEmbed = new EmbedBuilder()
                 .setAuthor({
-                  name: origMsg.author?.username ?? 'Unknown User',
+                  name: origMsg.author?.username ?? t('en', 'commands.userinfo.unknown'),
                   iconURL: origMsg.author?.avatar
                     ? `https://fluxerusercontent.com/avatars/${origMsg.author.id}/${origMsg.author.avatar}.png`
                     : undefined,
@@ -398,11 +404,19 @@ const event: BotEvent = {
               if (content) starEmbed.setDescription(content);
 
               starEmbed.addFields(
-                { name: 'Source', value: `[Jump to message](https://fluxer.app/channels/${guild.id}/${reaction.channelId}/${reaction.messageId})`, inline: true },
-                { name: 'Channel', value: `<#${reaction.channelId}>`, inline: true },
+                {
+                  name: t('en', 'auditCatalog.events.messageReactionAdd.l401_addFields_name'),
+                  value: t('en', 'auditCatalog.events.messageReactionAdd.l401_addFields_value', {
+                    guildId: guild.id,
+                    channelId: reaction.channelId,
+                    messageId: reaction.messageId,
+                  }),
+                  inline: true
+                },
+                { name: t('en', 'commands.report.fieldChannel'), value: `<#${reaction.channelId}>`, inline: true },
               );
 
-              starEmbed.setFooter({ text: `ID: ${reaction.messageId}` });
+              starEmbed.setFooter({ text: t('en', 'auditCatalog.events.messageReactionAdd.l405_setFooter', { 'reaction.messageId': reaction.messageId }) });
 
               if (origMsg.attachments?.length > 0) {
                 const img = origMsg.attachments.find((a: any) => a.content_type?.startsWith('image/'));

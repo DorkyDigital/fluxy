@@ -71,13 +71,10 @@ const command: Command = {
       .setColor(0xED4245)
       .setDescription(reportContent)
       .addFields(
-        { name: t(lang, 'commands.report.fieldReporter'), value: `${author.username} (<@${author.id}>)`, inline: true },
-        { name: t(lang, 'commands.report.fieldUserId'), value: author.id, inline: true },
+        { name: t(lang, 'commands.report.fieldReporter'), value: t(lang, 'auditCatalog.commands.general.report.l74_addFields_value', { 'author.username': author.username, 'author.id': author.id }), inline: true },
         { name: t(lang, 'commands.report.fieldChannel'), value: `<#${(message as any).channelId || (message as any).channel?.id}>`, inline: true }
       )
-      .setThumbnail(author.displayAvatarURL?.() ?? author.avatarURL ?? null)
-      .setFooter({ text: t(lang, 'commands.report.footer') })
-      .setTimestamp(new Date());
+      .setThumbnail(author.displayAvatarURL?.() ?? author.avatarURL ?? null);
 
     let staffChannel: any;
     try {

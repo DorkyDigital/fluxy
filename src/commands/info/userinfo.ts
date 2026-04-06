@@ -60,17 +60,14 @@ const command: Command = {
       });
 
       const embed = new EmbedBuilder()
-        .setTitle(t(lang, 'commands.userinfo.title'))
+        .setTitle(user.username)
         .setColor(member?.displayColor || 0x3498db)
         .setThumbnail(user.avatarURL?.() || null)
         .addFields(
-          { name: t(lang, 'commands.userinfo.fieldUsername'), value: user.username, inline: true },
           { name: t(lang, 'commands.userinfo.fieldId'), value: user.id, inline: true },
           { name: t(lang, 'commands.userinfo.fieldBot'), value: user.bot ? t(lang, 'commands.userinfo.yes') : t(lang, 'commands.userinfo.no'), inline: true },
           { name: t(lang, 'commands.userinfo.fieldAccountCreated'), value: createdString, inline: true }
-        )
-        .setTimestamp(new Date())
-        .setFooter({ text: t(lang, 'commands.userinfo.requestedBy', { username: (message as any).author.username }) });
+        );
 
       if (member) {
         const joinedAt = member.joinedAt ? new Date(member.joinedAt) : null;

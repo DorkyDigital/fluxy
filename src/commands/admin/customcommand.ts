@@ -3,6 +3,7 @@ import { EmbedBuilder } from '@erinjs/core';
 import GuildSettings from '../../models/GuildSettings';
 import settingsCache from '../../utils/settingsCache';
 import isNetworkError from '../../utils/isNetworkError';
+import { t, normalizeLocale } from '../../i18n';
 
 const RESERVED_NAMES = [
   'help', 'ticket', 'automod', 'ban', 'kick', 'warn', 'mute', 'unmute',
@@ -29,38 +30,43 @@ function parseColor(str?: string): string | null {
 const subcommands: Record<string, (message: any, args: string[], guild: any, settings: any) => Promise<any>> = {
 
   async add(message, args, guild, settings) {
+    const lang = normalizeLocale(settings?.language);
     const name = args[0]?.toLowerCase();
     if (!name) {
       return message.reply(
-        'Usage: `!customcommand add <name> <response>`\n' +
-        'Example: `!customcommand add invite Join our server: https://fluxer.app/invite/abc`'
+        t(lang, 'auditCatalog.commands.admin.customcommand.l35_reply')
       );
     }
 
     if (!/^[a-z0-9_-]{1,32}$/.test(name)) {
-      return message.reply('Command names must be 1–32 characters, alphanumeric, hyphens, or underscores only.');
+      return message.reply(t(lang, 'auditCatalog.commands.admin.customcommand.l41_reply'));
     }
 
     if (RESERVED_NAMES.includes(name)) {
-      return message.reply(`\`${name}\` is a built-in command and cannot be used as a custom command name.`);
+      return message.reply(t(lang, 'auditCatalog.commands.admin.customcommand.l45_reply', { name }));
     }
 
     const response = args.slice(1).join(' ').trim();
     if (!response) {
-      return message.reply('Please provide a response message.\nUsage: `!customcommand add <name> <response>`');
+      return message.reply(t(lang, 'auditCatalog.commands.admin.customcommand.l50_reply'));
     }
 
     if (response.length > MAX_RESPONSE_LENGTH) {
-      return message.reply(`Response is too long (${response.length}/${MAX_RESPONSE_LENGTH} characters).`);
+      return message.reply(
+        t(lang, 'auditCatalog.commands.admin.customcommand.l54_reply', {
+          'response.length': response.length,
+          MAX_RESPONSE_LENGTH,
+        })
+      );
     }
 
     const existing = settings.customCommands?.find((c: any) => c.name === name);
     if (existing) {
-      return message.reply(`A custom command \`!${name}\` already exists. Use \`!customcommand edit ${name} <new response>\` to change it, or \`!customcommand remove ${name}\` first.`);
+      return message.reply(t(lang, 'auditCatalog.commands.admin.customcommand.l59_reply', { name }));
     }
 
     if ((settings.customCommands?.length || 0) >= MAX_COMMANDS) {
-      return message.reply(`You've reached the maximum of ${MAX_COMMANDS} custom commands. Remove one first.`);
+      return message.reply(t(lang, 'auditCatalog.commands.admin.customcommand.l63_reply', { MAX_COMMANDS }));
     }
 
     settings.customCommands.push({
@@ -82,16 +88,17 @@ const subcommands: Record<string, (message: any, args: string[], guild: any, set
     await settings.save();
     settingsCache.invalidate(guild.id);
 
-    return message.reply(`Custom command \`!${name}\` created.`);
+    return message.reply(t(lang, 'auditCatalog.commands.admin.customcommand.l85_reply', { name }));
   },
 
   async remove(message, args, guild, settings) {
+    const lang = normalizeLocale(settings?.language);
     const name = args[0]?.toLowerCase();
-    if (!name) return message.reply('Usage: `!customcommand remove <name>`');
+    if (!name) return message.reply(t(lang, 'auditCatalog.commands.admin.customcommand.l90_reply'));
 
     const idx = settings.customCommands?.findIndex((c: any) => c.name === name);
     if (idx === undefined || idx === -1) {
-      return message.reply(`No custom command \`!${name}\` found.`);
+      return message.reply(t(lang, 'auditCatalog.commands.admin.customcommand.l94_reply', { name }));
     }
 
     settings.customCommands.splice(idx, 1);
@@ -99,23 +106,29 @@ const subcommands: Record<string, (message: any, args: string[], guild: any, set
     await settings.save();
     settingsCache.invalidate(guild.id);
 
-    return message.reply(`Custom command \`!${name}\` removed.`);
+    return message.reply(t(lang, 'auditCatalog.commands.admin.customcommand.l102_reply', { name }));
   },
 
   async edit(message, args, guild, settings) {
+    const lang = normalizeLocale(settings?.language);
     const name = args[0]?.toLowerCase();
-    if (!name) return message.reply('Usage: `!customcommand edit <name> <new response>`');
+    if (!name) return message.reply(t(lang, 'auditCatalog.commands.admin.customcommand.l107_reply'));
 
     const response = args.slice(1).join(' ').trim();
-    if (!response) return message.reply('Please provide the new response.\nUsage: `!customcommand edit <name> <new response>`');
+    if (!response) return message.reply(t(lang, 'auditCatalog.commands.admin.customcommand.l110_reply'));
 
     if (response.length > MAX_RESPONSE_LENGTH) {
-      return message.reply(`Response is too long (${response.length}/${MAX_RESPONSE_LENGTH} characters).`);
+      return message.reply(
+        t(lang, 'auditCatalog.commands.admin.customcommand.l54_reply', {
+          'response.length': response.length,
+          MAX_RESPONSE_LENGTH,
+        })
+      );
     }
 
     const cmd = settings.customCommands?.find((c: any) => c.name === name);
     if (!cmd) {
-      return message.reply(`No custom command \`!${name}\` found.`);
+      return message.reply(t(lang, 'auditCatalog.commands.admin.customcommand.l94_reply', { name }));
     }
 
     cmd.response = response.replace(/\\n/g, '\n');
@@ -123,23 +136,23 @@ const subcommands: Record<string, (message: any, args: string[], guild: any, set
     await settings.save();
     settingsCache.invalidate(guild.id);
 
-    return message.reply(`Custom command \`!${name}\` updated.`);
+    return message.reply(t(lang, 'auditCatalog.commands.admin.customcommand.l126_reply', { name }));
   },
 
   async embed(message, args, guild, settings) {
+    const lang = normalizeLocale(settings?.language);
     const name = args[0]?.toLowerCase();
     const toggle = args[1]?.toLowerCase();
 
     if (!name || !['on', 'off'].includes(toggle)) {
       return message.reply(
-        'Usage: `!customcommand embed <name> <on|off> [color] [title]`\n' +
-        'Example: `!customcommand embed invite on #5865F2 Server Invite`'
+        t(lang, 'auditCatalog.commands.admin.customcommand.l135_reply')
       );
     }
 
     const cmd = settings.customCommands?.find((c: any) => c.name === name);
     if (!cmd) {
-      return message.reply(`No custom command \`!${name}\` found.`);
+      return message.reply(t(lang, 'auditCatalog.commands.admin.customcommand.l94_reply', { name }));
     }
 
     cmd.embed = toggle === 'on';
@@ -161,73 +174,115 @@ const subcommands: Record<string, (message: any, args: string[], guild: any, set
     settingsCache.invalidate(guild.id);
 
     if (cmd.embed) {
-      let reply = `\`!${name}\` will now send as an embed.`;
-      if (cmd.color) reply += ` Color: \`${cmd.color}\``;
-      if (cmd.title) reply += ` Title: **${cmd.title}**`;
+      let reply = t(lang, 'auditCatalog.commands.admin.customcommand.l164_reply', { name });
+      if (cmd.color) {
+        reply += ` ${t(lang, 'auditCatalog.commands.admin.customcommand.l165_reply', { 'cmd.color': cmd.color })}`;
+      }
+      if (cmd.title) {
+        reply += ` ${t(lang, 'auditCatalog.commands.admin.customcommand.l166_reply', { 'cmd.title': cmd.title })}`;
+      }
       return message.reply(reply);
     }
-    return message.reply(`\`!${name}\` will now send as a plain message.`);
+    return message.reply(t(lang, 'auditCatalog.commands.admin.customcommand.l169_reply', { name }));
   },
 
   async list(message, args, guild, settings) {
+    const lang = normalizeLocale(settings?.language);
     const commands = settings.customCommands || [];
     if (commands.length === 0) {
-      return message.reply('No custom commands configured. Use `!customcommand add <name> <response>` to create one.');
+      return message.reply(t(lang, 'auditCatalog.commands.admin.customcommand.l175_reply'));
     }
 
     const lines = commands.map((c: any, i: number) => {
       const preview = c.response.length > 60 ? c.response.substring(0, 57) + '...' : c.response;
-      const flags = c.embed ? ' (embed)' : '';
+      const flags = c.embed ? t(lang, 'auditCatalog.commands.admin.customcommand.l180_reply') : '';
       return `**${i + 1}.** \`!${c.name}\`${flags} - ${preview}`;
     });
 
     const embed = new EmbedBuilder()
-      .setTitle(`Custom Commands - ${guild.name}`)
+      .setTitle(t(lang, 'auditCatalog.commands.admin.customcommand.l185_setTitle', { 'guild.name': guild.name }))
       .setDescription(lines.join('\n'))
       .setColor(0x5865F2)
-      .setFooter({ text: `${commands.length}/${MAX_COMMANDS} commands` });
+      .setFooter({
+        text: t(lang, 'auditCatalog.commands.admin.customcommand.l188_setFooter', {
+          'commands.length': commands.length,
+          MAX_COMMANDS,
+        }),
+      });
 
     return message.reply({ embeds: [embed] });
   },
 
   async info(message, args, guild, settings) {
+    const lang = normalizeLocale(settings?.language);
     const name = args[0]?.toLowerCase();
-    if (!name) return message.reply('Usage: `!customcommand info <name>`');
+    if (!name) return message.reply(t(lang, 'auditCatalog.commands.admin.customcommand.l195_reply'));
 
     const cmd = settings.customCommands?.find((c: any) => c.name === name);
     if (!cmd) {
-      return message.reply(`No custom command \`!${name}\` found.`);
+      return message.reply(t(lang, 'auditCatalog.commands.admin.customcommand.l94_reply', { name }));
     }
 
     const embed = new EmbedBuilder()
-      .setTitle(`Custom Command: !${cmd.name}`)
+      .setTitle(t(lang, 'auditCatalog.commands.admin.customcommand.l203_setTitle', { 'cmd.name': cmd.name }))
       .setColor(0x5865F2)
       .addFields(
-        { name: 'Response', value: cmd.response.length > 1024 ? cmd.response.substring(0, 1021) + '...' : cmd.response },
-        { name: 'Embed Mode', value: cmd.embed ? 'Yes' : 'No', inline: true }
+        {
+          name: t(lang, 'auditCatalog.commands.admin.customcommand.l206_addFields_name'),
+          value: cmd.response.length > 1024 ? cmd.response.substring(0, 1021) + '...' : cmd.response,
+        },
+        {
+          name: t(lang, 'auditCatalog.commands.admin.customcommand.l207_addFields_name'),
+          value: cmd.embed
+            ? t(lang, 'verification.status.enabledYes')
+            : t(lang, 'verification.status.enabledNo'),
+          inline: true
+        }
       );
 
-    if (cmd.embed && cmd.color) embed.addFields({ name: 'Color', value: cmd.color, inline: true });
-    if (cmd.embed && cmd.title) embed.addFields({ name: 'Title', value: cmd.title, inline: true });
+    if (cmd.embed && cmd.color) {
+      embed.addFields({ name: t(lang, 'commands.roleinfo.fieldColor'), value: cmd.color, inline: true });
+    }
+    if (cmd.embed && cmd.title) {
+      embed.addFields({ name: t(lang, 'auditCatalog.commands.admin.customcommand.l211_addFields_name'), value: cmd.title, inline: true });
+    }
 
     return message.reply({ embeds: [embed] });
   }
 };
 
-function showHelp(message: any) {
+function showHelp(message: any, lang: string) {
   const embed = new EmbedBuilder()
-    .setTitle('Custom Commands')
+    .setTitle(t(lang, 'auditCatalog.commands.admin.customcommand.l219_setTitle'))
     .setColor(0x5865F2)
-    .setDescription('Create custom commands that the bot responds to with a configured message.')
+    .setDescription(t(lang, 'auditCatalog.commands.admin.customcommand.l221_setDescription'))
     .addFields(
-      { name: '!customcommand add <name> <response>', value: 'Create a new custom command' },
-      { name: '!customcommand remove <name>', value: 'Delete a custom command' },
-      { name: '!customcommand edit <name> <new response>', value: 'Change the response of an existing command' },
-      { name: '!customcommand embed <name> <on|off> [color] [title]', value: 'Toggle embed mode for a command' },
-      { name: '!customcommand list', value: 'List all custom commands' },
-      { name: '!customcommand info <name>', value: 'Show details of a specific command' }
+      {
+        name: t(lang, 'auditCatalog.commands.admin.customcommand.l223_addFields_name'),
+        value: t(lang, 'auditCatalog.commands.admin.customcommand.l223_addFields_value')
+      },
+      {
+        name: t(lang, 'auditCatalog.commands.admin.customcommand.l224_addFields_name'),
+        value: t(lang, 'auditCatalog.commands.admin.customcommand.l224_addFields_value')
+      },
+      {
+        name: t(lang, 'auditCatalog.commands.admin.customcommand.l225_addFields_name'),
+        value: t(lang, 'auditCatalog.commands.admin.customcommand.l225_addFields_value')
+      },
+      {
+        name: t(lang, 'auditCatalog.commands.admin.customcommand.l226_addFields_name'),
+        value: t(lang, 'auditCatalog.commands.admin.customcommand.l226_addFields_value')
+      },
+      {
+        name: t(lang, 'auditCatalog.commands.admin.customcommand.l227_addFields_name'),
+        value: t(lang, 'auditCatalog.commands.admin.customcommand.l227_addFields_value')
+      },
+      {
+        name: t(lang, 'auditCatalog.commands.admin.customcommand.l228_addFields_name'),
+        value: t(lang, 'auditCatalog.commands.admin.customcommand.l228_addFields_value')
+      }
     )
-    .setFooter({ text: 'Use \\n in responses for line breaks. Max 5 commands, 2000 chars each.' });
+    .setFooter({ text: t(lang, 'auditCatalog.commands.admin.customcommand.l230_setFooter') });
 
   return message.reply({ embeds: [embed] });
 }
@@ -244,17 +299,19 @@ const command: Command = {
   async execute(message, args, client) {
     let guild = (message as any).guild;
     if (!guild && (message as any).guildId) guild = await client.guilds.fetch((message as any).guildId);
-    if (!guild) return void await message.reply('This command can only be used in a server.');
+    if (!guild) return void await message.reply(t('en', 'commands.admin.keywords.serverOnly'));
+
+    const settings: any = await GuildSettings.getOrCreate(guild.id);
+    const lang = normalizeLocale(settings?.language);
+    if (!settings.customCommands) settings.customCommands = [];
 
     const sub = args[0]?.toLowerCase();
 
     if (!sub || !subcommands[sub]) {
-      return showHelp(message);
+      return showHelp(message, lang);
     }
 
     try {
-      const settings: any = await GuildSettings.getOrCreate(guild.id);
-      if (!settings.customCommands) settings.customCommands = [];
       await subcommands[sub](message, args.slice(1), guild, settings);
     } catch (error: any) {
       const guildName = guild?.name || 'Unknown Server';
@@ -262,7 +319,7 @@ const command: Command = {
         console.warn(`[${guildName}] Fluxer API unreachable during !customcommand (ECONNRESET)`);
       } else {
         console.error(`[${guildName}] Error in !customcommand: ${error.message || error}`);
-        message.reply('An error occurred while processing the custom command.').catch(() => {});
+        message.reply(t(lang, 'auditCatalog.commands.admin.customcommand.l265_reply')).catch(() => {});
       }
     }
   }

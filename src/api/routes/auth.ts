@@ -2,9 +2,14 @@ import { Router, type Request } from 'express';
 import crypto from 'crypto';
 import config from '../../config';
 import { invalidateTokenCache } from '../middleware/auth';
+import { t } from '../../i18n';
 
 const pendingStates = new Map<string, { createdAt: number }>();
 const STATE_TTL = 5 * 60 * 1000;
+
+function authRouteT(key: string): string {
+  return t('en', `auditCatalog.api.routes.auth.${key}`);
+}
 
 setInterval(() => {
   const now = Date.now();
@@ -19,7 +24,7 @@ export function createAuthRouter(): Router {
   router.get('/login', (_req, res) => {
     const { clientId, redirectUri } = config.fluxerOAuth;
     if (!clientId || !redirectUri) {
-      res.status(500).json({ error: 'OAuth2 not configured' });
+      res.status(500).json({ error: authRouteT('oauthNotConfigured') });
       return;
     }
 
@@ -43,19 +48,19 @@ export function createAuthRouter(): Router {
   router.post('/callback', async (req, res) => {
     const { code, state } = req.body;
     if (!code) {
-      res.status(400).json({ error: 'Missing authorization code' });
+      res.status(400).json({ error: authRouteT('missingAuthorizationCode') });
       return;
     }
 
     if (!state || !pendingStates.has(state)) {
-      res.status(400).json({ error: 'Invalid or expired OAuth state' });
+      res.status(400).json({ error: authRouteT('invalidOrExpiredState') });
       return;
     }
     pendingStates.delete(state);
 
     const { clientId, clientSecret, redirectUri } = config.fluxerOAuth;
     if (!clientId || !clientSecret || !redirectUri) {
-      res.status(500).json({ error: 'OAuth2 not configured' });
+      res.status(500).json({ error: authRouteT('oauthNotConfigured') });
       return;
     }
 
@@ -73,7 +78,7 @@ export function createAuthRouter(): Router {
       });
 
       if (!tokenRes.ok) {
-        res.status(400).json({ error: 'Token exchange failed' });
+        res.status(400).json({ error: authRouteT('tokenExchangeFailed') });
         return;
       }
 
@@ -105,7 +110,7 @@ export function createAuthRouter(): Router {
 
       res.json({ success: true });
     } catch {
-      res.status(500).json({ error: 'Token exchange error' });
+      res.status(500).json({ error: authRouteT('tokenExchangeError') });
     }
   });
 
@@ -150,7 +155,7 @@ export function createAuthRouter(): Router {
     }
 
     if (!token) {
-      res.status(401).json({ error: 'Missing token' });
+      res.status(401).json({ error: authRouteT('missingToken') });
       return;
     }
 
@@ -176,7 +181,7 @@ export function createAuthRouter(): Router {
       }
 
       if (!userRes.ok) {
-        res.status(401).json({ error: 'Invalid token' });
+        res.status(401).json({ error: authRouteT('invalidToken') });
         return;
       }
 
@@ -187,7 +192,7 @@ export function createAuthRouter(): Router {
       };
       res.json(responseData);
     } catch {
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({ error: authRouteT('internalServerError') });
     }
   });
 

@@ -1,6 +1,7 @@
 import Warning from '../../models/Warning';
 import ModerationLog from '../../models/ModerationLog';
 import { logModAction } from '../../utils/logger';
+import { t, normalizeLocale } from '../../i18n';
 
 
 function buildMatcher(entry: any): (content: string) => boolean {
@@ -72,7 +73,11 @@ async function check(message: any, client: any, settings: any): Promise<boolean>
       });
 
       author.send(
-        `You received a warning in **${guild.name}**.\n**Reason:** ${reason}\n**Total Warnings:** ${warningCount}`
+        t(normalizeLocale(settings?.language), 'auditCatalog.automod.modules.keywordWarning.l75_send', {
+          'guild.name': guild.name,
+          reason,
+          warningCount
+        })
       ).catch(() => {});
 
     } catch (err: any) {

@@ -8,7 +8,7 @@ import formatDuration from '../../utils/formatDuration';
 import settingsCache from '../../utils/settingsCache';
 import ModerationLog from '../../models/ModerationLog';
 import isNetworkError from '../../utils/isNetworkError';
-import { isPermDenied, PERM_MESSAGES } from '../../utils/permError';
+import { isPermDenied, permMessage } from '../../utils/permError';
 import { t, normalizeLocale } from '../../i18n';
 
 const DEFAULT_MUTE_DURATION = 10 * 60 * 1000; // default mute, change if you would like :)
@@ -185,7 +185,7 @@ const command: Command = {
       if (isNetworkError(error)) {
         console.warn(`[${guildName}] Fluxer API unreachable during !mute (ECONNRESET)`);
       } else if (isPermDenied(error)) {
-        message.reply(PERM_MESSAGES.mute).catch(() => {});
+        message.reply(permMessage(lang, 'mute')).catch(() => {});
       } else {
         console.error(`[${guildName}] Error in !mute: ${error.message || error}`);
         message.reply(t(lang, 'commands.moderation.mute.errors.generic')).catch(() => {});

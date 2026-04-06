@@ -6,7 +6,7 @@ import { canModerate } from '../../utils/permissions';
 import { logModAction } from '../../utils/logger';
 import ModerationLog from '../../models/ModerationLog';
 import isNetworkError from '../../utils/isNetworkError';
-import { isPermDenied, PERM_MESSAGES } from '../../utils/permError';
+import { isPermDenied, permMessage } from '../../utils/permError';
 import settingsCache from '../../utils/settingsCache';
 import { t, normalizeLocale } from '../../i18n';
 
@@ -141,7 +141,7 @@ const command: Command = {
       if (isNetworkError(error)) {
         console.warn(`[${guildName}] Fluxer API unreachable during !timeout (ECONNRESET)`);
       } else if (isPermDenied(error)) {
-        message.reply(PERM_MESSAGES.timeout).catch(() => {});
+        message.reply(permMessage(lang, 'timeout')).catch(() => {});
       } else {
         console.error(`[${guildName}] Error in !timeout: ${error.message || error}`);
         message.reply(t(lang, 'commands.moderation.timeout.errors.generic')).catch(() => {});

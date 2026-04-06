@@ -85,11 +85,10 @@ const command: Command = {
       const features = guild.features?.length ? guild.features.join(', ') : t(lang, 'commands.serverinfo.none');
 
       const embed = new EmbedBuilder()
-        .setTitle(t(lang, 'commands.serverinfo.title'))
+        .setTitle(guild.name)
         .setColor(0x3498db)
         .setThumbnail(guild.iconURL?.() || null)
         .addFields(
-          { name: t(lang, 'commands.serverinfo.fieldName'), value: guild.name, inline: true },
           { name: t(lang, 'commands.serverinfo.fieldId'), value: guild.id, inline: true },
           { name: t(lang, 'commands.serverinfo.fieldOwner'), value: `<@${ownerId}>`, inline: true },
           { name: t(lang, 'commands.serverinfo.fieldMembers'), value: `${memberCount}`, inline: true },
@@ -99,9 +98,7 @@ const command: Command = {
           { name: t(lang, 'commands.serverinfo.fieldRoles'), value: `${roleCount}`, inline: true },
           { name: t(lang, 'commands.serverinfo.fieldCreated'), value: createdString, inline: true },
           { name: t(lang, 'commands.serverinfo.fieldFeatures'), value: (features.substring(0, 1024) || t(lang, 'commands.serverinfo.none')), inline: false }
-        )
-        .setTimestamp(new Date())
-        .setFooter({ text: t(lang, 'commands.serverinfo.requestedBy', { username: (message as any).author.username }) });
+        );
 
       await message.reply({ embeds: [embed] });
 

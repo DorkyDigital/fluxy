@@ -6,6 +6,12 @@ import settingsCache from '../../utils/settingsCache';
 import { hasAnyPermission } from '../../utils/permissions';
 import { t, normalizeLocale } from '../../i18n';
 import { registerReactionPaginator } from '../../utils/reactionPaginator';
+import {
+  compactEmbedDescription,
+  formatCompactPageIndicator,
+  joinCompactFooterParts,
+  trimFooterPrompt,
+} from '../../utils/embedPresentation';
 
 const ACCENT_COLOR = 0xf1c40f;
 
@@ -161,19 +167,16 @@ function buildCategoryEmbed(opts: {
   const description = opts.category.meta.description
     ? `${opts.category.meta.description}\n\n${commandList}`
     : commandList;
-
-  const footerParts = [t(opts.lang, 'commands.help.menuFooter', { prefix: opts.prefix })];
-  if (opts.totalPages > 1) {
-    footerParts.push(`${opts.pageNumber}/${opts.totalPages}`);
-    footerParts.push('⬅️/➡️');
-  }
+  const footer = joinCompactFooterParts([
+    trimFooterPrompt(t(opts.lang, 'commands.help.menuFooter', { prefix: opts.prefix })),
+    formatCompactPageIndicator(opts.pageNumber, opts.totalPages),
+  ]);
 
   return new EmbedBuilder()
     .setTitle(`${t(opts.lang, 'commands.help.menuTitle')} - ${opts.category.meta.label}`)
     .setDescription(description)
     .setColor(ACCENT_COLOR)
-    .setFooter({ text: footerParts.join(' • ') })
-    .setTimestamp(new Date());
+    .setFooter({ text: footer });
 }
 
 function buildTextCategoryList(opts: {
@@ -257,27 +260,22 @@ const command: Command = {
         const visible = cmd && await canUserSeeCommand({ message, cmd, isOwner, member, disabledCommands, guildSettings });
         if (cmd && visible) {
           const usageStr = `\`${prefix}${cmd.name}${cmd.usage ? ' ' + cmd.usage : ''}\``;
-          const meta = CATEGORY_META[cmd.category] ?? { label: cmd.category };
 
           const embed = new EmbedBuilder()
             .setTitle(`${cmd.name}`)
-            .setDescription(Array.isArray(cmd.description) ? cmd.description.join('\n') : (cmd.description || 'No description provided.'))
+            .setDescription(compactEmbedDescription(cmd.description))
             .setColor(ACCENT_COLOR)
-            .addFields({ name: 'Usage', value: usageStr, inline: false });
+            .addFields({ name: t(lang, 'commands.admin.starboard.help.fieldUsage'), value: usageStr, inline: false });
 
           if (cmd.permissions?.length) {
-            embed.addFields({ name: 'Permission Required', value: cmd.permissions.join(', '), inline: true });
+            embed.addFields({ name: t(lang, 'auditCatalog.commands.general.help.l271_addFields_name'), value: cmd.permissions.join(', '), inline: true });
           }
           if (cmd.aliases?.length) {
-            embed.addFields({ name: 'Aliases', value: cmd.aliases.map((a: string) => `\`${a}\``).join('  '), inline: true });
+            embed.addFields({ name: t(lang, 'commands.admin.starboard.help.fieldAliases'), value: cmd.aliases.map((a: string) => `\`${a}\``).join('  '), inline: true });
           }
           if (cmd.cooldown) {
-            embed.addFields({ name: 'Cooldown', value: `${cmd.cooldown}s`, inline: true });
+            embed.addFields({ name: t(lang, 'commands.admin.starboard.help.fieldCooldown'), value: t(lang, 'auditCatalog.commands.general.help.l277_addFields_value', { 'cmd.cooldown': cmd.cooldown }), inline: true });
           }
-
-          embed.addFields({ name: 'Category', value: `${meta.label}`, inline: true });
-          embed.setFooter({ text: `${prefix}help [command/category] • Fluxy Docs: docs.fluxy.gay` });
-          embed.setTimestamp(new Date());
 
           try {
             return void await message.reply({ embeds: [embed] });

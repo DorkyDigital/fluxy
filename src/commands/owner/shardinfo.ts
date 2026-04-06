@@ -1,5 +1,6 @@
 import { EmbedBuilder } from '@erinjs/core';
 import type { Command } from '../../types';
+import { t } from '../../i18n';
 
 function formatUptime(seconds: number): string {
   const d = Math.floor(seconds / 86400);
@@ -63,18 +64,17 @@ const command: Command = {
       }
 
       const embed = new EmbedBuilder()
-        .setTitle('Shard Info')
+        .setTitle(t('en', 'auditCatalog.commands.owner.shardinfo.l66_setTitle'))
         .setDescription(
           `${totalShards} shards \u2022 ${totalGuilds} guilds \u2022 ${totalMemory.toFixed(1)} MB\n\n` +
           lines.join('\n')
         )
-        .setColor(0x5865F2)
-        .setTimestamp(new Date());
+        .setColor(0x5865F2);
 
       await message.reply({ embeds: [embed] });
     } catch (err: any) {
       console.error('[SHARDINFO] error:', err);
-      try { await message.reply('An error occurred while running !shardinfo.'); } catch {}
+      try { await message.reply(t('en', 'auditCatalog.commands.owner.shardinfo.l76_reply')); } catch {}
     }
   },
 };

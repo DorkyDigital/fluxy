@@ -92,12 +92,11 @@ const command: Command = {
         .setDescription(t('en', 'commands.admin.starboard.help.description'))
         .addFields(
           { name: t('en', 'commands.admin.starboard.help.fieldUsage'), value: usageStr, inline: false },
-          { name: t('en', 'commands.admin.starboard.help.fieldAliases'), value: '`sb`', inline: true },
-          { name: t('en', 'commands.admin.starboard.help.fieldCooldown'), value: '3s', inline: true },
+          { name: t('en', 'commands.admin.starboard.help.fieldAliases'), value: t('en', 'auditCatalog.commands.admin.starboard.l95_addFields_value'), inline: true },
+          { name: t('en', 'commands.admin.starboard.help.fieldCooldown'), value: t('en', 'auditCatalog.commands.admin.starboard.l96_addFields_value'), inline: true },
           { name: t('en', 'commands.admin.starboard.help.fieldPublic'), value: publicSubs.join('\n'), inline: false },
           { name: t('en', 'commands.admin.starboard.help.fieldAdmin'), value: adminSubs.join('\n'), inline: false },
         )
-        .setTimestamp(new Date());
       return void await message.reply({ embeds: [embed] });
     }
 
@@ -137,7 +136,7 @@ const command: Command = {
 
           const existing = boards.find((b: any) => b.channelId === channelId);
           if (!existing && boards.length >= 3) {
-            return void await message.reply('You can have up to 3 starboards. Remove one before adding another.');
+            return void await message.reply(t(lang, 'auditCatalog.commands.admin.starboard.l139_reply'));
           }
 
           if (existing) {
@@ -172,7 +171,6 @@ const command: Command = {
               { name: t(lang, 'commands.admin.starboard.setup.fieldThreshold'), value: t(lang, 'commands.admin.starboard.setup.thresholdReactions', { threshold: board?.threshold ?? 3 }), inline: true },
               { name: t(lang, 'commands.admin.starboard.setup.fieldEmoji'), value: board?.emoji ?? '⭐', inline: true },
             )
-            .setTimestamp(new Date());
           return void await message.reply({ embeds: [embed] });
         }
 
@@ -200,7 +198,7 @@ const command: Command = {
 
           const board = findBoard(boards, targetChannelId);
           if (!board) {
-            if (boards.length > 1) return void await message.reply('Specify which starboard channel to update.');
+            if (boards.length > 1) return void await message.reply(t(lang, 'auditCatalog.commands.admin.starboard.l201_reply'));
             return void await message.reply(t(lang, 'commands.admin.starboard.setup.usage', { prefix }));
           }
 
@@ -232,7 +230,7 @@ const command: Command = {
 
           const board = findBoard(boards, targetChannelId);
           if (!board) {
-            if (boards.length > 1) return void await message.reply('Specify which starboard channel to update.');
+            if (boards.length > 1) return void await message.reply(t(lang, 'auditCatalog.commands.admin.starboard.l201_reply'));
             return void await message.reply(t(lang, 'commands.admin.starboard.setup.usage', { prefix }));
           }
 
@@ -249,7 +247,7 @@ const command: Command = {
           const channelId = parseChannelId(args[1]);
           const board = findBoard(boards, channelId);
           if (!board) {
-            if (boards.length > 1) return void await message.reply('Specify which starboard channel to update.');
+            if (boards.length > 1) return void await message.reply(t(lang, 'auditCatalog.commands.admin.starboard.l201_reply'));
             return void await message.reply(t(lang, 'commands.admin.starboard.setup.usage', { prefix }));
           }
 
@@ -267,7 +265,7 @@ const command: Command = {
           const channelId = parseChannelId(args[1]);
           const board = findBoard(boards, channelId);
           if (!board) {
-            if (boards.length > 1) return void await message.reply('Specify which starboard channel to update.');
+            if (boards.length > 1) return void await message.reply(t(lang, 'auditCatalog.commands.admin.starboard.l201_reply'));
             return void await message.reply(t(lang, 'commands.admin.starboard.setup.usage', { prefix }));
           }
 
@@ -285,7 +283,7 @@ const command: Command = {
 
           const board = findBoard(boards, boardChannelId);
           if (!board) {
-            if (boards.length > 1) return void await message.reply('Specify which starboard channel to update.');
+            if (boards.length > 1) return void await message.reply(t(lang, 'auditCatalog.commands.admin.starboard.l201_reply'));
             return void await message.reply(t(lang, 'commands.admin.starboard.setup.usage', { prefix }));
           }
 
@@ -318,7 +316,7 @@ const command: Command = {
           const boardChannelId = parseChannelId(args[2]);
           const board = findBoard(boards, boardChannelId);
           if (!board) {
-            if (boards.length > 1) return void await message.reply('Specify which starboard channel to update.');
+            if (boards.length > 1) return void await message.reply(t(lang, 'auditCatalog.commands.admin.starboard.l201_reply'));
             return void await message.reply(t(lang, 'commands.admin.starboard.setup.usage', { prefix }));
           }
 
@@ -350,7 +348,6 @@ const command: Command = {
           const embed = new EmbedBuilder()
             .setTitle(t(lang, 'commands.admin.starboard.settings.title'))
             .setColor(0xf1c40f)
-            .setTimestamp(new Date());
 
           for (const board of boards) {
             const ignoredChannels = board.ignoredChannels?.length
@@ -407,7 +404,6 @@ const command: Command = {
             .setDescription(lines.join('\n\n'))
             .setColor(0xf1c40f)
             .setFooter({ text: t(lang, 'commands.admin.starboard.leaderboard.footer', { count: entries.length }) })
-            .setTimestamp(new Date());
           return void await message.reply({ embeds: [embed] });
         }
 
@@ -438,7 +434,6 @@ const command: Command = {
             .setDescription(lines.join('\n'))
             .setColor(0xf1c40f)
             .setFooter({ text: t(lang, 'commands.admin.starboard.topusers.footer', { count: pipeline.length }) })
-            .setTimestamp(new Date());
           return void await message.reply({ embeds: [embed] });
         }
 
@@ -475,14 +470,13 @@ const command: Command = {
               { name: t(lang, 'commands.admin.starboard.stats.totalStars'), value: `${totalStars}`, inline: true },
               { name: t(lang, 'commands.admin.starboard.stats.postedToStarboard'), value: `${postedCount}`, inline: true },
             )
-            .setTimestamp(new Date());
 
           if (boardBreakdown.length > 0) {
             const lines = boardBreakdown.map((b: any) => {
               const ch = b._id ? `<#${b._id}>` : 'Unknown board';
               return `${ch}: ${b.stars} stars across ${b.messages} message(s)`;
             });
-            embed.addFields({ name: 'Boards', value: lines.join('\n'), inline: false });
+            embed.addFields({ name: t(lang, 'auditCatalog.commands.admin.starboard.l479_addFields_name'), value: lines.join('\n'), inline: false });
           }
 
           return void await message.reply({ embeds: [embed] });
@@ -527,19 +521,26 @@ const command: Command = {
 
             const starEmbed = new EmbedBuilder()
               .setAuthor({
-                name: msgData.author?.username ?? 'Unknown User',
+                name: msgData.author?.username ?? t(lang, 'commands.userinfo.unknown'),
                 iconURL: msgData.author?.avatar
                   ? `https://fluxerusercontent.com/avatars/${msgData.author.id}/${msgData.author.avatar}.png`
                   : undefined,
               })
               .setDescription(content)
               .addFields(
-                { name: 'Source', value: `[Jump to message](https://fluxer.app/channels/${guild.id}/${targetChannelId}/${targetMessageId})`, inline: true },
-                { name: 'Channel', value: `<#${targetChannelId}>`, inline: true },
+                {
+                  name: t(lang, 'auditCatalog.commands.admin.starboard.l531_addFields_name'),
+                  value: t(lang, 'auditCatalog.commands.admin.starboard.l531_addFields_value', {
+                    guildId: guild.id,
+                    channelId: targetChannelId,
+                    messageId: targetMessageId,
+                  }),
+                  inline: true
+                },
+                { name: t(lang, 'commands.report.fieldChannel'), value: `<#${targetChannelId}>`, inline: true },
               )
               .setColor(starColor)
-              .setFooter({ text: `${starEmoji} Manually added | ID: ${targetMessageId}` })
-              .setTimestamp(new Date(msgData.timestamp ?? Date.now()));
+              .setFooter({ text: t(lang, 'auditCatalog.commands.admin.starboard.l535_setFooter', { starEmoji, targetMessageId }) })
 
             if (msgData.attachments?.length > 0) {
               const img = msgData.attachments.find((a: any) => a.content_type?.startsWith('image/'));

@@ -75,7 +75,7 @@ const command: Command = {
         try {
           targetUser = await client.users.fetch(userId);
         } catch {
-          targetUser = { id: userId, username: 'Unknown User' };
+          targetUser = { id: userId, username: t(lang, 'commands.userinfo.unknown') };
         }
       }
 
@@ -175,8 +175,7 @@ const command: Command = {
               { name: t(lang, 'commands.moderation.warn.dmFieldReason'), value: reason },
               { name: t(lang, 'commands.moderation.warn.dmFieldTotalWarnings'), value: `${warningCount}` }
             )
-            .setColor(0xf39c12)
-            .setTimestamp(new Date());
+            .setColor(0xf39c12);
 
           const dmChannel = await (client as any).users.createDM?.(targetUser.id);
           if (dmChannel) {

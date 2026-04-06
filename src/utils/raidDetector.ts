@@ -1,6 +1,7 @@
 import { EmbedBuilder } from '@erinjs/core';
 import config from '../config';
 import { logServerEvent } from './logger';
+import { t } from '../i18n';
 
 const DEFAULT_JOIN_THRESHOLD = 10;
 const DEFAULT_TIME_WINDOW_MS = 15_000;
@@ -82,15 +83,15 @@ export async function sendRaidAlert(
   const mentionList = userIds.slice(0, 20).map(id => `<@${id}>`).join(' ');
 
   const embed = new EmbedBuilder()
-    .setTitle('🚨 Possible Raid Detected')
+    .setTitle(t('en', 'auditCatalog.utils.raidDetector.l85_setTitle'))
     .setDescription(
       `**${joinCount}** users joined **${guild.name}** within a short time window.\n\n` +
       `This may be a raid. Review the user(s) below and take action if needed.`
     )
     .addFields(
-      { name: 'Server', value: `${guild.name} (\`${guild.id}\`)`, inline: false },
-      { name: `User IDs (${userIds.length})`, value: idList.length > 1024 ? idList.slice(0, 1000) + '...' : idList, inline: false },
-      { name: 'User IDs (copyable)', value: `\`\`\`\n${idListForBan.length > 900 ? idListForBan.slice(0, 900) + '...' : idListForBan}\n\`\`\``, inline: false },
+      { name: t('en', 'auditCatalog.utils.raidDetector.l91_addFields_name'), value: `${guild.name} (\`${guild.id}\`)`, inline: false },
+      { name: t('en', 'auditCatalog.utils.raidDetector.l92_addFields_name', { 'userIds.length': userIds.length }), value: idList.length > 1024 ? idList.slice(0, 1000) + '...' : idList, inline: false },
+      { name: t('en', 'auditCatalog.utils.raidDetector.l93_addFields_name'), value: t('en', 'auditCatalog.utils.raidDetector.l93_addFields_value', { "idListForBan.length > 900 ? idListForBan.slice(0, 900) + '...' : idListForBan": idListForBan.length > 900 ? idListForBan.slice(0, 900) + '...' : idListForBan }), inline: false },
     )
     .setColor(0xff0000)
     .setTimestamp(new Date());
@@ -130,13 +131,13 @@ export async function sendRaidAlert(
       if (guildOwnerDM) {
         await guildOwnerDM.send({ embeds: [
           new EmbedBuilder()
-            .setTitle('🚨 Possible Raid Detected')
+            .setTitle(t('en', 'auditCatalog.utils.raidDetector.l133_setTitle'))
             .setDescription(
               `**${joinCount}** users joined **${guild.name}** in rapid succession.\n\n` +
               `This may be a raid. Check your server and consider enabling lockdown if needed.`
             )
             .addFields(
-              { name: `User IDs (${userIds.length})`, value: idList.length > 1024 ? idList.slice(0, 1000) + '...' : idList, inline: false },
+              { name: t('en', 'auditCatalog.utils.raidDetector.l139_addFields_name', { 'userIds.length': userIds.length }), value: idList.length > 1024 ? idList.slice(0, 1000) + '...' : idList, inline: false },
             )
             .setColor(0xff0000)
             .setTimestamp(new Date())

@@ -8,6 +8,7 @@ import RssFeedState, { type IRssFeedState } from '../models/RssFeedState';
 import log from '../utils/consoleLogger';
 import settingsCache from '../utils/settingsCache';
 import { fetchFeed } from '../utils/rssFeed';
+import { t } from '../i18n';
 import {
   RSS_MAX_SEEN_ITEM_IDS,
   clampItemsPerPoll,
@@ -747,7 +748,7 @@ class RssPollerService {
 
             if (summary) {
               embed.addFields({
-                name: 'Link',
+                name: t('en', 'auditCatalog.services.RssPollerService.l750_addFields_name'),
                 value: item.link,
                 inline: false,
               });

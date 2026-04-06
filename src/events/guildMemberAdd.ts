@@ -11,6 +11,7 @@ import GlobalBan from '../models/GlobalBan';
 import GlobalBanPrompt from '../models/GlobalBanPrompt';
 import { recordJoin, sendRaidAlert, isRaidActive } from '../utils/raidDetector';
 import { scoreMember, checkAndAlert } from '../utils/suspiciousDetector';
+import { t } from '../i18n';
 
 const welcomeFailCooldowns = new Map<string, number>();
 const WELCOME_FAIL_COOLDOWN = 5 * 60 * 1000;
@@ -21,14 +22,14 @@ async function handleGlobalBan(member: any, guild: any, client: any, ban: any): 
       const user = member.user || member;
       await user.send({
         embeds: [new EmbedBuilder()
-          .setTitle('You have been automatically banned')
+          .setTitle(t('en', 'auditCatalog.events.guildMemberAdd.l24_setTitle'))
           .setDescription(
             `You have been banned from **${guild.name}** because your account is on the Fluxy global ban list.\n\n` +
             `**Reason:** ${ban.reason}` +
             (ban.evidence ? `\n**Evidence:** ${ban.evidence}` : '')
           )
           .setColor(0xe74c3c)
-          .setFooter({ text: 'If you believe this is a mistake, contact the bot owner' })
+          .setFooter({ text: t('en', 'auditCatalog.events.guildMemberAdd.l31_setFooter') })
           .setTimestamp(new Date())
           .toJSON()]
       });
@@ -40,7 +41,7 @@ async function handleGlobalBan(member: any, guild: any, client: any, ban: any): 
 
     await logServerEvent(
       guild,
-      'Global Ban Enforced',
+      t('en', 'auditCatalog.events.guildMemberAdd.l65_setTitle'),
       0xe74c3c,
       [
         { name: 'User', value: `<@${member.id}> (\`${member.id}\`)`, inline: true },
@@ -62,7 +63,7 @@ async function handleGlobalBan(member: any, guild: any, client: any, ban: any): 
         if (owner) {
           await owner.send({
             embeds: [new EmbedBuilder()
-              .setTitle('Global Ban Enforced')
+              .setTitle(t('en', 'auditCatalog.events.guildMemberAdd.l65_setTitle'))
               .setDescription(
                 `A user was automatically banned from **${guild.name}** because they are on the Fluxy global ban list.\n\n` +
                 `**User:** <@${member.id}> (\`${member.id}\`)\n` +

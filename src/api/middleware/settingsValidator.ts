@@ -4,6 +4,7 @@ import {
   RSS_MAX_ITEMS_PER_POLL,
   RSS_MIN_POLL_INTERVAL_MINUTES,
 } from '../../utils/rssDefaults';
+import { t } from '../../i18n';
 
 const SNOWFLAKE_RE = /^\d{17,20}$/;
 const MAX_STRING_LENGTH = 2000;
@@ -25,6 +26,42 @@ const CUSTOM_COMMAND_PERMISSION_VALUES = new Set([
 const CUSTOM_COMMAND_ACTION_VALUES = new Set(['reply', 'toggleRole']);
 
 const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+function validatorT(key: string, vars?: Record<string, string | number>): string {
+  return t('en', `auditCatalog.api.middleware.settingsValidator.${key}`, vars);
+}
+
+const validation = {
+  mustBeObject: (field: string) => validatorT('mustBeObject', { field }),
+  mustBeBoolean: (field: string) => validatorT('mustBeBoolean', { field }),
+  mustBeArray: (field: string) => validatorT('mustBeArray', { field }),
+  mustBeString: (field: string) => validatorT('mustBeString', { field }),
+  mustBeValidLocaleCode: (field: string) => validatorT('mustBeValidLocaleCode', { field }),
+  mustBeValidChannelId: (field: string) => validatorT('mustBeValidChannelId', { field }),
+  mustBeValidRoleId: (field: string) => validatorT('mustBeValidRoleId', { field }),
+  mustBeValidWebhookId: (field: string) => validatorT('mustBeValidWebhookId', { field }),
+  mustBeValidMessageId: (field: string) => validatorT('mustBeValidMessageId', { field }),
+  mustBeValidId: (field: string) => validatorT('mustBeValidId', { field }),
+  maxAllowed: (label: string, max: number) => validatorT('maxAllowed', { label, max }),
+  eachStringLengthRange: (label: string, min: number, max: number) => validatorT('eachStringLengthRange', { label, min, max }),
+  mustBeRange: (field: string, min: number, max: number) => validatorT('mustBeRange', { field, min, max }),
+  mustBeUnderCharacters: (field: string, max: number) => validatorT('mustBeUnderCharacters', { field, max }),
+  mustBeArrayOfUpTo: (field: string, max: number, itemType: string) => validatorT('mustBeArrayOfUpTo', { field, max, itemType }),
+  mustBeOneOf: (field: string, options: string) => validatorT('mustBeOneOf', { field, options }),
+  mustBeHttpUrl: (field: string) => validatorT('mustBeHttpUrl', { field }),
+  mustStartWithSlash: (field: string, context: string) => validatorT('mustStartWithSlash', { field, context }),
+  eachItemMustBeObject: (label: string) => validatorT('eachItemMustBeObject', { label }),
+  eachItemUnderCharacters: (label: string, max: number) => validatorT('eachItemUnderCharacters', { label, max }),
+  mustBeNonEmptyString: (field: string) => validatorT('mustBeNonEmptyString', { field }),
+  mustBeNonEmptyStringUnder: (field: string, max: number) => validatorT('mustBeNonEmptyStringUnder', { field, max }),
+  mustBeValidHexColor: (field: string) => validatorT('mustBeValidHexColor', { field }),
+  mustBeUnique: (field: string) => validatorT('mustBeUnique', { field }),
+  isInvalid: (field: string) => validatorT('isInvalid', { field }),
+  isRequiredForAction: (field: string, action: string) => validatorT('isRequiredForAction', { field, action }),
+  canContainAtMost: (field: string, max: number, itemType: string) => validatorT('canContainAtMost', { field, max, itemType }),
+  keyTooLong: (field: string) => validatorT('keyTooLong', { field }),
+  customCommandNameInvalid: () => validatorT('customCommandNameInvalid'),
+};
 
 function deepSanitize(value: unknown, depth = 0): unknown {
   if (depth > MAX_OBJECT_DEPTH) return undefined;
@@ -95,87 +132,87 @@ function isHttpUrl(v: unknown): v is string {
 }
 
 function validateStarboardEntry(value: unknown): true | string {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) return 'starboard must be an object';
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return validation.mustBeObject('starboard');
   const sb = value as Record<string, unknown>;
-  if (sb.enabled !== undefined && typeof sb.enabled !== 'boolean') return 'starboard.enabled must be boolean';
-  if (sb.channelId !== undefined && !isSnowflakeOrNull(sb.channelId)) return 'starboard.channelId must be a valid channel ID';
-  if (sb.threshold !== undefined && !isBoundedInt(sb.threshold, 1, 100)) return 'starboard.threshold must be 1-100';
-  if (sb.emoji !== undefined && !isBoundedString(sb.emoji, 64)) return 'starboard.emoji must be under 64 characters';
-  if (sb.selfStarEnabled !== undefined && typeof sb.selfStarEnabled !== 'boolean') return 'starboard.selfStarEnabled must be boolean';
-  if (sb.ignoreBots !== undefined && typeof sb.ignoreBots !== 'boolean') return 'starboard.ignoreBots must be boolean';
-  if (sb.ignoredChannels !== undefined && !isSnowflakeArray(sb.ignoredChannels, 50)) return 'starboard.ignoredChannels must be channel IDs';
-  if (sb.ignoredRoles !== undefined && !isSnowflakeArray(sb.ignoredRoles, 50)) return 'starboard.ignoredRoles must be role IDs';
+  if (sb.enabled !== undefined && typeof sb.enabled !== 'boolean') return validation.mustBeBoolean('starboard.enabled');
+  if (sb.channelId !== undefined && !isSnowflakeOrNull(sb.channelId)) return validation.mustBeValidChannelId('starboard.channelId');
+  if (sb.threshold !== undefined && !isBoundedInt(sb.threshold, 1, 100)) return validation.mustBeRange('starboard.threshold', 1, 100);
+  if (sb.emoji !== undefined && !isBoundedString(sb.emoji, 64)) return validation.mustBeUnderCharacters('starboard.emoji', 64);
+  if (sb.selfStarEnabled !== undefined && typeof sb.selfStarEnabled !== 'boolean') return validation.mustBeBoolean('starboard.selfStarEnabled');
+  if (sb.ignoreBots !== undefined && typeof sb.ignoreBots !== 'boolean') return validation.mustBeBoolean('starboard.ignoreBots');
+  if (sb.ignoredChannels !== undefined && !isSnowflakeArray(sb.ignoredChannels, 50)) return validation.mustBeArrayOfUpTo('starboard.ignoredChannels', 50, 'channel IDs');
+  if (sb.ignoredRoles !== undefined && !isSnowflakeArray(sb.ignoredRoles, 50)) return validation.mustBeArrayOfUpTo('starboard.ignoredRoles', 50, 'role IDs');
   return true;
 }
 
 function validateRssFeedEntry(value: unknown): true | string {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    return 'rss.feeds entries must be objects';
+    return validation.eachItemMustBeObject('rss.feeds entries');
   }
 
   const feed = value as Record<string, unknown>;
 
   if (feed.id !== undefined && !isBoundedString(feed.id, 128)) {
-    return 'rss.feeds[].id must be under 128 characters';
+    return validation.mustBeUnderCharacters('rss.feeds[].id', 128);
   }
 
   if (feed.name !== undefined && feed.name !== null && !isBoundedString(feed.name, 120)) {
-    return 'rss.feeds[].name must be under 120 characters';
+    return validation.mustBeUnderCharacters('rss.feeds[].name', 120);
   }
 
   if (feed.sourceType !== undefined && feed.sourceType !== 'rss' && feed.sourceType !== 'rsshub') {
-    return 'rss.feeds[].sourceType must be either rss or rsshub';
+    return validation.mustBeOneOf('rss.feeds[].sourceType', 'rss or rsshub');
   }
 
   const sourceType = (feed.sourceType === 'rsshub' ? 'rsshub' : 'rss') as 'rss' | 'rsshub';
   if (sourceType === 'rss') {
     if (!isHttpUrl(feed.url)) {
-      return 'rss.feeds[].url must be a valid http(s) URL';
+      return validation.mustBeHttpUrl('rss.feeds[].url');
     }
   } else {
     if (!isBoundedString(feed.route, 500) || !(feed.route as string).startsWith('/')) {
-      return 'rss.feeds[].route must start with / for rsshub sources';
+      return validation.mustStartWithSlash('rss.feeds[].route', 'rsshub sources');
     }
   }
 
   if (!isSnowflake(feed.channelId)) {
-    return 'rss.feeds[].channelId must be a valid channel ID';
+    return validation.mustBeValidChannelId('rss.feeds[].channelId');
   }
 
   if (feed.mentionRoleId !== undefined && !isSnowflakeOrNull(feed.mentionRoleId)) {
-    return 'rss.feeds[].mentionRoleId must be a valid role ID';
+    return validation.mustBeValidRoleId('rss.feeds[].mentionRoleId');
   }
 
   if (feed.webhookId !== undefined && !isSnowflakeOrNull(feed.webhookId)) {
-    return 'rss.feeds[].webhookId must be a valid webhook ID';
+    return validation.mustBeValidWebhookId('rss.feeds[].webhookId');
   }
 
   if (feed.webhookToken !== undefined && feed.webhookToken !== null && !isBoundedString(feed.webhookToken, 300)) {
-    return 'rss.feeds[].webhookToken must be under 300 characters';
+    return validation.mustBeUnderCharacters('rss.feeds[].webhookToken', 300);
   }
 
   if (feed.webhookName !== undefined && feed.webhookName !== null && !isBoundedString(feed.webhookName, 80)) {
-    return 'rss.feeds[].webhookName must be under 80 characters';
+    return validation.mustBeUnderCharacters('rss.feeds[].webhookName', 80);
   }
 
   if (feed.enabled !== undefined && typeof feed.enabled !== 'boolean') {
-    return 'rss.feeds[].enabled must be boolean';
+    return validation.mustBeBoolean('rss.feeds[].enabled');
   }
 
   if (feed.maxItemsPerPoll !== undefined && !isBoundedInt(feed.maxItemsPerPoll, 1, RSS_MAX_ITEMS_PER_POLL)) {
-    return `rss.feeds[].maxItemsPerPoll must be between 1 and ${RSS_MAX_ITEMS_PER_POLL}`;
+    return validation.mustBeRange('rss.feeds[].maxItemsPerPoll', 1, RSS_MAX_ITEMS_PER_POLL);
   }
 
   if (feed.includeSummary !== undefined && typeof feed.includeSummary !== 'boolean') {
-    return 'rss.feeds[].includeSummary must be boolean';
+    return validation.mustBeBoolean('rss.feeds[].includeSummary');
   }
 
   if (feed.includeImage !== undefined && typeof feed.includeImage !== 'boolean') {
-    return 'rss.feeds[].includeImage must be boolean';
+    return validation.mustBeBoolean('rss.feeds[].includeImage');
   }
 
   if (feed.format !== undefined && feed.format !== 'embed' && feed.format !== 'text') {
-    return 'rss.feeds[].format must be embed or text';
+    return validation.mustBeOneOf('rss.feeds[].format', 'embed or text');
   }
 
   return true;
@@ -189,188 +226,188 @@ interface ValidationResult {
 
 const fieldValidators: Record<string, (value: unknown) => true | string> = {
   language(v) {
-    if (typeof v !== 'string') return 'language must be a string';
+    if (typeof v !== 'string') return validation.mustBeString('language');
     const code = v.trim();
-    if (!/^[a-z]{2,3}(-[a-z0-9]{2,8})?$/i.test(code) || code.length > 20) return 'language must be a valid locale code';
+    if (!/^[a-z]{2,3}(-[a-z0-9]{2,8})?$/i.test(code) || code.length > 20) return validation.mustBeValidLocaleCode('language');
     return true;
   },
 
   prefixes(v) {
-    if (!Array.isArray(v)) return 'prefixes must be an array';
-    if (v.length > 10) return 'Maximum 10 prefixes allowed';
+    if (!Array.isArray(v)) return validation.mustBeArray('prefixes');
+    if (v.length > 10) return validation.maxAllowed('prefixes', 10);
     if (!v.every(p => typeof p === 'string' && p.length > 0 && p.length <= 10)) {
-      return 'Each prefix must be a string between 1-10 characters';
+      return validation.eachStringLengthRange('prefix', 1, 10);
     }
     return true;
   },
 
   prefix(v) {
-    if (typeof v !== 'string') return 'prefix must be a string';
-    if (v.length < 1 || v.length > 10) return 'prefix must be 1-10 characters';
+    if (typeof v !== 'string') return validation.mustBeString('prefix');
+    if (v.length < 1 || v.length > 10) return validation.mustBeRange('prefix length', 1, 10);
     return true;
   },
 
   logChannelId(v) {
-    if (!isSnowflakeOrNull(v)) return 'logChannelId must be a valid channel ID';
+    if (!isSnowflakeOrNull(v)) return validation.mustBeValidChannelId('logChannelId');
     return true;
   },
 
   serverLogChannelId(v) {
-    if (!isSnowflakeOrNull(v)) return 'serverLogChannelId must be a valid channel ID';
+    if (!isSnowflakeOrNull(v)) return validation.mustBeValidChannelId('serverLogChannelId');
     return true;
   },
 
   muteRoleId(v) {
-    if (!isSnowflakeOrNull(v)) return 'muteRoleId must be a valid role ID';
+    if (!isSnowflakeOrNull(v)) return validation.mustBeValidRoleId('muteRoleId');
     return true;
   },
 
   autoroleId(v) {
-    if (!isSnowflakeOrNull(v)) return 'autoroleId must be a valid role ID';
+    if (!isSnowflakeOrNull(v)) return validation.mustBeValidRoleId('autoroleId');
     return true;
   },
 
   staffChannelId(v) {
-    if (!isSnowflakeOrNull(v)) return 'staffChannelId must be a valid channel ID';
+    if (!isSnowflakeOrNull(v)) return validation.mustBeValidChannelId('staffChannelId');
     return true;
   },
 
   staffRoleId(v) {
-    if (!isSnowflakeOrNull(v)) return 'staffRoleId must be a valid role ID';
+    if (!isSnowflakeOrNull(v)) return validation.mustBeValidRoleId('staffRoleId');
     return true;
   },
 
   staffInboxChannelId(v) {
-    if (!isSnowflakeOrNull(v)) return 'staffInboxChannelId must be a valid channel ID';
+    if (!isSnowflakeOrNull(v)) return validation.mustBeValidChannelId('staffInboxChannelId');
     return true;
   },
 
   honeypotAlertRoleId(v) {
-    if (!isSnowflakeOrNull(v)) return 'honeypotAlertRoleId must be a valid role ID';
+    if (!isSnowflakeOrNull(v)) return validation.mustBeValidRoleId('honeypotAlertRoleId');
     return true;
   },
 
   ticketCategoryId(v) {
-    if (!isSnowflakeOrNull(v)) return 'ticketCategoryId must be a valid ID';
+    if (!isSnowflakeOrNull(v)) return validation.mustBeValidId('ticketCategoryId');
     return true;
   },
 
   ticketSupportRoleId(v) {
-    if (!isSnowflakeOrNull(v)) return 'ticketSupportRoleId must be a valid role ID';
+    if (!isSnowflakeOrNull(v)) return validation.mustBeValidRoleId('ticketSupportRoleId');
     return true;
   },
 
   ticketLogChannelId(v) {
-    if (!isSnowflakeOrNull(v)) return 'ticketLogChannelId must be a valid channel ID';
+    if (!isSnowflakeOrNull(v)) return validation.mustBeValidChannelId('ticketLogChannelId');
     return true;
   },
 
   ticketSetupChannelId(v) {
-    if (!isSnowflakeOrNull(v)) return 'ticketSetupChannelId must be a valid channel ID';
+    if (!isSnowflakeOrNull(v)) return validation.mustBeValidChannelId('ticketSetupChannelId');
     return true;
   },
 
   ticketSetupMessageId(v) {
-    if (!isSnowflakeOrNull(v)) return 'ticketSetupMessageId must be a valid message ID';
+    if (!isSnowflakeOrNull(v)) return validation.mustBeValidMessageId('ticketSetupMessageId');
     return true;
   },
 
   ticketMaxOpen(v) {
-    if (!isBoundedInt(v, 1, 50)) return 'ticketMaxOpen must be 1-50';
+    if (!isBoundedInt(v, 1, 50)) return validation.mustBeRange('ticketMaxOpen', 1, 50);
     return true;
   },
 
   ticketOpenMessage(v) {
-    if (v !== null && !isBoundedString(v, 1000)) return 'ticketOpenMessage must be under 1000 characters';
+    if (v !== null && !isBoundedString(v, 1000)) return validation.mustBeUnderCharacters('ticketOpenMessage', 1000);
     return true;
   },
 
   ticketEmoji(v) {
-    if (!isBoundedString(v, 64)) return 'ticketEmoji must be under 64 characters';
+    if (!isBoundedString(v, 64)) return validation.mustBeUnderCharacters('ticketEmoji', 64);
     return true;
   },
 
   ticketSupportRoleIds(v) {
-    if (!isSnowflakeArray(v, 25)) return 'ticketSupportRoleIds must be an array of up to 25 role IDs';
+    if (!isSnowflakeArray(v, 25)) return validation.mustBeArrayOfUpTo('ticketSupportRoleIds', 25, 'role IDs');
     return true;
   },
 
   blacklistedChannels(v) {
-    if (!isSnowflakeArray(v, 50)) return 'blacklistedChannels must be an array of channel IDs';
+    if (!isSnowflakeArray(v, 50)) return validation.mustBeArrayOfUpTo('blacklistedChannels', 50, 'channel IDs');
     return true;
   },
 
   honeypotChannels(v) {
-    if (!isSnowflakeArray(v, 20)) return 'honeypotChannels must be an array of channel IDs';
+    if (!isSnowflakeArray(v, 20)) return validation.mustBeArrayOfUpTo('honeypotChannels', 20, 'channel IDs');
     return true;
   },
 
   lockdownRoles(v) {
-    if (!isSnowflakeArray(v, 50)) return 'lockdownRoles must be an array of role IDs';
+    if (!isSnowflakeArray(v, 50)) return validation.mustBeArrayOfUpTo('lockdownRoles', 50, 'role IDs');
     return true;
   },
 
   lockdownAllowedRoles(v) {
-    if (!isSnowflakeArray(v, 50)) return 'lockdownAllowedRoles must be an array of role IDs';
+    if (!isSnowflakeArray(v, 50)) return validation.mustBeArrayOfUpTo('lockdownAllowedRoles', 50, 'role IDs');
     return true;
   },
 
   lockdownAllowedUsers(v) {
-    if (!isSnowflakeArray(v, 50)) return 'lockdownAllowedUsers must be an array of user IDs';
+    if (!isSnowflakeArray(v, 50)) return validation.mustBeArrayOfUpTo('lockdownAllowedUsers', 50, 'user IDs');
     return true;
   },
 
   slowmodeAllowedRoles(v) {
-    if (!isSnowflakeArray(v, 50)) return 'slowmodeAllowedRoles must be an array of role IDs';
+    if (!isSnowflakeArray(v, 50)) return validation.mustBeArrayOfUpTo('slowmodeAllowedRoles', 50, 'role IDs');
     return true;
   },
 
   commandAllowedRoles(v) {
-    if (!isSnowflakeArray(v, 50)) return 'commandAllowedRoles must be an array of role IDs';
+    if (!isSnowflakeArray(v, 50)) return validation.mustBeArrayOfUpTo('commandAllowedRoles', 50, 'role IDs');
     return true;
   },
 
   disabledCommands(v) {
-    if (!Array.isArray(v)) return 'disabledCommands must be an array';
-    if (v.length > 100) return 'Maximum 100 disabled commands';
+    if (!Array.isArray(v)) return validation.mustBeArray('disabledCommands');
+    if (v.length > 100) return validation.maxAllowed('disabled commands', 100);
     if (!v.every(c => typeof c === 'string' && c.length <= 50)) {
-      return 'Each command name must be under 50 characters';
+      return validation.eachItemUnderCharacters('command name', 50);
     }
     return true;
   },
 
   globalBanEnabled(v) {
-    if (typeof v !== 'boolean') return 'globalBanEnabled must be a boolean';
+    if (typeof v !== 'boolean') return validation.mustBeBoolean('globalBanEnabled');
     return true;
   },
 
   globalBanAutoApply(v) {
-    if (typeof v !== 'boolean') return 'globalBanAutoApply must be a boolean';
+    if (typeof v !== 'boolean') return validation.mustBeBoolean('globalBanAutoApply');
     return true;
   },
 
   automodEnabled(v) {
-    if (typeof v !== 'boolean') return 'automodEnabled must be a boolean';
+    if (typeof v !== 'boolean') return validation.mustBeBoolean('automodEnabled');
     return true;
   },
 
   raidDisableAutorole(v) {
-    if (typeof v !== 'boolean') return 'raidDisableAutorole must be a boolean';
+    if (typeof v !== 'boolean') return validation.mustBeBoolean('raidDisableAutorole');
     return true;
   },
 
   reactionRoleDMEnabled(v) {
-    if (typeof v !== 'boolean') return 'reactionRoleDMEnabled must be a boolean';
+    if (typeof v !== 'boolean') return validation.mustBeBoolean('reactionRoleDMEnabled');
     return true;
   },
 
   onboardingComplete(v) {
-    if (typeof v !== 'boolean') return 'onboardingComplete must be a boolean';
+    if (typeof v !== 'boolean') return validation.mustBeBoolean('onboardingComplete');
     return true;
   },
 
   onboardingStep(v) {
-    if (!isBoundedInt(v, 0, 20)) return 'onboardingStep must be 0-20';
+    if (!isBoundedInt(v, 0, 20)) return validation.mustBeRange('onboardingStep', 0, 20);
     return true;
   },
 
@@ -379,8 +416,8 @@ const fieldValidators: Record<string, (value: unknown) => true | string> = {
   },
 
   starboards(v) {
-    if (!Array.isArray(v)) return 'starboards must be an array';
-    if (v.length > 3) return 'Cannot have more than 3 starboards';
+    if (!Array.isArray(v)) return validation.mustBeArray('starboards');
+    if (v.length > 3) return validation.maxAllowed('starboards', 3);
     for (const entry of v) {
       const res = validateStarboardEntry(entry);
       if (res !== true) return res;
@@ -389,76 +426,76 @@ const fieldValidators: Record<string, (value: unknown) => true | string> = {
   },
 
   welcomeMessage(v) {
-    if (typeof v !== 'object' || v === null || Array.isArray(v)) return 'welcomeMessage must be an object';
+    if (typeof v !== 'object' || v === null || Array.isArray(v)) return validation.mustBeObject('welcomeMessage');
     const wm = v as Record<string, unknown>;
-    if (wm.enabled !== undefined && typeof wm.enabled !== 'boolean') return 'welcomeMessage.enabled must be boolean';
-    if (wm.channelId !== undefined && !isSnowflakeOrNull(wm.channelId)) return 'welcomeMessage.channelId must be a channel ID';
-    if (wm.message !== undefined && !isBoundedString(wm.message, 2000)) return 'welcomeMessage.message must be under 2000 characters';
-    if (wm.embed !== undefined && typeof wm.embed !== 'object') return 'welcomeMessage.embed must be an object';
-    if (wm.dmEnabled !== undefined && typeof wm.dmEnabled !== 'boolean') return 'welcomeMessage.dmEnabled must be boolean';
-    if (wm.dmMessage !== undefined && !isBoundedString(wm.dmMessage, 2000)) return 'welcomeMessage.dmMessage must be under 2000 characters';
+    if (wm.enabled !== undefined && typeof wm.enabled !== 'boolean') return validation.mustBeBoolean('welcomeMessage.enabled');
+    if (wm.channelId !== undefined && !isSnowflakeOrNull(wm.channelId)) return validation.mustBeValidChannelId('welcomeMessage.channelId');
+    if (wm.message !== undefined && !isBoundedString(wm.message, 2000)) return validation.mustBeUnderCharacters('welcomeMessage.message', 2000);
+    if (wm.embed !== undefined && typeof wm.embed !== 'object') return validation.mustBeObject('welcomeMessage.embed');
+    if (wm.dmEnabled !== undefined && typeof wm.dmEnabled !== 'boolean') return validation.mustBeBoolean('welcomeMessage.dmEnabled');
+    if (wm.dmMessage !== undefined && !isBoundedString(wm.dmMessage, 2000)) return validation.mustBeUnderCharacters('welcomeMessage.dmMessage', 2000);
     return true;
   },
 
   goodbyeMessage(v) {
-    if (typeof v !== 'object' || v === null || Array.isArray(v)) return 'goodbyeMessage must be an object';
+    if (typeof v !== 'object' || v === null || Array.isArray(v)) return validation.mustBeObject('goodbyeMessage');
     const gm = v as Record<string, unknown>;
-    if (gm.enabled !== undefined && typeof gm.enabled !== 'boolean') return 'goodbyeMessage.enabled must be boolean';
-    if (gm.channelId !== undefined && !isSnowflakeOrNull(gm.channelId)) return 'goodbyeMessage.channelId must be a channel ID';
-    if (gm.message !== undefined && !isBoundedString(gm.message, 2000)) return 'goodbyeMessage.message must be under 2000 characters';
-    if (gm.embed !== undefined && typeof gm.embed !== 'object') return 'goodbyeMessage.embed must be an object';
+    if (gm.enabled !== undefined && typeof gm.enabled !== 'boolean') return validation.mustBeBoolean('goodbyeMessage.enabled');
+    if (gm.channelId !== undefined && !isSnowflakeOrNull(gm.channelId)) return validation.mustBeValidChannelId('goodbyeMessage.channelId');
+    if (gm.message !== undefined && !isBoundedString(gm.message, 2000)) return validation.mustBeUnderCharacters('goodbyeMessage.message', 2000);
+    if (gm.embed !== undefined && typeof gm.embed !== 'object') return validation.mustBeObject('goodbyeMessage.embed');
     return true;
   },
 
   moderation(v) {
-    if (typeof v !== 'object' || v === null || Array.isArray(v)) return 'moderation must be an object';
+    if (typeof v !== 'object' || v === null || Array.isArray(v)) return validation.mustBeObject('moderation');
     return true;  // deep-sanitized, Mongoose schema validates shape
   },
 
   automod(v) {
-    if (typeof v !== 'object' || v === null || Array.isArray(v)) return 'automod must be an object';
+    if (typeof v !== 'object' || v === null || Array.isArray(v)) return validation.mustBeObject('automod');
     return true;
   },
 
   antiLink(v) {
-    if (typeof v !== 'object' || v === null || Array.isArray(v)) return 'antiLink must be an object';
+    if (typeof v !== 'object' || v === null || Array.isArray(v)) return validation.mustBeObject('antiLink');
     return true;
   },
 
   antiSpam(v) {
-    if (typeof v !== 'object' || v === null || Array.isArray(v)) return 'antiSpam must be an object';
+    if (typeof v !== 'object' || v === null || Array.isArray(v)) return validation.mustBeObject('antiSpam');
     return true;
   },
 
   antiGhostPing(v) {
-    if (typeof v !== 'object' || v === null || Array.isArray(v)) return 'antiGhostPing must be an object';
+    if (typeof v !== 'object' || v === null || Array.isArray(v)) return validation.mustBeObject('antiGhostPing');
     return true;
   },
 
   verification(v) {
-    if (typeof v !== 'object' || v === null || Array.isArray(v)) return 'verification must be an object';
+    if (typeof v !== 'object' || v === null || Array.isArray(v)) return validation.mustBeObject('verification');
     return true;
   },
 
   rss(v) {
-    if (typeof v !== 'object' || v === null || Array.isArray(v)) return 'rss must be an object';
+    if (typeof v !== 'object' || v === null || Array.isArray(v)) return validation.mustBeObject('rss');
     const rss = v as Record<string, unknown>;
 
     if (rss.enabled !== undefined && typeof rss.enabled !== 'boolean') {
-      return 'rss.enabled must be boolean';
+      return validation.mustBeBoolean('rss.enabled');
     }
 
     if (
       rss.pollIntervalMinutes !== undefined &&
       !isBoundedInt(rss.pollIntervalMinutes, RSS_MIN_POLL_INTERVAL_MINUTES, 1440)
     ) {
-      return `rss.pollIntervalMinutes must be between ${RSS_MIN_POLL_INTERVAL_MINUTES} and 1440`;
+      return validation.mustBeRange('rss.pollIntervalMinutes', RSS_MIN_POLL_INTERVAL_MINUTES, 1440);
     }
 
     if (rss.feeds !== undefined) {
-      if (!Array.isArray(rss.feeds)) return 'rss.feeds must be an array';
+      if (!Array.isArray(rss.feeds)) return validation.mustBeArray('rss.feeds');
       if (rss.feeds.length > RSS_MAX_FEEDS_PER_GUILD) {
-        return `rss.feeds can contain at most ${RSS_MAX_FEEDS_PER_GUILD} feeds`;
+        return validation.canContainAtMost('rss.feeds', RSS_MAX_FEEDS_PER_GUILD, 'feeds');
       }
 
       for (const entry of rss.feeds) {
@@ -469,7 +506,7 @@ const fieldValidators: Record<string, (value: unknown) => true | string> = {
 
     if (rss.pollIntervalMinutes === undefined && rss.feeds !== undefined && rss.enabled === true) {
       if (!isBoundedInt(RSS_DEFAULT_POLL_INTERVAL_MINUTES, RSS_MIN_POLL_INTERVAL_MINUTES, 1440)) {
-        return 'rss.pollIntervalMinutes default is invalid';
+        return validation.isInvalid('rss.pollIntervalMinutes default');
       }
     }
 
@@ -477,90 +514,90 @@ const fieldValidators: Record<string, (value: unknown) => true | string> = {
   },
 
   reactionRoles(v) {
-    if (!Array.isArray(v)) return 'reactionRoles must be an array';
-    if (v.length > 50) return 'Maximum 50 reaction role panels';
+    if (!Array.isArray(v)) return validation.mustBeArray('reactionRoles');
+    if (v.length > 50) return validation.maxAllowed('reaction role panels', 50);
     return true;
   },
 
   customCommands(v) {
-    if (!Array.isArray(v)) return 'customCommands must be an array';
+    if (!Array.isArray(v)) return validation.mustBeArray('customCommands');
     if (v.length > CUSTOM_COMMAND_MAX_PER_GUILD) {
-      return `Maximum ${CUSTOM_COMMAND_MAX_PER_GUILD} custom commands`;
+      return validation.maxAllowed('custom commands', CUSTOM_COMMAND_MAX_PER_GUILD);
     }
 
     const names = new Set<string>();
 
     for (const cmd of v) {
-      if (typeof cmd !== 'object' || cmd === null) return 'Each custom command must be an object';
+      if (typeof cmd !== 'object' || cmd === null) return validation.eachItemMustBeObject('custom command');
       const c = cmd as Record<string, unknown>;
 
       if (typeof c.name !== 'string' || !CUSTOM_COMMAND_NAME_RE.test(c.name.trim().toLowerCase())) {
-        return 'Custom command name must be 1-32 chars and use a-z, 0-9, - or _';
+        return validation.customCommandNameInvalid();
       }
 
       const normalizedName = c.name.trim().toLowerCase();
       if (names.has(normalizedName)) {
-        return 'Custom command names must be unique';
+        return validation.mustBeUnique('customCommands[].name');
       }
       names.add(normalizedName);
 
       if (typeof c.response !== 'string' || c.response.trim().length === 0) {
-        return 'Custom command response must be a non-empty string';
+        return validation.mustBeNonEmptyString('customCommands[].response');
       }
 
-      if (c.response.length > 2000) return 'Custom command response must be under 2000 characters';
+      if (c.response.length > 2000) return validation.mustBeUnderCharacters('customCommands[].response', 2000);
 
       if (c.embed !== undefined && typeof c.embed !== 'boolean') {
-        return 'customCommands[].embed must be boolean';
+        return validation.mustBeBoolean('customCommands[].embed');
       }
 
       if (c.color !== undefined && c.color !== null) {
         if (typeof c.color !== 'string' || !CUSTOM_COMMAND_COLOR_RE.test(c.color)) {
-          return 'customCommands[].color must be a valid 6-digit hex color';
+          return validation.mustBeValidHexColor('customCommands[].color');
         }
       }
 
       if (c.title !== undefined && c.title !== null && !isBoundedString(c.title, 256)) {
-        return 'customCommands[].title must be under 256 characters';
+        return validation.mustBeUnderCharacters('customCommands[].title', 256);
       }
 
       if (c.enabled !== undefined && typeof c.enabled !== 'boolean') {
-        return 'customCommands[].enabled must be boolean';
+        return validation.mustBeBoolean('customCommands[].enabled');
       }
 
       const actionType = typeof c.actionType === 'string' ? c.actionType : 'reply';
       if (c.actionType !== undefined && !CUSTOM_COMMAND_ACTION_VALUES.has(actionType)) {
-        return 'customCommands[].actionType is invalid';
+        return validation.mustBeOneOf('customCommands[].actionType', 'reply or toggleRole');
       }
 
       if (c.targetRoleId !== undefined && !isSnowflakeOrNull(c.targetRoleId)) {
-        return 'customCommands[].targetRoleId must be a valid role ID';
+        return validation.mustBeValidRoleId('customCommands[].targetRoleId');
       }
 
       if (actionType === 'toggleRole' && !isSnowflake(c.targetRoleId)) {
-        return 'customCommands[].targetRoleId is required for toggleRole action';
+        return validation.isRequiredForAction('customCommands[].targetRoleId', 'toggleRole');
       }
 
       if (c.requiredRoleIds !== undefined && !isSnowflakeArray(c.requiredRoleIds, 10)) {
-        return 'customCommands[].requiredRoleIds must be an array of up to 10 role IDs';
+        return validation.mustBeArrayOfUpTo('customCommands[].requiredRoleIds', 10, 'role IDs');
       }
 
       if (c.allowedChannelIds !== undefined && !isSnowflakeArray(c.allowedChannelIds, 25)) {
-        return 'customCommands[].allowedChannelIds must be an array of up to 25 channel IDs';
+        return validation.mustBeArrayOfUpTo('customCommands[].allowedChannelIds', 25, 'channel IDs');
       }
 
       if (c.requiredPermission !== undefined && c.requiredPermission !== null) {
         if (typeof c.requiredPermission !== 'string' || !CUSTOM_COMMAND_PERMISSION_VALUES.has(c.requiredPermission)) {
-          return 'customCommands[].requiredPermission is invalid';
+          return validation.isInvalid('customCommands[].requiredPermission');
         }
       }
 
       if (c.cooldownSeconds !== undefined && !isBoundedInt(c.cooldownSeconds, 0, 3600)) {
-        return 'customCommands[].cooldownSeconds must be between 0 and 3600';
+        return validation.mustBeRange('customCommands[].cooldownSeconds', 0, 3600);
       }
 
       if (c.deleteTrigger !== undefined && typeof c.deleteTrigger !== 'boolean') {
-        return 'customCommands[].deleteTrigger must be boolean';
+        return validation.mustBeBoolean('customCommands[].deleteTrigger');
       }
     }
     return true;
@@ -568,13 +605,13 @@ const fieldValidators: Record<string, (value: unknown) => true | string> = {
 
   keywordWarnings(v) {
     if (typeof v !== 'object' || v === null || Array.isArray(v)) {
-      return 'keywordWarnings must be an object';
+      return validation.mustBeObject('keywordWarnings');
     }
 
     const kw = v as Record<string, unknown>;
 
     if (kw.enabled !== undefined && typeof kw.enabled !== 'boolean') {
-      return 'keywordWarnings.enabled must be boolean';
+      return validation.mustBeBoolean('keywordWarnings.enabled');
     }
 
     if (
@@ -583,34 +620,34 @@ const fieldValidators: Record<string, (value: unknown) => true | string> = {
       kw.action !== 'warn' &&
       kw.action !== 'delete+warn'
     ) {
-      return 'keywordWarnings.action must be delete, warn, or delete+warn';
+      return validation.mustBeOneOf('keywordWarnings.action', 'delete, warn, or delete+warn');
     }
 
     if (kw.keywords !== undefined) {
-      if (!Array.isArray(kw.keywords)) return 'keywordWarnings.keywords must be an array';
-      if (kw.keywords.length > 50) return 'Maximum 50 keyword warnings';
+      if (!Array.isArray(kw.keywords)) return validation.mustBeArray('keywordWarnings.keywords');
+      if (kw.keywords.length > 50) return validation.maxAllowed('keyword warnings', 50);
 
       for (const entry of kw.keywords) {
         if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) {
-          return 'Each keyword warning must be an object';
+          return validation.eachItemMustBeObject('keyword warning');
         }
 
         const keyword = entry as Record<string, unknown>;
 
         if (!isBoundedString(keyword.pattern, 200) || (keyword.pattern as string).trim().length === 0) {
-          return 'keywordWarnings.keywords[].pattern must be a non-empty string under 200 characters';
+          return validation.mustBeNonEmptyStringUnder('keywordWarnings.keywords[].pattern', 200);
         }
 
         if (keyword.isRegex !== undefined && typeof keyword.isRegex !== 'boolean') {
-          return 'keywordWarnings.keywords[].isRegex must be boolean';
+          return validation.mustBeBoolean('keywordWarnings.keywords[].isRegex');
         }
 
         if (keyword.label !== undefined && keyword.label !== null && !isBoundedString(keyword.label, 100)) {
-          return 'keywordWarnings.keywords[].label must be under 100 characters';
+          return validation.mustBeUnderCharacters('keywordWarnings.keywords[].label', 100);
         }
 
         if (keyword.addedBy !== undefined && keyword.addedBy !== null && !isBoundedString(keyword.addedBy, 64)) {
-          return 'keywordWarnings.keywords[].addedBy must be under 64 characters';
+          return validation.mustBeUnderCharacters('keywordWarnings.keywords[].addedBy', 64);
         }
       }
     }
@@ -619,19 +656,19 @@ const fieldValidators: Record<string, (value: unknown) => true | string> = {
   },
 
   logChannelOverrides(v) {
-    if (typeof v !== 'object' || v === null || Array.isArray(v)) return 'logChannelOverrides must be an object';
+    if (typeof v !== 'object' || v === null || Array.isArray(v)) return validation.mustBeObject('logChannelOverrides');
     const overrides = v as Record<string, unknown>;
     for (const [key, val] of Object.entries(overrides)) {
-      if (key.length > 50) return 'logChannelOverrides key too long';
-      if (!isSnowflakeOrNull(val)) return `logChannelOverrides.${key} must be a valid channel ID`;
+      if (key.length > 50) return validation.keyTooLong('logChannelOverrides');
+      if (!isSnowflakeOrNull(val)) return validation.mustBeValidChannelId(`logChannelOverrides.${key}`);
     }
     return true;
   },
 
   disabledLogEvents(v) {
-    if (!Array.isArray(v)) return 'disabledLogEvents must be an array';
-    if (v.length > 50) return 'Maximum 50 disabled log events';
-    if (!v.every(e => typeof e === 'string' && e.length <= 50)) return 'Each event name must be under 50 characters';
+    if (!Array.isArray(v)) return validation.mustBeArray('disabledLogEvents');
+    if (v.length > 50) return validation.maxAllowed('disabled log events', 50);
+    if (!v.every(e => typeof e === 'string' && e.length <= 50)) return validation.eachItemUnderCharacters('event name', 50);
     return true;
   },
 };

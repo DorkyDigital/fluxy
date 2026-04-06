@@ -57,7 +57,6 @@ async function showStatus(message: any, guild: any, settings: any, lang: string)
       { name: t(lang, 'commands.admin.automod.status.fieldExemptChannels'), value: exemptChannels }
     )
     .setFooter({ text: t(lang, 'commands.admin.automod.status.footer') })
-    .setTimestamp(new Date());
 
   return message.reply({ embeds: [embed] });
 }

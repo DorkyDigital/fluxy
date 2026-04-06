@@ -1,11 +1,16 @@
 import isNetworkError from '../../utils/isNetworkError';
 import * as embedQueue from '../../utils/embedQueue';
 import { Routes } from '@erinjs/types';
+import { t, normalizeLocale } from '../../i18n';
 
 
 export const DEFAULT_USER_THRESHOLD = 5;
 export const DEFAULT_TIME_WINDOW = 10_000; // is ms
 const MIN_CONTENT_LENGTH = 5;
+
+function antiRaidT(locale: unknown, key: string, vars?: Record<string, string | number>): string {
+  return t(normalizeLocale(locale), `auditCatalog.automod.modules.antiRaid.${key}`, vars);
+}
 
 
 export interface RaidEntry {
@@ -130,6 +135,7 @@ async function logRaidDetection(
   client: any,
   guild: any,
   logChannelId: string,
+  locale: unknown,
   entries: RaidEntry[],
   normalized: string,
   deletedCount: number
@@ -145,21 +151,21 @@ async function logRaidDetection(
     const uniqueChannels = [...new Set(entries.map(e => e.channelId))];
 
     const embed = {
-      title: 'Coordinated Spam / Raid Detected',
-      description: `**${uniqueUsers.length}** users sent near-identical messages within a short window. All matching messages have been deleted.`,
+      title: antiRaidT(locale, 'logTitle'),
+      description: antiRaidT(locale, 'logDescription', { userCount: uniqueUsers.length }),
       fields: [
         {
-          name: 'Normalized Content',
-          value: `\`\`\`${normalized.slice(0, 200) || '(empty after normalization)'}\`\`\``,
+          name: antiRaidT(locale, 'fieldNormalizedContent'),
+          value: `\`\`\`${normalized.slice(0, 200) || antiRaidT(locale, 'emptyAfterNormalization')}\`\`\``,
           inline: false
         },
         {
-          name: `Users Involved (${uniqueUsers.length})`,
-          value: uniqueUsers.slice(0, 20).map(id => `<@${id}>`).join(', ') + (uniqueUsers.length > 20 ? ` ...+${uniqueUsers.length - 20} more` : ''),
+          name: antiRaidT(locale, 'fieldUsersInvolved', { userCount: uniqueUsers.length }),
+          value: uniqueUsers.slice(0, 20).map(id => `<@${id}>`).join(', ') + (uniqueUsers.length > 20 ? antiRaidT(locale, 'usersMoreSuffix', { moreCount: uniqueUsers.length - 20 }) : ''),
           inline: false
         },
-        { name: 'Messages Deleted', value: `${deletedCount}`, inline: true },
-        { name: 'Channels Affected', value: uniqueChannels.map(id => `<#${id}>`).join(', ').slice(0, 200), inline: false },
+        { name: antiRaidT(locale, 'fieldMessagesDeleted'), value: `${deletedCount}`, inline: true },
+        { name: antiRaidT(locale, 'fieldChannelsAffected'), value: uniqueChannels.map(id => `<#${id}>`).join(', ').slice(0, 200), inline: false },
       ],
       color: 0xff4444,
       timestamp: new Date().toISOString(),
@@ -221,14 +227,14 @@ const antiRaid = {
       const channelId = entry.channelId;
       const channel = guild?.channels?.get(channelId);
       if (channel) {
-        channel.send({ content: '⚠️ Coordinated spam detected and removed.' })
+        channel.send({ content: t(normalizeLocale(settings?.language), 'auditCatalog.automod.modules.antiRaid.l224_send_content') })
           .then((m: any) => setTimeout(() => m.delete().catch(() => { }), 8_000))
           .catch(() => { });
       }
 
       const logChannelId = settings.moderation?.logChannelId || settings.logChannelId;
       if (logChannelId) {
-        logRaidDetection(client, guild, logChannelId, allEntries, normalized, deleted).catch(() => { });
+        logRaidDetection(client, guild, logChannelId, settings?.language, allEntries, normalized, deleted).catch(() => { });
       }
     }
 

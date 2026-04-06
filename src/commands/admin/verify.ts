@@ -95,7 +95,6 @@ async function setupVerification(message: any, args: string[], guild: any, setti
       .setDescription(t(lang, 'verification.panel.description'))
       .setColor(0x5865F2)
       .setFooter({ text: t(lang, 'verification.panel.footer') })
-      .setTimestamp(new Date());
 
     const channel = guild.channels?.get?.(panelChannelId) || await client.channels.fetch(panelChannelId);
     const panelMessage = await channel.send({ embeds: [panelEmbed] });
@@ -113,7 +112,6 @@ async function setupVerification(message: any, args: string[], guild: any, setti
     .setTitle(t(lang, 'verification.setupComplete.title'))
     .setDescription(t(lang, 'verification.setupComplete.description', { panelChannelId, verifiedRoleId }))
     .setColor(0x2ecc71)
-    .setTimestamp(new Date());
 
   return message.reply({ embeds: [statusEmbed] });
 }
@@ -140,7 +138,6 @@ async function postPanel(message: any, args: string[], guild: any, settings: any
       .setDescription(t(lang, 'verification.panel.description'))
       .setColor(0x5865F2)
       .setFooter({ text: t(lang, 'verification.panel.footer') })
-      .setTimestamp(new Date());
 
     const channel = guild.channels?.get?.(channelId) || await client.channels.fetch(channelId);
     const panelMsg = await channel.send({ embeds: [panelEmbed] });
@@ -216,7 +213,6 @@ async function showStatus(message: any, args: string[], guild: any, settings: an
       `**Log Channel:** ${v.logChannelId ? `<#${v.logChannelId}>` : t(lang, 'verification.status.notSet')}\n` +
       `**${t(lang, 'verification.status.maxAttemptsLabel')}:** ${v.maxAttempts || 2}`
     )
-    .setTimestamp(new Date());
 
   return message.reply({ embeds: [statusEmbed] });
 }
@@ -275,7 +271,6 @@ async function testVerification(message: any, args: string[], guild: any, settin
       .setTitle(t(lang, 'verification.captcha.title'))
       .setDescription(t(lang, 'verification.captcha.description', { userId, maxAttempts }))
       .setColor(0x5865F2)
-            .setTimestamp(new Date());
 
     await channel.send({
       embeds: [captchaEmbed],

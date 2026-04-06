@@ -50,7 +50,7 @@ const command: Command = {
       try {
         targetUser = await client.users.fetch(userId);
       } catch {
-        targetUser = { id: userId, username: 'Unknown User' };
+        targetUser = { id: userId, username: t(lang, 'commands.userinfo.unknown') };
       }
 
       const displayName = targetUser.username || targetUser.id;

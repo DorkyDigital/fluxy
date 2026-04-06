@@ -3,6 +3,11 @@ import os from 'os';
 import type { Client } from '@erinjs/core';
 import pidusage from 'pidusage';
 import logBuffer from '../../services/LogBuffer';
+import { t } from '../../i18n';
+
+function healthT(key: string): string {
+  return t('en', `auditCatalog.api.routes.health.${key}`);
+}
 
 export function createHealthRouter(client: Client): Router {
   const router = Router();
@@ -41,7 +46,7 @@ export function createHealthRouter(client: Client): Router {
         nodeVersion: process.version,
       });
     } catch {
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({ error: healthT('internalServerError') });
     }
   });
 
@@ -54,7 +59,7 @@ export function createHealthRouter(client: Client): Router {
       platform: os.platform(),
       arch: os.arch(),
       hostname: os.hostname(),
-      cpuModel: cpus[0]?.model || 'unknown',
+      cpuModel: cpus[0]?.model || healthT('unknown'),
       cpuCores: cpus.length,
       totalMemoryMB: +(totalMem / 1024 / 1024).toFixed(0),
       freeMemoryMB: +(freeMem / 1024 / 1024).toFixed(0),
@@ -86,7 +91,7 @@ export function createHealthRouter(client: Client): Router {
         loadAvg: os.loadavg(),
       });
     } catch {
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({ error: healthT('internalServerError') });
     }
   });
 

@@ -9,6 +9,7 @@ import config from '../../config';
 import { EmbedBuilder } from '@erinjs/core';
 import { Routes } from '@erinjs/types';
 import * as messageDeleteQueue from '../../utils/messageDeleteQueue';
+import { t, normalizeLocale } from '../../i18n';
 
 const EMOJI_APPLY = '✅';
 const EMOJI_DECLINE = '❌';
@@ -25,15 +26,17 @@ const command: Command = {
   async execute(message, args, client, prefix = '!') {
     let guild = (message as any).guild;
     if (!guild && (message as any).guildId) guild = await client.guilds.fetch((message as any).guildId);
-    if (!guild) return void await message.reply('This command can only be used in a server.');
+    if (!guild) return void await message.reply(t('en', 'commands.admin.keywords.serverOnly'));
 
     const sub = args[0]?.toLowerCase();
     const isOwner = config.ownerId && (message as any).author.id === config.ownerId;
+    const guildSettings: any = await GuildSettings.getOrCreate(guild.id);
+    const lang = normalizeLocale(guildSettings?.language);
 
 
     if (sub === 'on' || sub === 'off') {
       try {
-        const settings: any = await GuildSettings.getOrCreate(guild.id);
+        const settings: any = guildSettings;
         settings.globalBanEnabled = sub === 'on';
         await settings.save();
         settingsCache.invalidate(guild.id);
@@ -50,7 +53,7 @@ const command: Command = {
           console.warn(`[${guild.name}] Fluxer API unreachable during !globalban ${sub}`);
         } else {
           console.error(`[${guild.name}] Error in !globalban ${sub}: ${error.message || error}`);
-          message.reply('An error occurred while updating the setting.').catch(() => { });
+          message.reply(t(lang, 'auditCatalog.commands.admin.globalban.l53_reply')).catch(() => { });
         }
         return;
       }
@@ -66,7 +69,7 @@ const command: Command = {
           (enabled ? `\nAuto-apply (skip prompt): **${autoApply ? 'on' : 'off'}**` : '')
         );
       } catch {
-        return void await message.reply('Could not fetch the current setting.');
+        return void await message.reply(t(lang, 'auditCatalog.commands.admin.globalban.l69_reply'));
       }
     }
 
@@ -77,16 +80,16 @@ const command: Command = {
           const settings = await settingsCache.get(guild.id);
           const autoApply = (settings as any)?.globalBanAutoApply === true;
           return void await message.reply(
-            `Auto-apply is **${autoApply ? 'on' : 'off'}**. Use \`${prefix}globalban autoban on\` or \`${prefix}globalban autoban off\` to change.`
+            t(lang, 'auditCatalog.commands.admin.globalban.l80_reply', { autoApply, prefix })
           );
         } catch {
-          return void await message.reply('Could not fetch the current setting.');
+          return void await message.reply(t(lang, 'auditCatalog.commands.admin.globalban.l83_reply'));
         }
       }
       try {
-        const settings: any = await GuildSettings.getOrCreate(guild.id);
+        const settings: any = guildSettings;
         if (!settings.globalBanEnabled) {
-          return void await message.reply('Enable global ban protection first with `globalban on`.');
+          return void await message.reply(t(lang, 'auditCatalog.commands.admin.globalban.l89_reply'));
         }
         settings.globalBanAutoApply = autobanSub === 'on';
         await settings.save();
@@ -102,7 +105,7 @@ const command: Command = {
           console.warn(`[${guild.name}] Fluxer API unreachable during !globalban autoban ${autobanSub}`);
         } else {
           console.error(`[${guild.name}] Error in !globalban autoban: ${error.message || error}`);
-          message.reply('An error occurred while updating the setting.').catch(() => { });
+          message.reply(t(lang, 'auditCatalog.commands.admin.globalban.l105_reply')).catch(() => { });
         }
         return;
       }
@@ -111,7 +114,7 @@ const command: Command = {
     if (sub === 'list') {
       const bans = await GlobalBan.find().sort({ addedAt: -1 }).lean();
       if (bans.length === 0) {
-        return void await message.reply('No global bans configured.');
+        return void await message.reply(t(lang, 'auditCatalog.commands.admin.globalban.l114_reply'));
       }
       const payload = bans.map((b: any) => ({
         userId: b.userId,
@@ -124,7 +127,7 @@ const command: Command = {
       const buffer = Buffer.from(json, 'utf-8');
       const filename = `fluxy-globalban-${new Date().toISOString().slice(0, 10)}.json`;
       return void await message.reply({
-        content: `Global ban list (**${bans.length}** entries).`,
+        content: t(lang, 'auditCatalog.commands.admin.globalban.l127_reply_content', { 'bans.length': bans.length }),
         files: [{ name: filename, data: buffer }],
       });
     }
@@ -132,7 +135,7 @@ const command: Command = {
     if (!isOwner) {
       return void await message.reply({
         embeds: [new EmbedBuilder()
-          .setTitle('Global Ban')
+          .setTitle(t(lang, 'auditCatalog.commands.admin.globalban.l135_setTitle'))
           .setColor(0x5865F2)
           .setDescription(
             `**Server commands** (admin):\n` +
@@ -286,7 +289,7 @@ const command: Command = {
 
       const buildPromptEmbed = () =>
         new EmbedBuilder()
-          .setTitle('New Global Ban – Your Decision')
+          .setTitle(t(lang, 'auditCatalog.commands.admin.globalban.l289_setTitle'))
           .setDescription(
             `A user has been added to the Fluxy global ban list.\n\n` +
             `**Do you want to apply this ban in your server?**\n\n` +
@@ -294,13 +297,12 @@ const command: Command = {
             `${EMOJI_DECLINE} – Skip (don't ban them here)`
           )
           .addFields(
-            { name: 'User', value: `<@${userId}> (\`${userId}\`)`, inline: true },
-            { name: 'Reason', value: reason, inline: false },
+            { name: t(lang, 'auditCatalog.commands.admin.globalban.l297_addFields_name'), value: `<@${userId}> (\`${userId}\`)`, inline: true },
+            { name: t(lang, 'commands.moderation.warn.dmFieldReason'), value: reason, inline: false },
             ...(evidence ? [{ name: 'Evidence', value: evidence, inline: false }] as any[] : []),
           )
           .setColor(0xe74c3c)
-          .setFooter({ text: 'React above to decide • Only server admins can respond' })
-          .setTimestamp(new Date());
+          .setFooter({ text: t(lang, 'auditCatalog.commands.admin.globalban.l302_setFooter') })
 
       for (const guildId of optedInGuildIds) {
         try {
@@ -348,19 +350,18 @@ const command: Command = {
               const owner = await client.users.fetch(ownerId).catch(() => null);
               if (owner) {
                 const dmEmbed = new EmbedBuilder()
-                  .setTitle('New Global Ban (no log channel)')
+                  .setTitle(t(lang, 'auditCatalog.commands.admin.globalban.l350_setTitle'))
                   .setDescription(
                     `**${guildName}** doesn't have a log channel configured, so we couldn't send the apply/skip prompt there. This notification was sent to you instead.\n\n` +
                     `**The user will be auto-banned if they join your server.** To receive future prompts in a channel (with ${EMOJI_APPLY}/${EMOJI_DECLINE} to choose), run \`setlog #your-log-channel\` in your server.`
                   )
                   .addFields(
-                    { name: 'User', value: `<@${userId}> (\`${userId}\`)`, inline: true },
-                    { name: 'Reason', value: reason, inline: false },
+                    { name: t(lang, 'auditCatalog.commands.admin.globalban.l356_addFields_name'), value: `<@${userId}> (\`${userId}\`)`, inline: true },
+                    { name: t(lang, 'commands.moderation.warn.dmFieldReason'), value: reason, inline: false },
                     ...(evidence ? [{ name: 'Evidence', value: evidence, inline: false }] as any[] : []),
                   )
                   .setColor(0xe74c3c)
-                  .setFooter({ text: 'Configure a log channel with setlog to get prompts in-server' })
-                  .setTimestamp(new Date());
+                  .setFooter({ text: t(lang, 'auditCatalog.commands.admin.globalban.l361_setFooter') })
                 await owner.send({ embeds: [dmEmbed.toJSON()] });
                 dmFallback++;
                 continue;
@@ -382,7 +383,7 @@ const command: Command = {
     if (sub === 'remove' || sub === 'unban') {
       const userId = args[1] ? parseUserId(args[1]) : null;
       if (!userId) {
-        return void await message.reply(`Usage: \`${prefix}globalban remove <userId>\``);
+        return void await message.reply(t(lang, 'auditCatalog.commands.admin.globalban.l383_reply', { prefix }));
       }
 
       const wasOnList = await GlobalBan.removeBan(userId);
@@ -390,13 +391,12 @@ const command: Command = {
 
       await message.reply({
         embeds: [new EmbedBuilder()
-          .setTitle('Global Unban')
+          .setTitle(t(lang, 'auditCatalog.commands.admin.globalban.l391_setTitle'))
           .setDescription(
             (wasOnList ? `<@${userId}> (\`${userId}\`) removed from the ban list.\n` : `User \`${userId}\` was not on the ban list.\n`) +
             `Unbanning across ${guildIds.length} servers...`
           )
           .setColor(0x2ecc71)
-          .setTimestamp(new Date())
           .toJSON()]
       });
 
@@ -412,10 +412,9 @@ const command: Command = {
 
       return void await message.reply({
         embeds: [new EmbedBuilder()
-          .setTitle('Global Unban Complete')
-          .setDescription(`**${unbanned}** unban(s) applied across ${guildIds.length} servers.`)
+          .setTitle(t(lang, 'auditCatalog.commands.admin.globalban.l412_setTitle'))
+          .setDescription(t(lang, 'auditCatalog.commands.admin.globalban.l413_setDescription', { unbanned, 'guildIds.length': guildIds.length }))
           .setColor(0x2ecc71)
-          .setTimestamp(new Date())
           .toJSON()]
       });
     }
@@ -423,25 +422,24 @@ const command: Command = {
     if (sub === 'check') {
       const userId = args[1] ? parseUserId(args[1]) : null;
       if (!userId) {
-        return void await message.reply(`Usage: \`${prefix}globalban check <userId>\``);
+        return void await message.reply(t(lang, 'auditCatalog.commands.admin.globalban.l422_reply', { prefix }));
       }
 
       const ban = await GlobalBan.isGlobalBanned(userId);
       if (!ban) {
-        return void await message.reply(`User \`${userId}\` is **not** on the global ban list.`);
+        return void await message.reply(t(lang, 'auditCatalog.commands.admin.globalban.l427_reply', { userId }));
       }
 
       return void await message.reply({
         embeds: [new EmbedBuilder()
-          .setTitle('Global Ban Found')
+          .setTitle(t(lang, 'auditCatalog.commands.admin.globalban.l432_setTitle'))
           .setDescription(`<@${ban.userId}> (\`${ban.userId}\`)`)
           .addFields(
-            { name: 'Reason', value: ban.reason, inline: false },
+            { name: t(lang, 'commands.moderation.warn.dmFieldReason'), value: ban.reason, inline: false },
             ...(ban.evidence ? [{ name: 'Evidence', value: ban.evidence, inline: false }] : []),
-            { name: 'Banned', value: `<t:${Math.floor(new Date(ban.addedAt).getTime() / 1000)}:R>`, inline: true },
+            { name: t(lang, 'auditCatalog.commands.admin.globalban.l437_addFields_name'), value: `<t:${Math.floor(new Date(ban.addedAt).getTime() / 1000)}:R>`, inline: true },
           )
           .setColor(0xe74c3c)
-          .setTimestamp(new Date())
           .toJSON()]
       });
     }
@@ -452,7 +450,7 @@ const command: Command = {
     if (!rawIds || (!isMassBan && !parseUserId(rawIds))) {
       return void await message.reply({
         embeds: [new EmbedBuilder()
-          .setTitle('Global Ban Commands')
+          .setTitle(t(lang, 'auditCatalog.commands.admin.globalban.l450_setTitle'))
           .setColor(0xe74c3c)
           .setDescription(
             `**Server commands** (admin):\n` +
@@ -482,22 +480,21 @@ const command: Command = {
     if (isMassBan) {
       const userIds = rawIds.split(',').map(id => id.trim()).filter(id => /^\d{17,20}$/.test(id));
       if (userIds.length === 0) {
-        return void await message.reply('No valid user IDs found. Separate IDs with commas (no spaces in the ID list).');
+        return void await message.reply(t(lang, 'auditCatalog.commands.admin.globalban.l480_reply'));
       }
       if (userIds.length > 100) {
-        return void await message.reply('Maximum of 100 IDs per mass ban.');
+        return void await message.reply(t(lang, 'auditCatalog.commands.admin.globalban.l483_reply'));
       }
 
       await message.reply({
         embeds: [new EmbedBuilder()
-          .setTitle('Mass Global Ban')
-          .setDescription(`Adding **${userIds.length}** users to the global ban list, banning them, and deleting recent messages in opted-in servers...`)
+          .setTitle(t(lang, 'auditCatalog.commands.admin.globalban.l488_setTitle'))
+          .setDescription(t(lang, 'auditCatalog.commands.admin.globalban.l489_setDescription', { 'userIds.length': userIds.length }))
           .addFields(
-            { name: 'Reason', value: reason, inline: false },
+            { name: t(lang, 'commands.moderation.warn.dmFieldReason'), value: reason, inline: false },
             ...(evidence ? [{ name: 'Evidence', value: evidence, inline: false }] : []),
           )
           .setColor(0xe74c3c)
-          .setTimestamp(new Date())
           .toJSON()]
       });
 
@@ -524,10 +521,9 @@ const command: Command = {
 
       await message.reply({
         embeds: [new EmbedBuilder()
-          .setTitle('Mass Global Ban Complete')
+          .setTitle(t(lang, 'auditCatalog.commands.admin.globalban.l521_setTitle'))
           .setDescription(parts.join('\n'))
           .setColor(0xe74c3c)
-          .setTimestamp(new Date())
           .toJSON()]
       });
       return;
@@ -549,14 +545,13 @@ const command: Command = {
 
     if (existing) {
       const embed = new EmbedBuilder()
-        .setTitle('Global Ban Re-scan')
-        .setDescription(`<@${userId}> (\`${userId}\`) is already on the ban list. Re-scanning opted-in servers and deleting recent messages...`)
+        .setTitle(t(lang, 'auditCatalog.commands.admin.globalban.l545_setTitle'))
+        .setDescription(t(lang, 'auditCatalog.commands.admin.globalban.l546_setDescription', { userId }))
         .addFields(
-          { name: 'Reason', value: reason, inline: false },
+          { name: t(lang, 'commands.moderation.warn.dmFieldReason'), value: reason, inline: false },
           ...(evidence ? [{ name: 'Evidence', value: evidence, inline: false }] : []),
         )
         .setColor(0xe74c3c)
-        .setTimestamp(new Date());
       await message.reply({ embeds: [embed.toJSON()] });
 
       const { banned, serversChecked } = await retroactiveBan(guildIds, [userId], `[Fluxy Global Ban] ${reason}`);
@@ -564,27 +559,25 @@ const command: Command = {
 
       await message.reply({
         embeds: [new EmbedBuilder()
-          .setTitle('Re-scan Complete')
-          .setDescription(`**${banned}** ban(s) applied across **${serversChecked}** opted-in server(s).\n**${deleted}** recent message(s) deleted.`)
+          .setTitle(t(lang, 'auditCatalog.commands.admin.globalban.l559_setTitle'))
+          .setDescription(t(lang, 'auditCatalog.commands.admin.globalban.l560_setDescription', { banned, serversChecked, deleted }))
           .setColor(0xe74c3c)
-          .setTimestamp(new Date())
           .toJSON()]
       });
       return;
     }
 
     const embed = new EmbedBuilder()
-      .setTitle('Global Ban Added')
+      .setTitle(t(lang, 'auditCatalog.commands.admin.globalban.l568_setTitle'))
       .setDescription(
         `<@${userId}> (\`${userId}\`) has been added to the global ban list.\n\n` +
         `Opted-in servers will receive a notification to choose whether to apply this ban.`
       )
       .addFields(
-        { name: 'Reason', value: reason, inline: false },
+        { name: t(lang, 'commands.moderation.warn.dmFieldReason'), value: reason, inline: false },
         ...(evidence ? [{ name: 'Evidence', value: evidence, inline: false }] : []),
       )
       .setColor(0xe74c3c)
-      .setTimestamp(new Date());
 
     await message.reply({ embeds: [embed.toJSON()] });
 
@@ -606,10 +599,9 @@ const command: Command = {
 
     await message.reply({
       embeds: [new EmbedBuilder()
-        .setTitle('Notifications Sent')
+        .setTitle(t(lang, 'auditCatalog.commands.admin.globalban.l599_setTitle'))
         .setDescription(lines.join('\n'))
         .setColor(0xe74c3c)
-        .setTimestamp(new Date())
         .toJSON()]
     });
     return;

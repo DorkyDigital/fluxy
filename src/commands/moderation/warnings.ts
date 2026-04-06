@@ -43,7 +43,7 @@ const command: Command = {
     try {
       targetUser = await client.users.fetch(userId);
     } catch {
-      targetUser = { id: userId, username: 'Unknown User' };
+      targetUser = { id: userId, username: t(lang, 'commands.userinfo.unknown') };
     }
 
     try {
@@ -52,8 +52,7 @@ const command: Command = {
 
       const embed = new EmbedBuilder()
         .setTitle(t(lang, 'commands.moderation.warnings.title', { username: targetUser.username || targetUser.id }))
-        .setColor(0xf39c12)
-        .setTimestamp(new Date());
+        .setColor(0xf39c12);
 
       if (warnings.length === 0) {
         embed.setDescription(t(lang, 'commands.moderation.warnings.noWarnings'));

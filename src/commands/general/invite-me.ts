@@ -21,10 +21,8 @@ const command: Command = {
       const lang = normalizeLocale(settings?.language);
       const embed = new EmbedBuilder()
         .setTitle(t(lang, 'commands.invite.title'))
-        .setDescription(t(lang, 'commands.invite.description', { inviteUrl: INVITE_URL }))
-        .setColor(0x6c72f8)
-        .setFooter({ text: t(lang, 'commands.invite.footer') })
-        .setTimestamp(new Date());
+        .setDescription(t(lang, 'auditCatalog.commands.general.invite_me.l24_setDescription', { INVITE_URL }))
+        .setColor(0x6c72f8);
 
       await message.reply({ embeds: [embed] });
     } catch (error: any) {

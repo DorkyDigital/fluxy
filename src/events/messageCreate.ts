@@ -17,6 +17,7 @@ async function handleInboxMessage(message: any, client: any, settings: any): Pro
 
   const content = message.content?.trim();
   if (!content) return;
+  const lang = normalizeLocale(settings?.language);
 
   if (!settings.staffChannelId) {
     console.warn(`[${message.guild?.name ?? message.guildId}] Report inbox received a message but no staff output channel is configured.`);
@@ -25,16 +26,16 @@ async function handleInboxMessage(message: any, client: any, settings: any): Pro
 
   const author = message.author;
   const embed = new EmbedBuilder()
-    .setTitle('New Staff Report')
+    .setTitle(t(lang, 'commands.report.embedTitle'))
     .setColor(0xED4245)
     .setDescription(content)
     .addFields(
-      { name: 'Reporter', value: `${author.username} (<@${author.id}>)`, inline: true },
-      { name: 'User ID', value: author.id, inline: true },
-      { name: 'Via', value: 'Report inbox channel', inline: true }
+      { name: t(lang, 'commands.report.fieldReporter'), value: `${author.username} (<@${author.id}>)`, inline: true },
+      { name: t(lang, 'auditCatalog.events.messageCreate.l33_addFields_name'), value: author.id, inline: true },
+      { name: t(lang, 'auditCatalog.events.messageCreate.l34_addFields_name'), value: t(lang, 'auditCatalog.events.messageCreate.l34_addFields_value'), inline: true }
     )
     .setThumbnail(author.displayAvatarURL?.() ?? author.avatarURL ?? null)
-    .setFooter({ text: 'This report is only visible to staff' })
+    .setFooter({ text: t(lang, 'auditCatalog.events.messageCreate.l37_setFooterReport') })
     .setTimestamp(new Date());
 
   const guild = message.guild;
@@ -66,17 +67,19 @@ async function handleMention(message: any, client: any): Promise<void> {
   const guildId = message.guildId || message.guild?.id;
 
   let prefix = config.prefix;
+  let lang = 'en';
   if (guildId) {
     try {
       const settings = await settingsCache.get(guildId);
       if (settings?.prefixes?.length) prefix = settings.prefixes[0];
+      lang = normalizeLocale(settings?.language);
     } catch { }
   }
 
   const categories = client.commandHandler?.getCommandsByCategory() ?? {};
 
   const embed = new EmbedBuilder()
-    .setTitle('👋 Hey there!')
+    .setTitle(t(lang, 'auditCatalog.events.messageCreate.l79_setTitle'))
     .setDescription(
       `My prefix in this server is **\`${prefix}\`**\n` +
       `Use \`${prefix}help\` to see all commands, or \`${prefix}help <command>\` for details on a specific one.\n\n` +
@@ -84,7 +87,7 @@ async function handleMention(message: any, client: any): Promise<void> {
     )
     .setColor(0x6c72f8)
     .setTimestamp(new Date())
-    .setFooter({ text: `Fluxy v${require('../../package.json').version}` });
+    .setFooter({ text: t(lang, 'auditCatalog.events.messageCreate.l87_setFooter', { "require('../../package.json').version": require('../../package.json').version }) });
 
   for (const [category, commands] of Object.entries(categories) as [string, any[]][]) {
     if (category === 'owner') continue;
@@ -100,7 +103,7 @@ async function handleMention(message: any, client: any): Promise<void> {
 
   await message.reply({ embeds: [embed] }).catch(() => {
     message.reply(
-      `My prefix here is **\`${prefix}\`** - use \`${prefix}help\` to see all commands.\n📖 Docs: https://docs.fluxy.gay`
+      t(lang, 'auditCatalog.events.messageCreate.l103_reply', { prefix })
     ).catch(() => { });
   });
 }
