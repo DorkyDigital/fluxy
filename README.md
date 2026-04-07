@@ -86,11 +86,11 @@ Full list is in `.env.example`. The ones you'll actually touch:
 
 Strings live under [`src/locales/`](src/locales/): **`en.json`** is the source; other files are named by locale (for example `de.json`, `zh-CN.json`). The bot loads every `*.json` in that folder at runtime; `npm run build` copies them into `build/locales/` for production.
 
-**Crowdin:** [Fluxy on Crowdin](https://crowdin.com/project/fluxy) — translations are synced from this repo via [`crowdin.yml`](crowdin.yml) (source `src/locales/en.json`, translations `src/locales/%locale%.json`). Replace the badge project slug in this README if your Crowdin project identifier differs.
+**Crowdin:** [Fluxy on Crowdin](https://crowdin.com/project/fluxy) — translations are synced from this repo via [`crowdin.yml`](crowdin.yml) (source `src/locales/en.json`, translations `src/locales/%locale%.json`).
 
 ### Deployment
 
-Fluxy runs fine standalone or under PM2 which I personally do. There are `pm2:*` scripts in `package.json` for that. Don't commit your `.env`. If you're enabling the API, set a real `API_ADMIN_TOKEN`. (Dont be stupid.)
+Fluxy runs fine standalone or under PM2. There are `pm2:*` scripts in `package.json` for that. Don't commit your `.env`, and if you're enabling the API, set a strong `API_ADMIN_TOKEN`.
 
 ---
 

@@ -1,7 +1,7 @@
 {
   "name": "fluxer-mod-bot",
   "version": "2.0.0",
-  "description": "fluxy - the awesomest bot for fluxer moderation, now with dashboard",
+  "description": "Fluxy moderation and server-management bot for Fluxer with an optional dashboard",
   "main": "build/index.js",
   "scripts": {
     "build": "tsc && tsc-alias && cp -r src/assets build/ && cp -r src/locales build/",
@@ -66,7 +66,7 @@
     "chatbot"
   ],
   "author": "",
-  "license": "MIT",
+  "license": "Elastic-2.0",
   "dependencies": {
     "@erinjs/core": "^1.2.4",
     "@erinjs/types": "^1.2.4",

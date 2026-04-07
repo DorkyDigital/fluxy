@@ -1743,13 +1743,13 @@ function RssTab({ settings, guild, onSave, saving }: TabProps) {
                       )
                     }
                     placeholder={
-                      feed.sourceType === 'rss' ? 'https://example.com/feed.xml' : '/twitter/user/dogbonewish'
+                      feed.sourceType === 'rss' ? 'https://example.com/feed.xml' : '/twitter/user/username'
                     }
                   />
                   <p className="text-xs text-gray-500">
                     {feed.sourceType === 'rss'
                       ? 'Use a full http(s) feed URL.'
-                      : 'Use a route path starting with /. Example: /twitter/user/dogbonewish'}
+                      : 'Use a route path starting with /. Example: /twitter/user/username'}
                   </p>
                 </div>
 

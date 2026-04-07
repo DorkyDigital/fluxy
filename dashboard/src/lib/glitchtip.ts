@@ -11,7 +11,7 @@ if (dsn) {
 
     tracesSampleRate: 0.1,
 
-    tracePropagationTargets: ['localhost', /^https:\/\/yourserver\.io\/api/],
+    tracePropagationTargets: ['localhost', /^\/api/],
 
     replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 1.0,

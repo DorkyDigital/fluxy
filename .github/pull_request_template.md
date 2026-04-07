@@ -40,5 +40,5 @@ Describe what you ran:
 ## Checklist
 
 - [ ] I agree my contributions are licensed under the project license ([LICENSE](LICENSE)).
-- [ ] I did not commit secrets (`.env`, tokens, keys. FOR THE LOVE OF GOD DO NO FUCKING DO THIS).
+- [ ] I did not commit secrets (`.env`, tokens, keys).
 - [ ] For behavior changes: I considered edge cases (permissions, DMs, missing guild data) where applicable.

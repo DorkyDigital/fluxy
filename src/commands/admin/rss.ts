@@ -209,7 +209,7 @@ const command: Command = {
             name: t(lang, 'auditCatalog.commands.admin.rss.l201_addFields_name'),
             value: [
               `\`${prefix}rss test https://hnrss.org/frontpage\``,
-              `\`${prefix}rss test /twitter/user/dogbonewish\``,
+              `\`${prefix}rss test /twitter/user/username\``,
               `\`${prefix}rss add <#updates> /github/issue/vercel/next.js @News\``,
               `\`${prefix}rss add <#updates> /twitter/user/username\``,
               'Tip: most instances use /twitter/... for X profiles, not /x/...',
