@@ -510,6 +510,8 @@ export async function fetchFeed(target: FeedTarget, options: FetchFeedOptions): 
   const feedUrl = resolveFeedUrl(target, options);
   await assertSafeTarget(feedUrl);
 
+  const validatedUrl = new URL(feedUrl);
+
   const timeoutMs = Math.max(1000, options.timeoutMs || 10000);
   const maxBodyBytes = Math.max(16 * 1024, options.maxBodyBytes || 1024 * 1024);
 
@@ -524,9 +526,8 @@ export async function fetchFeed(target: FeedTarget, options: FetchFeedOptions): 
   if (options.etag) headers['If-None-Match'] = options.etag;
   if (options.lastModified) headers['If-Modified-Since'] = options.lastModified;
 
-  // feedUrl has been validated in resolveFeedUrl and assertSafeTarget to prevent SSRF
   try {
-    const response = await fetch(feedUrl, {
+    const response = await fetch(validatedUrl, {
       method: 'GET',
       headers,
       signal: controller.signal,
