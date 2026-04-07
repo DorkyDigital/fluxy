@@ -93,7 +93,7 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
-    "@types/node": "^25.5.0",
+    "@types/node": "^25.5.2",
     "@types/node-cron": "^3.0.11",
     "@types/pidusage": "^2.0.5",
     "@types/supertest": "^7.2.0",
