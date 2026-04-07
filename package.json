@@ -82,7 +82,7 @@
     "express-rate-limit": "^8.3.2",
     "fast-xml-parser": "^5.5.9",
     "helmet": "^8.1.0",
-    "mongoose": "^9.3.3",
+    "mongoose": "^9.4.1",
     "node-cron": "^4.2.1",
     "pidusage": "^4.0.1",
     "ws": "^8.20.0"
