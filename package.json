@@ -100,7 +100,7 @@
     "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.58.0",
     "@typescript-eslint/parser": "^8.57.1",
-    "eslint": "^10.1.0",
+    "eslint": "^10.2.0",
     "jest": "^30.3.0",
     "prettier": "^3.8.1",
     "rimraf": "^6.1.3",
