@@ -161,7 +161,7 @@ function toRichPreviewLink(value: string): string {
     const parsed = new URL(value);
     const host = normalizeHost(parsed.hostname);
     if (host === 'x.com' || host === 'twitter.com') {
-      parsed.hostname = 'fxtwitter.com';
+      parsed.hostname = 'fixupx.com';
       return parsed.toString();
     }
   } catch {

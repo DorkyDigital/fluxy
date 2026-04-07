@@ -624,7 +624,7 @@ describe('RssPollerService', () => {
       avatar_url: 'https://pbs.twimg.com/profile_images/hd2.jpg',
     });
     expect(String(webhookPayloads[0].content)).toContain(
-      'https://fxtwitter.com/helldivers2/status/2040444809219916065',
+      'https://fixupx.com/helldivers2/status/2040444809219916065',
     );
     expect(mockGuildSettingsUpdateOne).toHaveBeenCalledWith(
       { guildId: 'g1', 'rss.feeds.id': 'feed-1' },
