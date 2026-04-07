@@ -526,6 +526,7 @@ export async function fetchFeed(target: FeedTarget, options: FetchFeedOptions): 
   if (options.etag) headers['If-None-Match'] = options.etag;
   if (options.lastModified) headers['If-Modified-Since'] = options.lastModified;
 
+  // codeql[js/request-forgery] - URL has been validated in resolveFeedUrl and assertSafeTarget to prevent SSRF attacks
   try {
     const response = await fetch(validatedUrl, {
       method: 'GET',
