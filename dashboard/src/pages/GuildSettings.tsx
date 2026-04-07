@@ -1742,9 +1742,7 @@ function RssTab({ settings, guild, onSave, saving }: TabProps) {
                         feed.sourceType === 'rss' ? { url: e.target.value } : { route: e.target.value },
                       )
                     }
-                    placeholder={
-                      feed.sourceType === 'rss' ? 'https://example.com/feed.xml' : '/twitter/user/username'
-                    }
+                    placeholder={feed.sourceType === 'rss' ? 'https://example.com/feed.xml' : '/twitter/user/username'}
                   />
                   <p className="text-xs text-gray-500">
                     {feed.sourceType === 'rss'
