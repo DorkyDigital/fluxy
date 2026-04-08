@@ -4,7 +4,6 @@ import compression from 'compression';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
-import csurf from '@dr.pogodin/csurf';
 import path from 'path';
 import type { Client } from '@erinjs/core';
 import type CommandHandler from '../handlers/CommandHandler';
@@ -117,26 +116,17 @@ export async function startApiServer(client: Client, commandHandler: CommandHand
 
   const { authenticate, requireOwner, requireGuildAccess } = createAuthMiddleware(client);
 
-  // CSRF protection for authenticated routes
-  const csrfProtection = csurf({ cookie: true });
-
   const authRouter = createAuthRouter();
 
   app.use('/api/public', createPublicRouter(client));
 
   app.use('/api/auth', authRouter);
-  app.use('/api/bot', csrfProtection, authenticate, createBotRouter(client, commandHandler, requireOwner));
-  app.use(
-    '/api/guilds',
-    csrfProtection,
-    authenticate,
-    writeLimiter,
-    createGuildsRouter(client, requireGuildAccess('id')),
-  );
-  app.use('/api/stats', csrfProtection, authenticate, requireOwner, createStatsRouter(client));
-  app.use('/api/health', csrfProtection, authenticate, requireOwner, createHealthRouter(client));
-  app.use('/api/moderation', csrfProtection, authenticate, createModerationRouter(requireGuildAccess('guildId')));
-  app.use('/api/data', csrfProtection, authenticate, createDataRouter());
+  app.use('/api/bot', authenticate, createBotRouter(client, commandHandler, requireOwner));
+  app.use('/api/guilds', authenticate, writeLimiter, createGuildsRouter(client, requireGuildAccess('id')));
+  app.use('/api/stats', authenticate, requireOwner, createStatsRouter(client));
+  app.use('/api/health', authenticate, requireOwner, createHealthRouter(client));
+  app.use('/api/moderation', authenticate, createModerationRouter(requireGuildAccess('guildId')));
+  app.use('/api/data', authenticate, createDataRouter());
 
   const dashboardPath = path.join(__dirname, '..', '..', 'dashboard', 'dist');
   app.use(
