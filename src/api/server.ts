@@ -120,8 +120,13 @@ export async function startApiServer(client: Client, commandHandler: CommandHand
   // CSRF protection for authenticated routes
   const csrfProtection = csurf({ cookie: true });
 
+  const authRouter = createAuthRouter();
+
   app.use('/api/public', createPublicRouter(client));
-  app.use('/api/auth', csrfProtection, createAuthRouter());
+
+  app.use('/api/auth/login', authRouter);
+  app.use('/api/auth/callback', authRouter);
+  app.use('/api/auth', csrfProtection, authRouter);
   app.use('/api/bot', csrfProtection, authenticate, createBotRouter(client, commandHandler, requireOwner));
   app.use(
     '/api/guilds',
