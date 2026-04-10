@@ -1734,8 +1734,8 @@
           "l24_setDescription": "Add Fluxy to your server: [Invite link](${INVITE_URL})"
         },
         "ping": {
-          "l31_addFields_value": "\\`${restLatency}ms\\`",
-          "l32_addFields_value": "\\`${msgLatency}ms\\`"
+          "l31_addFields_value": "`${restLatency}ms`",
+          "l32_addFields_value": "`${msgLatency}ms`"
         },
         "report": {
           "l74_addFields_value": "${author.username} (<@${author.id}>)\\n\\`${author.id}\\`"
