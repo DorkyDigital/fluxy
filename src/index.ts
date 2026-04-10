@@ -361,11 +361,11 @@ async function init(): Promise<void> {
 
 const wsErrorTimestamps: number[] = [];
 const WS_WATCHDOG_WINDOW_MS = 10 * 60 * 1000;
-const WS_WATCHDOG_THRESHOLD = 50;
-let lastSuccessfulConnection = Date.now();
-let outageStartedAt: number | null = null;
-const MAX_OUTAGE_DURATION = 30 * 60 * 1000;
+const WS_WATCHDOG_THRESHOLD = 100;
+const MAX_OUTAGE_DURATION = 60 * 60 * 1000;
 let glitchtipReportedAtCount = 0;
+let outageStartedAt: number | null = null;
+let lastSuccessfulConnection = Date.now();
 
 client.on(Events.Error, (error: any) => {
   if (isTransientError(error)) {
@@ -616,6 +616,7 @@ process.on('unhandledRejection', (reason: any) => {
   }
   GlitchTip.captureException(reason);
   log.error('Rejection', reason?.message || reason);
+  process.exit(1);
 });
 
 process.on('uncaughtException', (error) => {
