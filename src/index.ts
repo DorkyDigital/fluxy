@@ -47,6 +47,23 @@ if (!wsShardPrototype.__fluxyIdentifyShardPatched) {
   };
 }
 
+if (!wsShardPrototype.__fluxyIdentifyPresencePatched) {
+  wsShardPrototype.__fluxyIdentifyPresencePatched = true;
+
+  const originalHandleHello = wsShardPrototype.handleHello;
+  wsShardPrototype.handleHello = function (this: any, data: any) {
+    const originalSend = this.send.bind(this);
+    this.send = (payload: any) => {
+      if (payload?.op === GatewayOpcodes.Identify && payload.d?.presence) {
+        delete payload.d.presence;
+      }
+      originalSend(payload);
+    };
+    originalHandleHello.call(this, data);
+    this.send = originalSend;
+  };
+}
+
 if (!wsShardPrototype.__fluxyBurstHeartbeatPatched) {
   wsShardPrototype.__fluxyBurstHeartbeatPatched = true;
 
@@ -346,12 +363,22 @@ async function refreshPresence(logGuildCount = false): Promise<void> {
     if (count <= 0) return;
 
     BOT_PRESENCE.custom_status.text = `Watching ${count} servers`;
+    pushPresenceUpdate();
     if (logGuildCount) {
       log.info('Presence', `Guild count: ${count} servers`);
     }
   } catch (error: any) {
     log.warn('Presence', `Failed to refresh guild count: ${error?.message || error}`);
   }
+}
+
+function pushPresenceUpdate(): void {
+  try {
+    (client as any).ws?.send(0, {
+      op: GatewayOpcodes.PresenceUpdate,
+      d: BOT_PRESENCE,
+    });
+  } catch {}
 }
 
 client.on(Events.Error, (error: any) => {
@@ -559,14 +586,7 @@ client.on(Events.Resumed, () => {
   glitchtipReportedAtCount = 0;
   sustainedOutageReported = false;
 
-  if (client.options.presence) {
-    try {
-      (client as any).ws?.send(0, {
-        op: GatewayOpcodes.PresenceUpdate,
-        d: client.options.presence,
-      });
-    } catch {}
-  }
+  pushPresenceUpdate();
 });
 
 setInterval(
