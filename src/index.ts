@@ -61,6 +61,12 @@ if (!wsProto.__fluxyIdentifyPatched) {
         }
         log.info('Gateway', `Identify → ignored_events=${IGNORED_GATEWAY_EVENTS.join(',')}`);
       }
+      if (payload?.op === GatewayOpcodes.Resume && payload.d?.token) {
+        if (!payload.d.token.startsWith('Bot ')) {
+          payload.d.token = `Bot ${payload.d.token}`;
+        }
+        log.info('Gateway', `Resume → session=${payload.d.session_id}, seq=${payload.d.seq}`);
+      }
       origSend(payload);
     };
     origHello.call(this, data);
