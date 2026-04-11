@@ -38,9 +38,14 @@ const IGNORED_GATEWAY_EVENTS = [
   'CHANNEL_PINS_UPDATE',
   'WEBHOOKS_UPDATE',
   'GUILD_EMOJIS_UPDATE',
+  'GUILD_MEMBER_UPDATE',
+  'INVITE_CREATE',
+  'INVITE_DELETE',
+  'MESSAGE_REACTION_ADD',
+  'MESSAGE_REACTION_REMOVE',
 ];
 
-const FAST_HEARTBEAT_MS = 5_000;
+const FAST_HEARTBEAT_MS = 2_000;
 const FAST_HEARTBEAT_DURATION_MS = 120_000;
 
 const wsProto = WebSocketShard.prototype as any;
@@ -66,11 +71,13 @@ if (!wsProto.__fluxyIdentifyPatched) {
 
     // The gateway's ack buffer (4096 events) uis fucking filleing before the default 41.25s too many guilds genuinely its so fucking ass.
     const shard = this;
-    const fastHb = setInterval(() => {
+    const sendHb = () => {
       if (shard.ws?.readyState === 1) {
         shard.send({ op: GatewayOpcodes.Heartbeat, d: shard.seq ?? null });
       }
-    }, FAST_HEARTBEAT_MS);
+    };
+    setTimeout(sendHb, 1_000);
+    const fastHb = setInterval(sendHb, FAST_HEARTBEAT_MS);
     setTimeout(() => clearInterval(fastHb), FAST_HEARTBEAT_DURATION_MS);
   };
 }
@@ -431,7 +438,13 @@ client.on(Events.Debug, (message: string) => {
   }
 
   if (message.includes('Closed: 4013')) {
-    log.warn('Recovery', 'Gateway 4013 — SDK will auto-reconnect');
+    log.warn('Recovery', 'Gateway 4013 (ack backpressure) — restarting process');
+    GlitchTip.captureMessage('Gateway 4013 (ack backpressure)', {
+      level: 'warning',
+      tags: { source: 'gateway_4013' },
+    });
+    GlitchTip.close(2000).finally(() => process.exit(1));
+    return;
   }
 
   if (message.includes('Closed: 4004')) {
