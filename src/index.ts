@@ -2,6 +2,8 @@ import './instrument';
 
 import * as GlitchTip from '@sentry/node';
 import { Client, GatewayOpcodes, Events } from '@erinjs/core';
+import { WebSocketShard } from '@erinjs/ws';
+import { createHash } from 'crypto';
 import mongoose from 'mongoose';
 import config from './config';
 import CommandHandler from './handlers/CommandHandler';
@@ -27,11 +29,67 @@ if (Guild && Role) {
   };
 }
 
+const wsShardPrototype = WebSocketShard.prototype as any;
+if (!wsShardPrototype.__fluxyBurstHeartbeatPatched) {
+  wsShardPrototype.__fluxyBurstHeartbeatPatched = true;
+
+  const originalShardConnect = wsShardPrototype.connect;
+  wsShardPrototype.connect = function (this: any) {
+    originalShardConnect.call(this);
+
+    const ws = this.ws;
+    if (!ws) return;
+
+    let burstEventCount = 0;
+    let burstActive = true;
+    const BURST_HEARTBEAT_EVERY = 100;
+    const BURST_DURATION_MS = 30_000;
+
+    setTimeout(() => {
+      burstActive = false;
+    }, BURST_DURATION_MS);
+
+    const onBurstMessage = () => {
+      if (!burstActive) return;
+
+      burstEventCount++;
+      if (burstEventCount % BURST_HEARTBEAT_EVERY !== 0) return;
+
+      const seq = this.seq;
+      if (seq === null || ws.readyState !== 1) return;
+
+      try {
+        ws.send(JSON.stringify({ op: GatewayOpcodes.Heartbeat, d: seq }));
+      } catch {}
+    };
+
+    if (typeof ws.addEventListener === 'function') {
+      ws.addEventListener('message', onBurstMessage);
+    } else if (typeof ws.on === 'function') {
+      ws.on('message', onBurstMessage);
+    }
+  };
+}
+
 try {
   config.validate();
 } catch (error: any) {
   log.fatal('Config', error.message);
   process.exit(1);
+}
+
+function logTokenFingerprint(): void {
+  try {
+    const token = config.token || '';
+    const trimmed = token.trim();
+    if (trimmed !== token) {
+      log.warn('Config', 'TOKEN has leading/trailing whitespace; trimming is recommended.');
+    }
+    const fingerprint = createHash('sha256').update(trimmed).digest('hex').slice(0, 10);
+    log.info('Config', `TOKEN fingerprint: ${fingerprint} (len=${trimmed.length})`);
+  } catch (error: any) {
+    log.warn('Config', `Failed to compute TOKEN fingerprint: ${error?.message || error}`);
+  }
 }
 
 if (config.glitchtip.dsn) {
@@ -51,6 +109,8 @@ if (config.glitchtip.dsn) {
 } else {
   log.info('GlitchTip', 'No DSN configured - error tracking disabled');
 }
+
+logTokenFingerprint();
 
 const BOT_PRESENCE = {
   status: 'online' as const,
@@ -386,6 +446,15 @@ client.on(Events.Debug, (message: string) => {
         tags: { source: 'gateway_invalid_session', action: 'continue' },
       });
     }
+    return;
+  }
+
+  if (message.includes('Closed: 4004')) {
+    log.error('Recovery', 'Gateway closed with 4004 during reconnect. Check TOKEN/env and Erin gateway recovery state.');
+    GlitchTip.captureMessage('Gateway closed 4004 (authentication failed)', {
+      level: 'error',
+      tags: { source: 'gateway_4004' },
+    });
     return;
   }
 
