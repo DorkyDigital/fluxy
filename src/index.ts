@@ -45,7 +45,7 @@ const IGNORED_GATEWAY_EVENTS = [
   'MESSAGE_REACTION_REMOVE',
 ];
 
-const FAST_HEARTBEAT_MS = 2_000;
+const FAST_HEARTBEAT_MS = 500;
 const FAST_HEARTBEAT_DURATION_MS = 120_000;
 
 const wsProto = WebSocketShard.prototype as any;
@@ -69,16 +69,23 @@ if (!wsProto.__fluxyIdentifyPatched) {
     origHello.call(this, data);
     this.send = origSend;
 
-    // The gateway's ack buffer (4096 events) uis fucking filleing before the default 41.25s too many guilds genuinely its so fucking ass.
+    // Pump heartbeats aggressively to drain the server's 4096-event ack buffer. this is a horrible way to go about it but i genuinely have no idea what else to fuckin do
     const shard = this;
+    let hbCount = 0;
     const sendHb = () => {
       if (shard.ws?.readyState === 1) {
         shard.send({ op: GatewayOpcodes.Heartbeat, d: shard.seq ?? null });
+        if (++hbCount % 20 === 0) {
+          log.debug('Gateway', `Fast HB × ${hbCount}, seq=${shard.seq ?? 'null'}`);
+        }
       }
     };
-    setTimeout(sendHb, 1_000);
+    setTimeout(sendHb, 250);
     const fastHb = setInterval(sendHb, FAST_HEARTBEAT_MS);
-    setTimeout(() => clearInterval(fastHb), FAST_HEARTBEAT_DURATION_MS);
+    setTimeout(() => {
+      clearInterval(fastHb);
+      log.info('Gateway', `Fast heartbeat phase done (${hbCount} beats, seq=${shard.seq ?? 'null'})`);
+    }, FAST_HEARTBEAT_DURATION_MS);
   };
 }
 
@@ -225,6 +232,11 @@ async function attemptMongoReconnect(): Promise<void> {
 }
 
 async function connectDatabase(): Promise<void> {
+  if (process.env.SKIP_MONGO === '1') {
+    log.warn('MongoDB', 'Skipped (SKIP_MONGO=1)');
+    return;
+  }
+
   const MAX_INITIAL_RETRIES = 5;
   const mongoOptions = {
     maxPoolSize: 10,
