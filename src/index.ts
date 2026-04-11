@@ -2,6 +2,7 @@ import './instrument';
 
 import * as GlitchTip from '@sentry/node';
 import { Client, GatewayOpcodes, Events } from '@erinjs/core';
+import { WebSocketShard } from '@erinjs/ws';
 import { createHash } from 'crypto';
 import mongoose from 'mongoose';
 import config from './config';
@@ -25,6 +26,32 @@ if (Guild && Role) {
       roles.push(role);
     }
     return roles;
+  };
+}
+
+const wsProto = WebSocketShard.prototype as any;
+if (!wsProto.__fluxyIdentifyPatched) {
+  wsProto.__fluxyIdentifyPatched = true;
+  const origHello = wsProto.handleHello;
+  wsProto.handleHello = function (this: any, data: any) {
+    const origSend = this.send.bind(this);
+    this.send = (payload: any) => {
+      if (payload?.op === GatewayOpcodes.Identify && payload.d) {
+        payload.d.large_threshold = 50;
+        if (this.options?.shardId != null && this.options?.numShards != null) {
+          payload.d.shard = [this.options.shardId, this.options.numShards];
+        }
+        delete payload.d.intents;
+        delete payload.d.presence;
+        if (!payload.d.token.startsWith('Bot ')) {
+          payload.d.token = `Bot ${payload.d.token}`;
+        }
+        log.debug('Gateway', `Identify → large_threshold=50 shard=[${payload.d.shard}]`);
+      }
+      origSend(payload);
+    };
+    origHello.call(this, data);
+    this.send = origSend;
   };
 }
 
