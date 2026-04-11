@@ -34,7 +34,14 @@ const IGNORED_GATEWAY_EVENTS = [
   'TYPING_START',
   'USER_UPDATE',
   'GUILD_INTEGRATIONS_UPDATE',
+  'VOICE_STATE_UPDATE',
+  'CHANNEL_PINS_UPDATE',
+  'WEBHOOKS_UPDATE',
+  'GUILD_EMOJIS_UPDATE',
 ];
+
+const FAST_HEARTBEAT_MS = 5_000;
+const FAST_HEARTBEAT_DURATION_MS = 120_000;
 
 const wsProto = WebSocketShard.prototype as any;
 if (!wsProto.__fluxyIdentifyPatched) {
@@ -56,6 +63,15 @@ if (!wsProto.__fluxyIdentifyPatched) {
     };
     origHello.call(this, data);
     this.send = origSend;
+
+    // The gateway's ack buffer (4096 events) uis fucking filleing before the default 41.25s too many guilds genuinely its so fucking ass.
+    const shard = this;
+    const fastHb = setInterval(() => {
+      if (shard.ws?.readyState === 1) {
+        shard.send({ op: GatewayOpcodes.Heartbeat, d: shard.seq ?? null });
+      }
+    }, FAST_HEARTBEAT_MS);
+    setTimeout(() => clearInterval(fastHb), FAST_HEARTBEAT_DURATION_MS);
   };
 }
 
