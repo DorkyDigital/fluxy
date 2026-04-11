@@ -30,21 +30,27 @@ if (Guild && Role) {
 }
 
 const wsShardPrototype = WebSocketShard.prototype as any;
-if (!wsShardPrototype.__fluxyIdentifyPatched) {
-  wsShardPrototype.__fluxyIdentifyPatched = true;
+if (!wsShardPrototype.__fluxyGatewayPatched) {
+  wsShardPrototype.__fluxyGatewayPatched = true;
 
   const originalHandleHello = wsShardPrototype.handleHello;
   wsShardPrototype.handleHello = function (this: any, data: any) {
     const originalSend = this.send.bind(this);
     this.send = (payload: any) => {
+      if (payload?.d?.token && !payload.d.token.startsWith('Bot ')) {
+        payload.d.token = `Bot ${payload.d.token}`;
+      }
+
       if (payload?.op === GatewayOpcodes.Identify && payload.d) {
-        if (!payload.d.token.startsWith('Bot ')) {
-          payload.d.token = `Bot ${payload.d.token}`;
-        }
         delete payload.d.presence;
         delete payload.d.shard;
-        delete payload.d.intents;
+        log.debug('Gateway', `Identify → token=${'Bot …' + payload.d.token.slice(-6)} intents=${payload.d.intents}`);
       }
+
+      if (payload?.op === GatewayOpcodes.Resume && payload.d) {
+        log.debug('Gateway', `Resume → session=${payload.d.session_id} seq=${payload.d.seq}`);
+      }
+
       originalSend(payload);
     };
     originalHandleHello.call(this, data);
@@ -403,6 +409,9 @@ const MAX_CONSECUTIVE_INVALID_SESSIONS = 8;
 const invalidSessionTimestamps: number[] = [];
 let invalidSessionCircuitReported = false;
 
+let consecutive4004 = 0;
+const MAX_4004_RETRIES = 3;
+
 let consecutiveClosed4013 = 0;
 const MAX_CONSECUTIVE_CLOSED_4013 = 6;
 let closed4013CircuitReported = false;
@@ -441,14 +450,30 @@ client.on(Events.Debug, (message: string) => {
   }
 
   if (message.includes('Closed: 4004')) {
+    consecutive4004++;
     log.error(
       'Recovery',
-      'Gateway closed with 4004 during reconnect. Check TOKEN/env and Erin gateway recovery state.',
+      `Gateway 4004 (${consecutive4004}/${MAX_4004_RETRIES}) - auth failed during reconnect`,
     );
     GlitchTip.captureMessage('Gateway closed 4004 (authentication failed)', {
       level: 'error',
       tags: { source: 'gateway_4004' },
     });
+
+    if (consecutive4004 <= MAX_4004_RETRIES) {
+      const delay = Math.min(5000 * Math.pow(2, consecutive4004 - 1), 60000);
+      log.warn('Recovery', `Retrying fresh identify in ${delay / 1000}s…`);
+      const shard: any = (client as any).ws?.shards?.values()?.next()?.value;
+      if (shard && !shard.destroying) {
+        shard.sessionId = null;
+        shard.seq = null;
+        setTimeout(() => {
+          if (!isShuttingDown && !shard.destroying) shard.connect();
+        }, delay);
+      }
+    } else {
+      log.error('Recovery', 'Exhausted 4004 retries - token may be invalid/rate limited. Staying alive for manual intervention.');
+    }
     return;
   }
 
@@ -484,6 +509,10 @@ client.on(Events.Ready, () => {
     log.ok('Recovery', `Gateway accepted session after ${consecutiveInvalidSessions} invalid session(s)`);
     consecutiveInvalidSessions = 0;
     invalidSessionCircuitReported = false;
+  }
+  if (consecutive4004 > 0) {
+    log.ok('Recovery', `Gateway accepted session after ${consecutive4004} auth failure(s)`);
+    consecutive4004 = 0;
   }
   if (consecutiveClosed4013 > 0) {
     log.ok('Recovery', `Gateway accepted session after ${consecutiveClosed4013} close 4013(s)`);
