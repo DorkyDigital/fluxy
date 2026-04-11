@@ -2,7 +2,6 @@ import './instrument';
 
 import * as GlitchTip from '@sentry/node';
 import { Client, GatewayOpcodes, Events } from '@erinjs/core';
-import { WebSocketShard } from '@erinjs/ws';
 import { createHash } from 'crypto';
 import mongoose from 'mongoose';
 import config from './config';
@@ -26,36 +25,6 @@ if (Guild && Role) {
       roles.push(role);
     }
     return roles;
-  };
-}
-
-const wsShardPrototype = WebSocketShard.prototype as any;
-if (!wsShardPrototype.__fluxyGatewayPatched) {
-  wsShardPrototype.__fluxyGatewayPatched = true;
-
-  const originalHandleHello = wsShardPrototype.handleHello;
-  wsShardPrototype.handleHello = function (this: any, data: any) {
-    const originalSend = this.send.bind(this);
-    this.send = (payload: any) => {
-      if (payload?.d?.token && !payload.d.token.startsWith('Bot ')) {
-        payload.d.token = `Bot ${payload.d.token}`;
-      }
-
-      if (payload?.op === GatewayOpcodes.Identify && payload.d) {
-        delete payload.d.presence;
-        delete payload.d.shard;
-        delete payload.d.intents;
-        log.debug('Gateway', `Identify → token=${'Bot …' + payload.d.token.slice(-6)}`);
-      }
-
-      if (payload?.op === GatewayOpcodes.Resume && payload.d) {
-        log.debug('Gateway', `Resume → session=${payload.d.session_id} seq=${payload.d.seq}`);
-      }
-
-      originalSend(payload);
-    };
-    originalHandleHello.call(this, data);
-    this.send = originalSend;
   };
 }
 
