@@ -92,7 +92,7 @@
     "@types/express": "^5.0.6",
     "@types/html-to-text": "^9.0.4",
     "@types/jest": "^30.0.0",
-    "@types/node": "^25.5.2",
+    "@types/node": "^25.6.0",
     "@types/node-cron": "^3.0.11",
     "@types/pidusage": "^2.0.5",
     "@types/supertest": "^7.2.0",
