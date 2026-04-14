@@ -73,13 +73,12 @@ if (!wsProto.__fluxyIdentifyPatched) {
     this.send = origSend;
 
     // Pump heartbeats aggressively to drain the server's 4096-event ack buffer. this is a horrible way to go about it but i genuinely have no idea what else to fuckin do
-    const shard = this;
     let hbCount = 0;
     const sendHb = () => {
-      if (shard.ws?.readyState === 1) {
-        shard.send({ op: GatewayOpcodes.Heartbeat, d: shard.seq ?? null });
+      if (this.ws?.readyState === 1) {
+        this.send({ op: GatewayOpcodes.Heartbeat, d: this.seq ?? null });
         if (++hbCount % 20 === 0) {
-          log.debug('Gateway', `Fast HB × ${hbCount}, seq=${shard.seq ?? 'null'}`);
+          log.debug('Gateway', `Fast HB × ${hbCount}, seq=${this.seq ?? 'null'}`);
         }
       }
     };
@@ -87,7 +86,7 @@ if (!wsProto.__fluxyIdentifyPatched) {
     const fastHb = setInterval(sendHb, FAST_HEARTBEAT_MS);
     setTimeout(() => {
       clearInterval(fastHb);
-      log.info('Gateway', `Fast heartbeat phase done (${hbCount} beats, seq=${shard.seq ?? 'null'})`);
+      log.info('Gateway', `Fast heartbeat phase done (${hbCount} beats, seq=${this.seq ?? 'null'})`);
     }, FAST_HEARTBEAT_DURATION_MS);
   };
 }

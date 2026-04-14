@@ -16,14 +16,10 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (
-              /react|react-dom|react-router-dom/.test(id)
-            ) {
+            if (/react|react-dom|react-router-dom/.test(id)) {
               return 'vendor-react';
             }
-            if (
-              /@radix-ui\/react-(dialog|dropdown-menu|select|tabs|switch|tooltip|toast)/.test(id)
-            ) {
+            if (/@radix-ui\/react-(dialog|dropdown-menu|select|tabs|switch|tooltip|toast)/.test(id)) {
               return 'vendor-radix';
             }
             if (/recharts/.test(id)) {
