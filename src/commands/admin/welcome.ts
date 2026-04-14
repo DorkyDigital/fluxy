@@ -86,8 +86,8 @@ const subcommands: Record<
         {
           name: t(lang, 'auditCatalog.commands.admin.welcome.l76_addFields_name'),
           value: t(lang, 'auditCatalog.commands.admin.welcome.l77_addFields_value', {
-            "dm.enabled ? 'Enabled' : 'Disabled'": dm.enabled ? 'Enabled' : 'Disabled',
-            "dm.imageEnabled ? 'Yes' : 'No'": dm.imageEnabled ? 'Yes' : 'No',
+            'dm.enabled': dm.enabled ?? false,
+            'dm.imageEnabled': dm.imageEnabled ?? false,
           }),
           inline: true,
         },
@@ -201,7 +201,7 @@ const subcommands: Record<
         return embedReply(
           message,
           t(lang, 'auditCatalog.commands.admin.welcome.l159_embedReply_description', {
-            "names.map((n: string) => `\\`${n}\\``).join(', ')": names.map((n: string) => `\`${n}\``).join(', '),
+            availablePresets: names.map((n: string) => `\`${n}\``).join(', '),
           }),
         );
       }
@@ -215,7 +215,7 @@ const subcommands: Record<
         return embedReply(
           message,
           t(lang, 'auditCatalog.commands.admin.welcome.l168_embedReply_description', {
-            "names.map((n: string) => `\\`${n}\\``).join(', ')": names.map((n: string) => `\`${n}\``).join(', '),
+            availablePresets: names.map((n: string) => `\`${n}\``).join(', '),
           }),
         );
       }
@@ -252,7 +252,7 @@ const subcommands: Record<
       return embedReply(
         message,
         t(lang, 'auditCatalog.commands.admin.welcome.l190_embedReply_description', {
-          "colors.join(' → ')": colors.join(' → '),
+          colors: colors.join(' → '),
         }),
       );
     }
@@ -291,7 +291,7 @@ const subcommands: Record<
       return embedReply(
         message,
         t(lang, 'auditCatalog.commands.admin.welcome.l212_embedReply_description', {
-          'text.toUpperCase()': text.toUpperCase(),
+          text: text.toUpperCase(),
         }),
       );
     }

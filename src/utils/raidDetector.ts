@@ -104,8 +104,7 @@ export async function sendRaidAlert(client: any, guild: any, joinCount: number, 
       {
         name: t('en', 'auditCatalog.utils.raidDetector.l93_addFields_name'),
         value: t('en', 'auditCatalog.utils.raidDetector.l93_addFields_value', {
-          "idListForBan.length > 900 ? idListForBan.slice(0, 900) + '...' : idListForBan":
-            idListForBan.length > 900 ? idListForBan.slice(0, 900) + '...' : idListForBan,
+          userIds: idListForBan.length > 900 ? idListForBan.slice(0, 900) + '...' : idListForBan,
         }),
         inline: false,
       },

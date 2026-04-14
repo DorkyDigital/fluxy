@@ -220,10 +220,8 @@ async function upsertHoneypot(
   return message.reply(
     t(lang, 'auditCatalog.commands.admin.honeypot.l198_reply', {
       'channel.id': channel.id,
-      "existing ? 'updated' : 'created'": existing ? 'updated' : 'created',
-      'formatEntry(\n      settings.honeypotChannels.find((h: any) => h.channelId === channel.id)\n    )': formatEntry(
-        settings.honeypotChannels.find((h: any) => h.channelId === channel.id),
-      ),
+      existing: existing !== undefined,
+      formattedEntry: formatEntry(settings.honeypotChannels.find((h: any) => h.channelId === channel.id)),
     }),
   );
 }

@@ -55,13 +55,41 @@ function getByPath(obj: unknown, key: string): unknown {
   return cur;
 }
 
+const TERNARY_REGEX = /(?<cond>.+?) \? '(?<trueStr>\w+)' : '(?<falseStr>\w+)'/;
+interface TernaryRegexResult {
+  cond: string;
+  trueStr: string;
+  falseStr: string;
+}
+const STRING_COMPARISON_REGEX = /(?<key>.+) === '(?<str>.+)'/;
+interface StringComparisonRegexResult {
+  key: string;
+  str: string;
+}
+
 function interpolate(template: string, vars?: Vars): string {
   if (!vars) return template;
   return template.replace(
     /\$\{([^}]+)\}|\{([a-zA-Z0-9_]+)\}/g,
     (_, templateKey: string | undefined, braceKey: string | undefined) => {
+      const ternaryExpr = templateKey?.match(TERNARY_REGEX) ?? null;
       const key = templateKey ?? braceKey;
       const v = key ? vars[key] : undefined;
+
+      if (ternaryExpr !== null) {
+        const ternary = ternaryExpr.groups! as unknown as TernaryRegexResult;
+
+        // Only supports comparing against a string
+        const explicitStrComparison = ternary.cond.match(STRING_COMPARISON_REGEX);
+        const comparisonRes: StringComparisonRegexResult | undefined =
+          explicitStrComparison?.groups as unknown as StringComparisonRegexResult;
+        if (comparisonRes !== undefined && vars[comparisonRes.key] !== undefined) {
+          return vars[comparisonRes.key] === comparisonRes.str! ? ternary.trueStr : ternary.falseStr;
+        } else if (vars[ternary.cond] !== undefined) {
+          return vars[ternary.cond] ? ternary.trueStr : ternary.falseStr;
+        }
+      }
+
       if (v === null || v === undefined) {
         return templateKey ? `\${${key}}` : `{${key}}`;
       }

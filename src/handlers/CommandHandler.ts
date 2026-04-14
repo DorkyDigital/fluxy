@@ -450,7 +450,7 @@ export default class CommandHandler {
         await message
           .reply(
             t(locale, 'auditCatalog.handlers.CommandHandler.l412_reply', {
-              "command.permissions.join(', ')": command.permissions.join(', '),
+              requiredPermissions: command.permissions.join(', '),
             }),
           )
           .catch(() => {});

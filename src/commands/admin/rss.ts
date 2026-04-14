@@ -322,7 +322,7 @@ const command: Command = {
           .setDescription(
             t(lang, 'auditCatalog.commands.admin.rss.l309_setDescription', {
               'rss.pollIntervalMinutes': rss.pollIntervalMinutes,
-              "rss.enabled ? 'enabled' : 'disabled'": rss.enabled ? 'enabled' : 'disabled',
+              'rss.enabled': rss.enabled,
             }),
           )
           .setColor(0x3498db);

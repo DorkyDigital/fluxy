@@ -161,8 +161,7 @@ async function sendSuspectAlert(client: any, guild: any, suspects: SuspectEntry[
     .addFields({
       name: t('en', 'auditCatalog.utils.suspiciousDetector.l159_addFields_name'),
       value: t('en', 'auditCatalog.utils.suspiciousDetector.l160_addFields_value', {
-        "idList.length > 900 ? idList.slice(0, 900) + '...' : idList":
-          idList.length > 900 ? idList.slice(0, 900) + '...' : idList,
+        idList: idList.length > 900 ? idList.slice(0, 900) + '...' : idList,
       }),
       inline: false,
     })
