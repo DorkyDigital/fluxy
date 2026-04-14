@@ -14,19 +14,25 @@ export default defineConfig({
     target: 'es2022',
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-radix': [
-            '@radix-ui/react-dialog',
-            '@radix-ui/react-dropdown-menu',
-            '@radix-ui/react-select',
-            '@radix-ui/react-tabs',
-            '@radix-ui/react-switch',
-            '@radix-ui/react-tooltip',
-            '@radix-ui/react-toast',
-          ],
-          'vendor-recharts': ['recharts'],
-          'vendor-glitchtip': ['@sentry/react'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (
+              /react|react-dom|react-router-dom/.test(id)
+            ) {
+              return 'vendor-react';
+            }
+            if (
+              /@radix-ui\/react-(dialog|dropdown-menu|select|tabs|switch|tooltip|toast)/.test(id)
+            ) {
+              return 'vendor-radix';
+            }
+            if (/recharts/.test(id)) {
+              return 'vendor-recharts';
+            }
+            if (/@sentry\/react/.test(id)) {
+              return 'vendor-glitchtip';
+            }
+          }
         },
       },
     },
