@@ -3,16 +3,10 @@ import GuildSettings from '../../models/GuildSettings';
 import settingsCache from '../../utils/settingsCache';
 import isNetworkError from '../../utils/isNetworkError';
 import { EmbedBuilder } from '@erinjs/core';
+import strLen from '../../utils/strlen';
 import { t, normalizeLocale } from '../../i18n';
 
 const HEX_RE = /^#[0-9a-f]{6}$/i;
-
-/// str.length counts the number of UTF-16 code units in the string, not the number of
-/// Unicode characters, so emojis may be counted as more than 1 character.
-/// We must convert it into an array of code units to get the character count
-function strLen(str: string): number {
-  return [...str].length;
-}
 
 async function save(settings: any, guildId: string): Promise<void> {
   settings.markModified('goodbyeMessage');
