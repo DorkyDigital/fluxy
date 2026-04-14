@@ -78,7 +78,7 @@
     "dotenv": "^17.4.1",
     "express": "^5.2.1",
     "express-rate-limit": "^8.3.2",
-    "fast-xml-parser": "^5.5.10",
+    "fast-xml-parser": "^5.5.12",
     "helmet": "^8.1.0",
     "html-to-text": "^9.0.5",
     "mongoose": "^9.4.1",
