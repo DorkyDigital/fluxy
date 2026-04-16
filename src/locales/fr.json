@@ -61,7 +61,7 @@
     },
     "panelPosted": "Panneau de vérification posté dans <#{channelId}>.",
     "roleSetDone": "Rôle vérifié défini à <@&{roleId}>.",
-    "categorySetDone": "`{prefix}vérifier setup` - création automatique de..... la catégorie, du canal, du rôle, et du panneau\n`{prefix}vérifier le panneau [#channel]` - (re-)poste le panneau de vérification\n`{prefix}vérifier le rôle <@role>` - définit le rôle vérifié\n`{prefix}vérifier la catégorie <id>` - définit la catégorie\n`{prefix}vérifier le journal <#channel>` - définit un canal de log\n`{prefix}vérifier le statut` - affiche la configuration actuelle\n`{prefix}vérifier la réinitialisation` - désactive et efface les paramètres\n`{prefix}vérifier le test` - ouvre un canal de vérification test privé",
+    "categorySetDone": "Catégorie de vérification définie sur `{categoryId}`.",
     "help": {
       "title": "Système de vérification manuelle",
       "body": "`{prefix}vérifier setup` - création automatique de la catégorie, du canal, du rôle, et du panneau\n`{prefix}vérifier le panneau [#channel]` - (re-)poste le panneau de vérification\n`{prefix}vérifier le rôle <@role>` - définit le rôle vérifié\n`{prefix}vérifier la catégorie <id>` - définit la catégorie\n`{prefix}vérifier le journal <#channel>` - définit un canal de log\n`{prefix}vérifier le statut` - affiche la configuration actuelle\n`{prefix}vérifier la réinitialisation` - désactive et efface les paramètres\n`{prefix}vérifier le test` - ouvre un canal de vérification test privé"
@@ -151,7 +151,7 @@
       "membersFetchFailed": "Échec de la récupération des membres du serveur.",
       "noneWithRole": "Aucun membre n'a actuellement le rôle **{roleName}**.",
       "invalidPage": "La page doit être un nombre à partir de 1.",
-      "pageTooHigh": "Membres",
+      "pageTooHigh": "Seulement {totalPages} page(s) disponible(s) pour ce rôle.",
       "embedTitle": "Membres ayant {roleName}",
       "footerTotal": "{memberCount} membre(s) total",
       "footerPageHint": "page {page}/{totalPages} - exécutez {prefix}inrole <role> <page> pour voir les autres pages",
@@ -247,7 +247,7 @@
         "invalidNumber": "Veuillez fournir un nombre valide.",
         "amountRange": "Le montant doit être compris entre 1 et 100.",
         "noMessages": "Aucun message à supprimer.",
-        "successDeleted": "",
+        "successDeleted": "Suppression réussie de **{userCount}** message(s).",
         "errors": {
           "cannotDeleteOlderThan14Days": "Impossible de supprimer les messages datant de plus de 14 jours.",
           "generic": "Une erreur est survenue lors de la suppression des messages."
