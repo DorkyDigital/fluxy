@@ -1288,7 +1288,7 @@
         }
       },
       "server": {
-        "dashboardNotBuilt": "Das Dashboard wurde nicht erstellt. Führen Sie `npm run build` in /dashboard aus."
+        "dashboardNotBuilt": "Das Dashboard wurde nicht erstellt. Führen Sie `pnpm run build` in /dashboard aus."
       }
     },
     "automod": {

@@ -13,19 +13,19 @@ By contributing, you agree that your contributions will be licensed under the sa
 - Copy `.env.example` to `.env` and fill in values
 
 ```bash
-npm install
-npm run build
-npm test
+pnpm install
+pnpm run build
+pnpm test
 ```
 
-The dashboard lives under `dashboard/`; root `npm run build` should build both as configured in `package.json`.
+The dashboard lives under `dashboard/`; root `pnpm run build` should build both as configured in `package.json`.
 
 ## Pull requests
 
 - Open an issue first for large changes or new features when possible.
 - Keep PRs focused; smaller changes are easier to review.
 - Fill out the [pull request template](.github/pull_request_template.md).
-- Ensure `npm run build` and `npm test` pass.
+- Ensure `pnpm run build` and `pnpm test` pass.
 
 ## Code style
 

@@ -1288,7 +1288,7 @@
         }
       },
       "server": {
-        "dashboardNotBuilt": "Dashboard not built. Run `npm run build` in /dashboard."
+        "dashboardNotBuilt": "Dashboard not built. Run `pnpm run build` in /dashboard."
       }
     },
     "automod": {

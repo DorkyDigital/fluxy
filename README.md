@@ -27,23 +27,23 @@ The rest of this README is for self-hosters and contributors etc.
 ### Requirements
 
 - Node.js `>=22`
-- npm
+- pnpm
 - MongoDB
 
 ### Quick start
 
 ```bash
 # 1. Install
-npm install
+pnpm install
 
 # 2. Copy and fill in the env file
 cp .env.example .env
 
 # 3. Dev
-npm run dev
+pnpm run dev
 
 # 4. Or build + run prod
-npm run build && npm start
+pnpm run build && pnpm start
 ```
 
 The two env vars you actually need to set are `TOKEN` and `MONGO_URI`. Everything else has a default or is optional.
@@ -71,18 +71,18 @@ Full list is in `.env.example`. The ones you'll actually touch:
 
 | Command                 | What it does                                                  |
 | ----------------------- | ------------------------------------------------------------- |
-| `npm run dev`           | Watch mode                                                    |
-| `npm run build`         | Compile TS → `build/`                                         |
-| `npm start`             | Run compiled bot                                              |
-| `npm test`              | Run tests                                                     |
-| `npm run test:watch`    | Watch tests                                                   |
-| `npm run test:coverage` | Coverage report                                               |
-| `npm run lint`          | ESLint                                                        |
-| `npm run i18n:check`    | Validate locale JSON files (keys + placeholders vs `en.json`) |
+| `pnpm run dev`           | Watch mode                                                    |
+| `pnpm run build`         | Compile TS → `build/`                                         |
+| `pnpm start`             | Run compiled bot                                              |
+| `pnpm test`              | Run tests                                                     |
+| `pnpm run test:watch`    | Watch tests                                                   |
+| `pnpm run test:coverage` | Coverage report                                               |
+| `pnpm run lint`          | ESLint                                                        |
+| `pnpm run i18n:check`    | Validate locale JSON files (keys + placeholders vs `en.json`) |
 
 ### Localization
 
-Strings live under [`src/locales/`](src/locales/): **`en.json`** is the source; other files are named by locale (for example `de.json`, `zh-CN.json`). The bot loads every `*.json` in that folder at runtime; `npm run build` copies them into `build/locales/` for production.
+Strings live under [`src/locales/`](src/locales/): **`en.json`** is the source; other files are named by locale (for example `de.json`, `zh-CN.json`). The bot loads every `*.json` in that folder at runtime; `pnpm run build` copies them into `build/locales/` for production.
 
 **Crowdin:** [Fluxy on Crowdin](https://crowdin.com/project/fluxy) — translations are synced from this repo via [`crowdin.yml`](crowdin.yml) (source `src/locales/en.json`, translations `src/locales/%locale%.json`).
 

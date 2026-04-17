@@ -5,7 +5,7 @@
   "main": "build/index.js",
   "scripts": {
     "build": "tsc && tsc-alias && cp -r src/assets build/ && cp -r src/locales build/",
-    "build:clean": "rimraf build/ && npm run build",
+    "build:clean": "rimraf build/ && pnpm run build",
     "start": "node build/index.js",
     "dev": "tsx watch src/index.ts",
     "test": "jest",
@@ -111,5 +111,6 @@
   },
   "engines": {
     "node": ">=22.0.0"
-  }
+  },
+  "packageManager": "pnpm@10.33.0"
 }

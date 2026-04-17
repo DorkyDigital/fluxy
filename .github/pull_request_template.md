@@ -23,9 +23,9 @@ Closes #<!-- issue number -->
 
 Describe what you ran:
 
-- [ ] `npm run lint`
-- [ ] `npm test`
-- [ ] `npm run build` (root; includes TS build)
+- [ ] `pnpm run lint`
+- [ ] `pnpm test`
+- [ ] `pnpm run build` (root; includes TS build)
 - [ ] Manually exercised: …
 
 ## User-visible changes
