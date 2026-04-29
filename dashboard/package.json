@@ -24,7 +24,7 @@
     "clsx": "^2.1.1",
     "emoji-picker-react": "^4.18.0",
     "lucide-react": "^1.8.0",
-    "posthog-js": "^1.368.0",
+    "posthog-js": "^1.372.4",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-router-dom": "^7.14.2",
