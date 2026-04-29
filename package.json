@@ -97,7 +97,7 @@
     "@types/pidusage": "^2.0.5",
     "@types/supertest": "^7.2.0",
     "@types/ws": "^8.18.1",
-    "@typescript-eslint/eslint-plugin": "^8.58.1",
+    "@typescript-eslint/eslint-plugin": "^8.59.1",
     "@typescript-eslint/parser": "^8.57.1",
     "eslint": "^10.2.0",
     "jest": "^30.3.0",
