@@ -23,18 +23,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
       - name: Use Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm i --frozen-lockfile
 
       - name: Check formatting
-        run: npm run format:check
+        run: pnpm run format:check
 
   bot-ci:
     name: Bot Build, Lint, and Test
@@ -44,27 +45,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
       - name: Use Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm i --frozen-lockfile
 
       - name: Lint
-        run: npm run lint
+        run: pnpm run lint
 
       - name: Build
-        run: npm run build
+        run: pnpm run build
 
       - name: Validate locales
-        run: npm run i18n:check
+        run: pnpm run i18n:check
 
       - name: Run tests
-        run: npm test
+        run: pnpm test
         env:
           NODE_ENV: test
 
@@ -79,18 +81,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
       - name: Use Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: dashboard/package-lock.json
+          cache: 'pnpm'
+          cache-dependency-path: dashboard/pnpm-lock.yaml
 
       - name: Install dashboard dependencies
-        run: npm ci
+        run: pnpm i --frozen-lockfile
 
       - name: Build dashboard
-        run: npm run build
+        run: pnpm run build
 
   dependency-audit:
     name: Dependency Audit
@@ -101,25 +104,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
       - name: Use Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
+          cache: 'pnpm'
           cache-dependency-path: |
-            package-lock.json
-            dashboard/package-lock.json
+            pnpm-lock.yaml
+            dashboard/pnpm-lock.yaml
 
       - name: Install bot dependencies
-        run: npm ci
+        run: pnpm i --frozen-lockfile
 
       - name: Audit bot production dependencies
-        run: npm audit --omit=dev --audit-level=high
+        run: pnpm audit --prod --audit-level high
 
       - name: Install dashboard dependencies
         working-directory: dashboard
-        run: npm ci
+        run: pnpm i --frozen-lockfile
 
       - name: Audit dashboard production dependencies
         working-directory: dashboard
-        run: npm audit --omit=dev --audit-level=high
+        run: pnpm audit --prod --audit-level high

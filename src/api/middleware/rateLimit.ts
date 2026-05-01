@@ -1,11 +1,11 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { type RateLimitRequestHandler } from 'express-rate-limit';
 import { t } from '../../i18n';
 
 function rateLimitT(key: string): string {
   return t('en', `auditCatalog.api.middleware.rateLimit.${key}`);
 }
 
-export const apiLimiter = rateLimit({
+export const apiLimiter: RateLimitRequestHandler = rateLimit({
   windowMs: 60 * 1000,
   max: 100,
   standardHeaders: true,
@@ -13,7 +13,7 @@ export const apiLimiter = rateLimit({
   message: { error: rateLimitT('tooManyRequests') },
 });
 
-export const authLimiter = rateLimit({
+export const authLimiter: RateLimitRequestHandler = rateLimit({
   windowMs: 60 * 1000,
   max: 10,
   standardHeaders: true,
@@ -21,7 +21,7 @@ export const authLimiter = rateLimit({
   message: { error: rateLimitT('tooManyAuthRequests') },
 });
 
-export const writeLimiter = rateLimit({
+export const writeLimiter: RateLimitRequestHandler = rateLimit({
   windowMs: 60 * 1000,
   max: 30,
   standardHeaders: true,
