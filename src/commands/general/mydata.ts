@@ -73,12 +73,29 @@ const command: Command = {
         const lines = [];
         if (result.userSettings) lines.push('- Personal settings deleted');
         if (result.warnings > 0) lines.push(`- ${result.warnings} warning record(s) deleted`);
+        if (result.warningsIssuedAnonymized > 0)
+          lines.push(`- ${result.warningsIssuedAnonymized} warning issuer reference(s) anonymized`);
         if (result.moderationLogsAnonymized > 0)
           lines.push(`- ${result.moderationLogsAnonymized} moderation log(s) anonymized`);
         if (result.ticketMessagesAnonymized > 0) lines.push('- Ticket transcript messages anonymized');
+        if (result.ticketsAnonymized > 0) lines.push(`- ${result.ticketsAnonymized} ticket field(s) anonymized`);
+        if (result.ticketParticipantsRemoved > 0)
+          lines.push(`- Removed from ${result.ticketParticipantsRemoved} ticket participant list(s)`);
+        if (result.globalBansAddedAnonymized > 0)
+          lines.push(`- ${result.globalBansAddedAnonymized} global ban creator reference(s) anonymized`);
+        if (result.globalBanPromptDecisionsAnonymized > 0)
+          lines.push(`- ${result.globalBanPromptDecisionsAnonymized} global ban prompt decision(s) anonymized`);
         if (result.commandUsage > 0) lines.push(`- ${result.commandUsage} command usage record(s) deleted`);
         if (result.guildSettingsReferences > 0)
           lines.push(`- Removed from ${result.guildSettingsReferences} guild allowlist(s)`);
+        if (result.keywordReferencesAnonymized > 0)
+          lines.push(`- ${result.keywordReferencesAnonymized} keyword author reference(s) anonymized`);
+        if (result.starboardMessagesAnonymized > 0)
+          lines.push(`- ${result.starboardMessagesAnonymized} starboard author reference(s) anonymized`);
+        if (result.starboardReactionsRemoved > 0)
+          lines.push(`- Removed from ${result.starboardReactionsRemoved} starboard reactor list(s)`);
+        if (result.lockdownStatesAnonymized > 0)
+          lines.push(`- ${result.lockdownStatesAnonymized} lockdown state reference(s) anonymized`);
 
         if (lines.length === 0) {
           lines.push(t(lang, 'commands.mydata.deleteNoData'));
