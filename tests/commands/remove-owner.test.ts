@@ -105,15 +105,24 @@ describe('owner remove command', () => {
     mockDeleteUserData.mockResolvedValue(makeDeleteResult());
   });
 
-  test('only runs in DMs with Fluxy', async () => {
+  test('runs in guild channels too', async () => {
     const message = makeMessage(OWNER_ID, 'guild-1');
     const client = makeClient();
 
-    await removeCommand.execute(message, [TARGET_ID], client, '!');
+    const pending = removeCommand.execute(message, [TARGET_ID], client, '!');
+    await flushPromises();
 
-    expect(message.reply).toHaveBeenCalledWith('Use this command in DMs with Fluxy only.');
-    expect(mockCollectUserData).not.toHaveBeenCalled();
-    expect(mockDeleteUserData).not.toHaveBeenCalled();
+    const confirmationMessage = message._sentMessages[0];
+    client.emitReaction(
+      { messageId: confirmationMessage.id, channelId: confirmationMessage.channelId, emoji: { name: '✅' } },
+      { id: OWNER_ID, bot: false },
+    );
+
+    await pending;
+
+    expect(message.reply).not.toHaveBeenCalledWith('Use this command in DMs with Fluxy only.');
+    expect(mockCollectUserData).toHaveBeenCalledWith(TARGET_ID);
+    expect(mockDeleteUserData).toHaveBeenCalledWith(TARGET_ID, { removeGlobalBan: true });
   });
 
   test('blocks non-owner usage even in DMs', async () => {
