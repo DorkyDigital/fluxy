@@ -8,10 +8,6 @@ const CONFIRM_EMOJI = '✅';
 const CANCEL_EMOJI = '❌';
 const CONFIRM_TIMEOUT_MS = 60 * 1000;
 
-function isDM(message: any): boolean {
-  return !message.guildId && !message.guild?.id;
-}
-
 function normalizeEmojiName(emoji: any): string {
   return String(emoji?.name ?? emoji ?? '')
     .replace(/[\uFE00-\uFE0F\u200D]/g, '')
@@ -140,7 +136,7 @@ function formatDeleteResult(result: DeleteResult): string {
 
 const command: Command = {
   name: 'remove',
-  description: 'Owner-only DM command to export and remove a usesars data',
+  description: "Owner-only command to export and remove a user's data",
   usage: '<userId>',
   category: 'owner',
   ownerOnly: true,
@@ -153,10 +149,6 @@ const command: Command = {
 
     if (!ownerId || authorId !== ownerId) {
       return void (await message.reply('This command is restricted to the bot owner.'));
-    }
-
-    if (!isDM(message)) {
-      return void (await message.reply('Use this command in DMs with Fluxy only.'));
     }
 
     const userId = parseUserId(args[0]);

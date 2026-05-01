@@ -13,6 +13,20 @@ import { clampPollIntervalMinutes } from '../../utils/rssDefaults';
 import { t, normalizeLocale } from '../../i18n';
 
 const OWNER_ONLY_SUBCOMMANDS = new Set(['debug', 'forcepoll', 'force', 'pollnow']);
+const MUTATING_SUBCOMMANDS = new Set(['add', 'remove', 'pause', 'resume', 'interval']);
+const EXPECTED_FEED_ERROR_PREFIXES = [
+  'Feed request timed out',
+  'Feed response exceeded max size',
+  'Feed request failed with status',
+  'Feed XML could not be parsed',
+  'Unsupported feed format',
+  'Invalid RSS',
+  'Invalid Atom',
+  'Feed host',
+  'Unable to resolve feed host',
+  'RSSHub route',
+  'Feed URL',
+];
 
 function parseChannelId(raw?: string): string | null {
   if (!raw) return null;
@@ -131,9 +145,36 @@ function findFeedByRef(feeds: IRssFeed[], ref: string): { feed: IRssFeed; index:
 }
 
 async function saveSettings(settings: any, guildId: string): Promise<void> {
-  settings.markModified('rss');
-  await settings.save();
+  if (typeof settings.markModified === 'function' && typeof settings.save === 'function') {
+    settings.markModified('rss');
+    await settings.save();
+  } else {
+    await GuildSettings.updateSetting(guildId, 'rss', settings.rss);
+  }
   settingsCache.invalidate(guildId);
+}
+
+function isExpectedFeedError(error: any): boolean {
+  const message = String(error?.message || error || '');
+  return EXPECTED_FEED_ERROR_PREFIXES.some((prefix) => message.startsWith(prefix));
+}
+
+async function fetchFeedForCommand(
+  source: { sourceType: 'rss' | 'rsshub'; url: string | null; route: string | null },
+  message: any,
+): Promise<Awaited<ReturnType<typeof fetchFeed>> | null> {
+  try {
+    return await fetchFeed(source, {
+      timeoutMs: config.rss.fetchTimeoutMs,
+      maxBodyBytes: config.rss.maxBodyBytes,
+      rsshubBaseUrl: config.rss.rsshubBaseUrl,
+      rsshubAccessKey: config.rss.rsshubAccessKey,
+    });
+  } catch (error: any) {
+    if (!isExpectedFeedError(error)) throw error;
+    await message.reply(`I could not fetch that feed: ${error.message || error}`).catch(() => {});
+    return null;
+  }
 }
 
 const command: Command = {
@@ -231,7 +272,10 @@ const command: Command = {
     }
 
     try {
-      const settings: any = initialSettings ?? (await GuildSettings.getOrCreate(guild.id));
+      const settings: any =
+        sub && MUTATING_SUBCOMMANDS.has(sub)
+          ? await GuildSettings.getOrCreate(guild.id)
+          : (initialSettings ?? (await GuildSettings.getOrCreate(guild.id)));
       lang = normalizeLocale(settings?.language);
       const rss = ensureRssSettings(settings);
 
@@ -261,19 +305,15 @@ const command: Command = {
 
         const mentionRoleId = parseRoleId(args[3]);
 
-        const probe = await fetchFeed(
+        const probe = await fetchFeedForCommand(
           {
             sourceType: parsedSource.sourceType,
             url: parsedSource.url,
             route: parsedSource.route,
           },
-          {
-            timeoutMs: config.rss.fetchTimeoutMs,
-            maxBodyBytes: config.rss.maxBodyBytes,
-            rsshubBaseUrl: config.rss.rsshubBaseUrl,
-            rsshubAccessKey: config.rss.rsshubAccessKey,
-          },
+          message,
         );
+        if (!probe) return;
 
         if (probe.items.length === 0) {
           return void (await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l266_reply')));
@@ -418,12 +458,8 @@ const command: Command = {
           return void (await message.reply(t(lang, 'auditCatalog.commands.admin.rss.l390_reply')));
         }
 
-        const parsed = await fetchFeed(source, {
-          timeoutMs: config.rss.fetchTimeoutMs,
-          maxBodyBytes: config.rss.maxBodyBytes,
-          rsshubBaseUrl: config.rss.rsshubBaseUrl,
-          rsshubAccessKey: config.rss.rsshubAccessKey,
-        });
+        const parsed = await fetchFeedForCommand(source, message);
+        if (!parsed) return;
 
         const preview = parsed.items
           .slice(0, 5)

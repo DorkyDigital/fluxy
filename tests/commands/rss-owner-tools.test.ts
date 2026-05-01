@@ -1,7 +1,9 @@
 const mockGetOrCreate = jest.fn();
+const mockUpdateSetting = jest.fn();
 const mockRssStateFind = jest.fn();
 const mockForcePollGuild = jest.fn();
 const mockGetRuntimeState = jest.fn();
+const mockSettingsCacheGet = jest.fn();
 
 jest.mock('@erinjs/core', () => ({
   EmbedBuilder: jest.fn().mockImplementation(() => {
@@ -63,6 +65,7 @@ jest.mock('../../src/models/GuildSettings', () => ({
   __esModule: true,
   default: {
     getOrCreate: (...args: any[]) => mockGetOrCreate(...args),
+    updateSetting: (...args: any[]) => mockUpdateSetting(...args),
   },
 }));
 
@@ -87,6 +90,7 @@ jest.mock('../../src/utils/isNetworkError', () => jest.fn(() => false));
 jest.mock('../../src/utils/settingsCache', () => ({
   __esModule: true,
   default: {
+    get: (...args: any[]) => mockSettingsCacheGet(...args),
     invalidate: jest.fn(),
   },
 }));
@@ -96,6 +100,9 @@ jest.mock('../../src/utils/rssFeed', () => ({
 }));
 
 import rssCommand from '../../src/commands/admin/rss';
+import { fetchFeed } from '../../src/utils/rssFeed';
+
+const fetchFeedMock = fetchFeed as jest.Mock;
 
 function makeGuildSettings() {
   return {
@@ -136,6 +143,8 @@ function makeMessage(authorId: string) {
 describe('rss owner-only tools', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockSettingsCacheGet.mockResolvedValue(null);
+    mockUpdateSetting.mockResolvedValue(null);
   });
 
   test('blocks non-owner from owner-only rss debug tools', async () => {
@@ -214,5 +223,61 @@ describe('rss owner-only tools', () => {
     expect(payload.embeds[0].data.title).toBe('RSS Debug (Owner Only)');
     expect(payload.embeds[0].data.description).toContain('Poller runtime: started');
     expect(payload.embeds[0].data.fields[0].value).toContain('Seen IDs: 3');
+  });
+
+  test('mutating commands use a GuildSettings document instead of cached plain settings', async () => {
+    const cachedSettings = {
+      language: 'en',
+      rss: {
+        enabled: true,
+        pollIntervalMinutes: 15,
+        feeds: [],
+      },
+    };
+    const documentSettings = makeGuildSettings();
+    mockSettingsCacheGet.mockResolvedValue(cachedSettings);
+    mockGetOrCreate.mockResolvedValue(documentSettings);
+
+    const message = makeMessage('admin-1');
+    const client = {} as any;
+
+    await (rssCommand as any).execute(message, ['interval', '30'], client, '!');
+
+    expect(mockGetOrCreate).toHaveBeenCalledWith('guild-1');
+    expect(documentSettings.rss.pollIntervalMinutes).toBe(30);
+    expect(documentSettings.markModified).toHaveBeenCalledWith('rss');
+    expect(documentSettings.save).toHaveBeenCalledTimes(1);
+    expect(mockUpdateSetting).not.toHaveBeenCalled();
+    expect(message.reply).toHaveBeenCalledWith('RSS poll interval set to 30 minute(s).');
+  });
+
+  test('expected feed fetch failures reply without logging command errors', async () => {
+    const documentSettings = {
+      rss: {
+        enabled: false,
+        pollIntervalMinutes: 15,
+        feeds: [],
+      },
+      markModified: jest.fn(),
+      save: jest.fn().mockResolvedValue(undefined),
+    };
+    mockGetOrCreate.mockResolvedValue(documentSettings);
+    fetchFeedMock.mockRejectedValue(new Error('Feed request timed out after 10000ms'));
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    const message = makeMessage('admin-1');
+    const client = {} as any;
+
+    await (rssCommand as any).execute(
+      message,
+      ['add', '<#12345678901234567>', 'https://example.com/feed.xml'],
+      client,
+      '!',
+    );
+
+    expect(message.reply).toHaveBeenCalledWith('I could not fetch that feed: Feed request timed out after 10000ms');
+    expect(documentSettings.save).not.toHaveBeenCalled();
+    expect(consoleSpy).not.toHaveBeenCalled();
+    consoleSpy.mockRestore();
   });
 });
