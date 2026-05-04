@@ -81,7 +81,7 @@
     "fast-xml-parser": "^5.7.2",
     "helmet": "^8.1.0",
     "html-to-text": "^9.0.5",
-    "mongoose": "^9.4.1",
+    "mongoose": "^9.6.1",
     "node-cron": "^4.2.1",
     "pidusage": "^4.0.1",
     "ws": "^8.20.0"
